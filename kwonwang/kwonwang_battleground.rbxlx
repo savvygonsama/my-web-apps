@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.23" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.24" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7384,51 +7384,54 @@ do
 		},
 	})
 
-	-- 🌌 혼돈개천권 [신]: 공간을 삼키고 터뜨리는 혼돈
+	-- 🌌 혼돈개천권 [신]: 무극신권의 끝. 흑과 백이 나뉘기 전의 혼돈, 먹으로 빚은 천마
 	add({
-		id = "hondon", name = "혼돈개천권", hanja = "混沌開天拳", icon = "🌌", grade = "신", fx = "subspace",
-		color = Color3.fromRGB(170, 120, 255), color2 = Color3.fromRGB(255, 240, 200),
-		palette = { Color3.fromRGB(150, 90, 255), Color3.fromRGB(255, 245, 220), Color3.fromRGB(40, 20, 70) },
-		desc = "하늘과 땅이 나뉘기 전의 혼돈을 주먹에 담았다. 주먹이 닿는 곳마다 공간이 삼켜지고 금이 가며, 끝에는 무너진 자리에서 새 하늘이 열린다.",
-		gimmick = "혼돈체: 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 20% 짧음. 기술마다 공간을 삼켰다가 터뜨린다. 초 오의(X)가 있다",
-		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (여섯 번 모두 환생한 몸으로)",
-		deflect = 0.34, postureMult = 1.5, speed = 1.2, cdMult = 0.8, dashCd = 0.55, stance = "stance_subspace",
+		id = "hondon", name = "혼돈개천권", hanja = "混沌開天拳", icon = "🌌", grade = "신", fx = "void",
+		color = Color3.fromRGB(235, 235, 245), color2 = Color3.fromRGB(255, 214, 120),
+		palette = { Color3.fromRGB(16, 16, 20), Color3.fromRGB(248, 248, 252), Color3.fromRGB(255, 210, 110) },
+		desc = "무극신권이 끝에 닿은 자리. 무극 이전, 흑과 백이 아직 나뉘지 않은 혼돈을 주먹에 담았다. 먹으로 천마를 빚어 타고 달리며, 손이 닿는 곳마다 세상이 다시 그려진다.",
+		gimmick = "혼돈체: 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 20% 짧음. 무극신권의 기술이 모두 한 단계 위로 올라섰다. R은 먹으로 빚은 천마를 타고 내달린다 (그동안 무적). 초 오의(X)가 있다",
+		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (무극신권을 익히고 여섯 번 모두 환생한 몸으로)",
+		deflect = 0.34, postureMult = 1.5, speed = 1.2, cdMult = 0.8, dashCd = 0.55, stance = "stance_mugeuk",
 		combo = {
-			{ id = "hd1", name = "혼돈장", pose = "void_palm_r", dur = 0.32, lunge = 4, hits = { hit(0.14, 6, 5, 34, 24, 0.4, 14, nil, true) } },
-			{ id = "hd2", name = "열공퇴", pose = "roundhouse", dur = 0.38, lunge = 3, hits = { hit(0.18, 7, 7, 34, 26, 0.5, 18, nil, true) } },
-			{ id = "hd3", name = "흡공권", pose = "back_spin_kick", dur = 0.44, lunge = 3, hits = { hit(0.2, 6, 5, 46, 34, 0.6, 22, 12, true), hit(0.3, 6, 5, 30, 20, 0.4, 14, nil, true) } },
-			{ id = "hd4", name = "붕천장", pose = "void_push", dur = 0.5, lunge = 2, hits = { hit(0.26, 8, 9, 78, 70, 0.8, 40, 12, true) } },
+			{ id = "hd1", name = "혼원수", pose = "void_palm_r", dur = 0.32, lunge = 4, hits = { hit(0.14, 6, 5, 34, 24, 0.4, 14, nil, true) } },
+			{ id = "hd2", name = "역혼수", pose = "void_palm_l", dur = 0.34, lunge = 4, hits = { hit(0.15, 7, 6, 34, 26, 0.5, 18, nil, true) } },
+			{ id = "hd3", name = "혼돈환", pose = "void_circle", dur = 0.44, lunge = 2, hits = { hit(0.2, 6, 7, 46, 34, 0.6, 22, 12, true), hit(0.32, 6, 7, 30, 20, 0.4, 14, nil, true) } },
+			{ id = "hd4", name = "귀원장", pose = "void_push", dur = 0.5, lunge = 2, hits = { hit(0.26, 8, 9, 78, 70, 0.8, 40, 12, true) } },
 		},
-		heavy = { id = "hdH", name = "허공일지", pose = "void_point", dur = 0.62, lunge = 10, hits = { hit(0.3, 14, 6, 130, 140, 1.1, 70, 10, true) } },
-		finisher = { id = "hdF", name = "개천승천", pose = "void_push", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		heavy = { id = "hdH", name = "개천장", pose = "void_sink", dur = 0.62, lunge = 6, hits = { hit(0.3, 10, 9, 130, 140, 1.1, 70, 10, true) } },
+		finisher = { id = "hdF", name = "혼돈승천", pose = "void_push", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
 		skills = {
-			E = { id = "hdE", name = "혼돈구", desc = "앞에 검은 혼돈의 구슬을 띄운다. 구슬이 둘레의 적을 빨아들인 뒤 안으로 무너지며 터진다", pose = "void_push", dur = 0.9, cd = 7, chi = 22,
+			E = { id = "hdE", name = "음양혼돈구", desc = "검은 구슬과 흰 구슬이 서로 감아 돌며 앞으로 나아가 둘레의 적을 빨아들인다. 두 구슬이 하나로 합쳐지는 순간 안으로 무너지며 금빛으로 터진다", pose = "void_point", dur = 0.9, cd = 7, chi = 22,
 				mech = seq({
-					{ t = 0.3, shape = "circle", at = "front", dist = 14, radius = 10, pull = 30, vfx = "voidOrb", col = 1, hit = hit(0, 0, 0, 60, 60, 0.6, 0) },
-					{ t = 0.78, shape = "circle", at = "front", dist = 14, radius = 11, vfx = "implode", col = 2, hit = hit(0, 0, 0, 110, 110, 1.0, 40, 14) },
+					{ t = 0.3, shape = "circle", at = "front", dist = 14, radius = 10, pull = 30, vfx = "yinyang", hit = hit(0, 0, 0, 60, 60, 0.6, 0) },
+					{ t = 0.78, shape = "circle", at = "front", dist = 14, radius = 11, vfx = "implode", col = 3, hit = hit(0, 0, 0, 110, 110, 1.0, 40, 14) },
 				}) },
-			R = { id = "hdR", name = "천붕지열", desc = "손끝으로 땅을 가리키면 발밑에 별 모양 금이 가고, 앞으로 공간이 찢어지며, 가까운 적 셋의 둘레 공간이 유리처럼 깨진다", pose = "void_point", dur = 1.1, cd = 9, chi = 26,
+			R = { id = "hdR", name = "묵마천행", desc = "먹으로 천마를 빚어 올라탄다 (그동안 무적). 세 번 박차고 30칸을 내달리며 발굽마다 먹이 튀어 적을 베고, 마지막에 앞발을 들어 내리찍으면 먹의 물결이 둘레로 터진다", pose = "void_sink", dur = 1.3, cd = 9, chi = 26,
+				mech = { kind = "forgeSeq", iframes = true, steps = {
+					{ t = 0.05, shape = "circle", at = "self", radius = 1, life = 1.3, vfx = "inkHorse" },
+					{ t = 0.25, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkSplash", col = 1, hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
+					{ t = 0.5, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkSplash", col = 1, hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
+					{ t = 0.75, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkSplash", col = 1, hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
+					{ t = 1.05, shape = "circle", at = "self", radius = 13, vfx = "inkStomp", col = 3, hit = hit(0, 0, 0, 70, 90, 1.0, 40, 16) },
+				} } },
+			G = { id = "hdG", name = "혼돈태극", desc = "세상의 빛깔이 빠지고 발밑에 40칸 넓이의 태극이 그려진다. 태극이 돌며 둘레의 적을 세 번 가운데로 감아 들인다. 마지막에 흑과 백이 하나로 섞이며 금빛 새 하늘이 열린다", pose = "ult_taiji", dur = 2.5, cd = 28, chi = 100, armor = true,
 				mech = seq({
-					{ t = 0.35, shape = "circle", at = "self", radius = 10, vfx = "starCrack", col = 1, hit = hit(0, 0, 0, 50, 60, 0.6, 30, 10) },
-					{ t = 0.65, shape = "line", at = "self", length = 30, width = 7, vfx = "rift", col = 2, hit = hit(0, 0, 0, 70, 80, 0.8, 40) },
-					{ t = 0.95, at = "each", n = 3, range = 30, radius = 6, vfx = "shatter", col = 2, hit = hit(0, 0, 0, 40, 50, 0.6, 20, 14) },
-				}) },
-			G = { id = "hdG", name = "혼돈개천", desc = "하늘에 검은 구멍이 열려 둘레의 적을 세 번 빨아들이며 짓누른다. 마지막에 구멍이 뒤집혀 흰 빛으로 터지며 새 하늘이 열린다", pose = "ult_origin", dur = 2.5, cd = 28, chi = 100, armor = true,
-				mech = seq({
-					{ t = 0.5, shape = "circle", at = "self", radius = 26, pull = 40, vfx = "blackhole", col = 3, hit = hit(0, 0, 0, 30, 40, 0.5, 0) },
+					{ t = 0.4, shape = "circle", at = "self", radius = 26, pull = 40, life = 1.9, vfx = "taiji", hit = hit(0, 0, 0, 30, 40, 0.5, 0) },
 					{ t = 0.9, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "voidPulse", col = 1, hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
-					{ t = 1.3, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "voidPulse", col = 1, hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
+					{ t = 1.3, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "voidPulse", col = 2, hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
 					{ t = 1.7, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "voidPulse", col = 1, hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
 					{ t = 2.2, shape = "circle", at = "self", radius = 28, vfx = "genesis", big = true, hit = hit(0, 0, 0, 260, 300, 1.6, 60, 30) },
 				}) },
-			X = { id = "hdX", name = "태초이전", desc = "초 오의 (그동안 무적). 세상이 어두워지고 가까운 적 여덟의 둘레 공간이 네 번 거듭 깨진다. 마지막에 모든 것이 한 점으로 삼켜졌다가 둘레 40칸이 흰 빛으로 다시 태어난다", pose = "ult_star", dur = 3.6, cd = 55, chi = 150, armor = true,
+			X = { id = "hdX", name = "태초이전", desc = "초 오의 (그동안 무적). 하늘만 한 먹의 천마를 타고 네 번 내달린다. 지나는 길마다 가까운 적의 둘레 공간이 깨진다. 마지막에 모든 것이 한 점으로 삼켜졌다가 둘레 40칸이 금빛으로 다시 태어난다", pose = "ult_star", dur = 3.8, cd = 55, chi = 150, armor = true,
 				mech = { kind = "forgeSeq", iframes = true, steps = {
-					{ t = 0.6, at = "each", n = 8, range = 40, radius = 7, vfx = "shatter", col = 1, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
-					{ t = 1.1, at = "each", n = 8, range = 40, radius = 7, vfx = "voidOrb", col = 3, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
-					{ t = 1.6, at = "each", n = 8, range = 40, radius = 7, vfx = "shatter", col = 2, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
-					{ t = 2.1, at = "each", n = 8, range = 40, radius = 7, vfx = "implode", col = 1, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
-					{ t = 2.6, shape = "circle", at = "self", radius = 40, pull = 50, vfx = "blackhole", col = 3, hit = hit(0, 0, 0, 40, 60, 0.6, 0) },
-					{ t = 3.2, shape = "circle", at = "self", radius = 40, vfx = "genesis", big = true, hit = hit(0, 0, 0, 420, 480, 1.8, 80, 30) },
+					{ t = 0.05, shape = "circle", at = "self", radius = 1, life = 2.4, big = true, vfx = "inkHorse" },
+					{ t = 0.5, dash = 12, at = "each", n = 8, range = 30, radius = 7, vfx = "shatter", col = 1, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
+					{ t = 1.0, dash = 12, at = "each", n = 8, range = 30, radius = 7, vfx = "inkSplash", col = 1, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
+					{ t = 1.5, dash = 12, at = "each", n = 8, range = 30, radius = 7, vfx = "shatter", col = 2, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
+					{ t = 2.0, dash = 12, at = "each", n = 8, range = 30, radius = 7, vfx = "inkSplash", col = 1, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
+					{ t = 2.7, shape = "circle", at = "self", radius = 40, pull = 50, vfx = "blackhole", col = 1, hit = hit(0, 0, 0, 40, 60, 0.6, 0) },
+					{ t = 3.3, shape = "circle", at = "self", radius = 40, vfx = "genesis", big = true, hit = hit(0, 0, 0, 420, 480, 1.8, 80, 30) },
 				} } },
 		},
 	})
@@ -7438,7 +7441,7 @@ end
 Config.FORGE = {
 	{ style = "samwon", rebirth = 1, shards = 40, gems = 1500, coinShares = 20, mats = { bloodmoon = 12, thunderstone = 10, tidepearl = 12 } },
 	{ style = "guryong", rebirth = 3, shards = 150, gems = 4000, coinShares = 40, mats = { thunderstone = 25, stardust = 20, petal = 30, bloodmoon = 20 } },
-	{ style = "hondon", rebirth = 6, shards = 400, gems = 10000, coinShares = 60, mats = { petal = 40, wine = 10, bloodmoon = 40, thunderstone = 40, tidepearl = 40, stardust = 40 } },
+	{ style = "hondon", rebirth = 6, needStyles = { "mugeuk" }, shards = 400, gems = 10000, coinShares = 60, mats = { petal = 40, wine = 10, bloodmoon = 40, thunderstone = 40, tidepearl = 40, stardust = 40 } },
 }
 Config.FORGE_BY_STYLE = {}
 for _, r in ipairs(Config.FORGE) do
@@ -13828,6 +13831,13 @@ function Actions.forge(player: Player, id: any)
 	if (p.rebirth or 0) < r.rebirth then
 		toast(player, string.format("⚒ %s은(는) 환생 %d번을 넘긴 몸이어야 벼릴 수 있어요 (지금 %d번)", style.name, r.rebirth, p.rebirth or 0))
 		return
+	end
+	for _, sid in ipairs(r.needStyles or {}) do
+		if not p.styles[sid] then
+			local ns = Config.STYLE_BY_ID[sid]
+			toast(player, string.format("⚒ %s은(는) %s을(를) 익힌 몸이어야 벼릴 수 있어요", style.name, ns and ns.name or sid))
+			return
+		end
 	end
 	local idx = Calc.realm(p)
 	local coins = Config.forgeCoins(r, idx)
@@ -26512,12 +26522,12 @@ function Skills.run(f: any, move: any, ctx: any)
 					local h = scaled(st.hit, sc)
 					local list = nearestList(f, st.range or 30, st.n or 3)
 					if #list == 0 then
-						Push:FireAllClients("skillfx", { kind = "forgeStep", vfx = st.vfx, shape = "circle", at = base + fwd * 10, from = base, dir = fwd, radius = st.radius, col = st.col, big = st.big, style = style })
+						Push:FireAllClients("skillfx", { kind = "forgeStep", m = f.model, life = st.life, vfx = st.vfx, shape = "circle", at = base + fwd * 10, from = base, dir = fwd, radius = st.radius, col = st.col, big = st.big, style = style })
 					end
 					local done: { [any]: boolean } = {}
 					for _, o in ipairs(list) do
 						local at = o.root.Position
-						Push:FireAllClients("skillfx", { kind = "forgeStep", vfx = st.vfx, shape = "circle", at = at, from = base, dir = fwd, radius = st.radius, col = st.col, big = st.big, style = style })
+						Push:FireAllClients("skillfx", { kind = "forgeStep", m = f.model, life = st.life, vfx = st.vfx, shape = "circle", at = at, from = base, dir = fwd, radius = st.radius, col = st.col, big = st.big, style = style })
 						for _, v in ipairs(hostilesNear(f, at, st.radius)) do
 							if not done[v] then
 								done[v] = true
@@ -26532,6 +26542,10 @@ function Skills.run(f: any, move: any, ctx: any)
 				elseif st.at == "target" then
 					local near = nearestList(f, st.range or 30, 1)
 					origin = near[1] and near[1].root.Position or (base + fwd * 8)
+				end
+				if forged and not st.hit then
+					Push:FireAllClients("skillfx", { kind = "forgeStep", m = f.model, life = st.life, vfx = st.vfx, col = st.col, shape = "circle", at = origin, from = base, dir = fwd, radius = st.radius, big = st.big, style = style })
+					return
 				end
 				local h = scaled(st.hit, sc)
 				local victims: { any } = {}
@@ -26554,7 +26568,7 @@ function Skills.run(f: any, move: any, ctx: any)
 				else
 					victims = hostilesNear(f, origin, st.radius)
 				end
-				Push:FireAllClients("skillfx", { kind = forged and "forgeStep" or "sinStep", vfx = st.vfx, col = st.col, shape = st.shape, at = origin, from = base, dir = fwd, radius = st.radius, inner = st.inner, length = st.length, width = st.width, angle = st.angle, big = st.big, label = st.name, style = style })
+				Push:FireAllClients("skillfx", { kind = forged and "forgeStep" or "sinStep", m = f.model, life = st.life, vfx = st.vfx, col = st.col, shape = st.shape, at = origin, from = base, dir = fwd, radius = st.radius, inner = st.inner, length = st.length, width = st.width, angle = st.angle, big = st.big, label = st.name, style = style })
 				for _, o in ipairs(victims) do
 					if st.pull then
 						pullTo(o, origin, st.pull)
@@ -53398,6 +53412,7 @@ return Forest
 --   구룡패천권: 금빛 발톱 · 용의 아가리 · 헤엄치는 금룡 · 똬리 · 내리꽂는 용 · 용왕관
 --   혼돈개천권: 혼돈의 구슬 · 무너짐 · 별 모양 금 · 찢어진 공간 · 유리처럼 깨지는 공간 · 검은 구멍 · 새 하늘
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
 
@@ -53791,6 +53806,222 @@ VFX.genesis = function(d, c, c2)
 	Fx.debris(g, 12, 30, c)
 	Fx.flash(g + V(0, 8, 0), WHITE, r * 2.5, 6, 0.6)
 	shake(1.5)
+end
+
+------------------------------------------------------------------------
+-- 혼돈개천권 (무극신권의 끝): 음양 구슬 · 먹의 천마 · 먹 튀김 · 태극
+------------------------------------------------------------------------
+local INK = Color3.fromRGB(16, 16, 20)
+local PAPER = Color3.fromRGB(248, 248, 252)
+local INKGOLD = Color3.fromRGB(255, 210, 110)
+
+VFX.yinyang = function(d)
+	local at = d.at + V(0, 3, 0)
+	local from = (d.from :: Vector3) + V(0, 3, 0)
+	local orbs = {}
+	for k = 0, 1 do
+		local o = piece(V(2.4, 2.4, 2.4), CF(from), k == 0 and INK or PAPER, 0, Enum.PartType.Ball)
+		if k == 0 then
+			o.Material = Enum.Material.Glass
+		end
+		table.insert(orbs, o)
+	end
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = math.clamp((os.clock() - t0) / 0.42, 0, 1)
+		local c = from:Lerp(at, t)
+		local r = 3 * (1 - t) + 0.4
+		for k, o in ipairs(orbs) do
+			local a = t * math.pi * 5 + k * math.pi
+			o.CFrame = CF(c + V(math.cos(a) * r, math.sin(a * 0.5) * 0.6, math.sin(a) * r))
+		end
+		if t >= 1 then
+			conn:Disconnect()
+			for _, o in ipairs(orbs) do
+				fadeOut(o, 0.2, V(0.4, 0.4, 0.4))
+			end
+		end
+	end)
+	-- 둘레에서 먹 방울이 빨려 든다
+	for k = 0, 11 do
+		local a = k / 12 * math.pi * 2
+		local m = piece(V(0.7, 0.7, 0.7), CF(at + V(math.cos(a) * (d.radius or 10), (math.random() - 0.5) * 3, math.sin(a) * (d.radius or 10))), k % 2 == 0 and INK or PAPER, 0, Enum.PartType.Ball)
+		tween(m, 0.45, { Position = at, Size = V(0.1, 0.1, 0.1) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		Debris:AddItem(m, 0.5)
+	end
+end
+
+-- 먹의 천마: 탄 사람 아래 (big = 하늘만 한 말이 머리 위 뒤에서 함께 내달린다)
+local function ell(size: Vector3, color: Color3, mat: Enum.Material?, alpha: number?): Part
+	local p = piece(size, CF(), color, alpha or 0)
+	p.Material = mat or Enum.Material.SmoothPlastic
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.Sphere
+	mesh.Parent = p
+	return p
+end
+VFX.inkHorse = function(d)
+	local model = d.m
+	local root = typeof(model) == "Instance" and model:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return
+	end
+	local big = d.big == true
+	local k = big and 3.2 or 1.15
+	local life = d.life or 1.2
+	local parts: { { any } } = {}
+	local function add(p: Part, off: CFrame, swing: number?)
+		table.insert(parts, { p, off, swing or 0 })
+		return p
+	end
+	-- 몸 · 목 · 머리 (먹), 갈기와 꼬리 (흰 빛), 금빛 눈, 다리 넷 (앞뒤로 젓는다)
+	add(ell(V(2.6, 2.6, 6) * k, INK), CF(0, 0, 0))
+	add(ell(V(1.5, 3, 1.6) * k, INK), CF(0, 1.6, -2.6) * CFrame.Angles(math.rad(-30), 0, 0))
+	add(ell(V(1.2, 1.3, 2.6) * k, INK), CF(0, 2.9, -3.7) * CFrame.Angles(math.rad(25), 0, 0))
+	for _, sx in ipairs({ -1, 1 }) do
+		add(piece(V(0.3, 0.3, 0.3) * k, CF(), INKGOLD, 0, Enum.PartType.Ball), CF(sx * 0.55, 3.2, -4.0))
+		add(ell(V(0.25, 0.8, 0.4) * k, INK), CF(sx * 0.35, 3.8, -3.2))
+	end
+	for j = 0, 5 do
+		add(ell(V(0.25, 1.4, 0.7) * k, PAPER, Enum.Material.Neon, 0.1), CF(0, 2.6 - j * 0.35, -2.8 + j * 0.45) * CFrame.Angles(math.rad(-50), 0, 0))
+	end
+	for j = 0, 3 do
+		add(ell(V(0.35, 0.35, 1.6) * k, PAPER, Enum.Material.Neon, 0.15), CF(0, 0.6 - j * 0.45, 3.4 + j * 0.9) * CFrame.Angles(math.rad(-25 - j * 10), 0, 0))
+	end
+	local legs = {}
+	for _, lg in ipairs({ { -0.8, -2.1, 0 }, { 0.8, -2.1, math.pi }, { -0.8, 2.1, math.pi }, { 0.8, 2.1, 0 } }) do
+		local p = ell(V(0.6, 3.2, 0.6) * k, INK)
+		table.insert(legs, { p, CF(lg[1], -1.6, lg[2]), lg[3] })
+		local hoof = piece(V(0.7, 0.4, 0.7) * k, CF(), INKGOLD, 0)
+		hoof.Material = Enum.Material.Neon
+		table.insert(legs, { hoof, CF(lg[1], -3.15, lg[2]), lg[3], true })
+	end
+	-- 몸에서 먹이 연기처럼 흩어진다
+	local smoke = Instance.new("ParticleEmitter")
+	smoke.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	smoke.Color = ColorSequence.new(INK)
+	smoke.Size = NumberSequence.new(2.2 * k, 4 * k)
+	smoke.Transparency = NumberSequence.new(0.35, 1)
+	smoke.Lifetime = NumberRange.new(0.6, 1)
+	smoke.Rate = big and 60 or 30
+	smoke.Speed = NumberRange.new(1, 3)
+	smoke.SpreadAngle = Vector2.new(60, 60)
+	smoke.Parent = parts[1][1]
+	local glit = Instance.new("ParticleEmitter")
+	glit.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	glit.Color = ColorSequence.new(INKGOLD)
+	glit.LightEmission = 1
+	glit.Size = NumberSequence.new(0.4 * k, 0)
+	glit.Lifetime = NumberRange.new(0.5, 0.9)
+	glit.Rate = 20
+	glit.Speed = NumberRange.new(2, 5)
+	glit.SpreadAngle = Vector2.new(180, 180)
+	glit.Parent = parts[1][1]
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		if not root.Parent or t > life then
+			conn:Disconnect()
+			for _, q in ipairs(parts) do
+				fadeOut(q[1], 0.35)
+			end
+			for _, q in ipairs(legs) do
+				fadeOut(q[1], 0.35)
+			end
+			Fx.burst("dust", root.Position, INK, 16, 1.4 * k / 1.15)
+			return
+		end
+		local look = root.CFrame.LookVector
+		local flat = V(look.X, 0, look.Z)
+		flat = flat.Magnitude > 0.01 and flat.Unit or V(0, 0, -1)
+		local base = big and (root.Position + V(0, 11, 0) - flat * 4) or (root.Position + V(0, -0.7, 0))
+		local bob = math.sin(t * 16) * 0.25 * k
+		local body = CFrame.lookAt(base, base + flat) * CF(0, bob, 0) * CFrame.Angles(math.sin(t * 16) * 0.06, 0, 0)
+		local scale = k
+		for _, q in ipairs(parts) do
+			local off = q[2]
+			q[1].CFrame = body * CF(off.Position * scale) * off.Rotation
+		end
+		for _, q in ipairs(legs) do
+			local off = q[2]
+			local sw = math.sin(t * 16 + q[3]) * 0.7
+			local hip = body * CF(off.X * scale, -0.9 * scale, off.Z * scale) * CFrame.Angles(sw, 0, 0)
+			if q[4] then
+				q[1].CFrame = hip * CF(0, -2.25 * scale, 0)
+			else
+				q[1].CFrame = hip * CF(0, -0.7 * scale, 0)
+			end
+		end
+	end)
+	Fx.flash(root.Position, PAPER, 20, 2, 0.3)
+end
+VFX.inkSplash = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 7
+	for k = 0, 9 do
+		local a = k / 10 * math.pi * 2 + math.random() * 0.4
+		local blot = ell(V(1.2, 0.6, 1.2) * (0.6 + math.random() * 0.8), INK, Enum.Material.SmoothPlastic, 0)
+		blot.CFrame = CF(g + V(0, 1, 0))
+		tween(blot, 0.35, { CFrame = CF(g + V(math.cos(a) * r, 0.3, math.sin(a) * r)), Size = V(2.4, 0.2, 2.4) })
+		task.delay(0.6, function()
+			fadeOut(blot, 0.5)
+		end)
+	end
+	local stain = disc(g + V(0, 0.2, 0), r * 0.4, INK, 0.2, 0.9, r)
+	stain.Material = Enum.Material.SmoothPlastic
+	Fx.burst("spark", g + V(0, 1, 0), INKGOLD, 6, 1)
+end
+VFX.inkStomp = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 13
+	local wave = piece(V(1.6, 4, 4), CF(g + V(0, 0.8, 0)) * CFrame.Angles(0, 0, math.rad(90)), INK, 0.1, Enum.PartType.Cylinder)
+	wave.Material = Enum.Material.SmoothPlastic
+	tween(wave, 0.4, { Size = V(0.3, r * 2.2, r * 2.2), Transparency = 1 })
+	Debris:AddItem(wave, 0.45)
+	Fx.ring(g + V(0, 0.6, 0), INKGOLD, 3, r * 2, 0.45)
+	Fx.debris(g, 6, 18, INK)
+	Fx.flash(g + V(0, 3, 0), INKGOLD, 24, 3, 0.3)
+	shake(0.7)
+end
+-- 땅에 그려지는 태극 (흑백 반원 둘 + 작은 눈 둘). 돌다가 사라진다
+VFX.taiji = function(d)
+	local g = ground(d.at) + V(0, 0.25, 0)
+	local r = d.radius or 26
+	local life = d.life or 1.8
+	local plate = disc(g, r, PAPER, 0.15, life + 0.4)
+	plate.Material = Enum.Material.SmoothPlastic
+	-- 흑과 백의 큰 원 둘이 서로를 쫓으며 돌고, 그 안에 반대 빛깔의 눈이 박힌다
+	local blackBig = piece(V(0.3, r, r), CF(), INK, 0.05, Enum.PartType.Cylinder)
+	local whiteDot = piece(V(0.32, r * 0.25, r * 0.25), CF(), PAPER, 0, Enum.PartType.Cylinder)
+	local blackDot = piece(V(0.32, r * 0.25, r * 0.25), CF(), INK, 0, Enum.PartType.Cylinder)
+	local whiteBig = piece(V(0.31, r, r), CF(), PAPER, 0.05, Enum.PartType.Cylinder)
+	local rim = piece(V(0.35, r * 2.05, r * 2.05), CF(g - V(0, 0.05, 0)) * CFrame.Angles(0, 0, math.rad(90)), INKGOLD, 0.3, Enum.PartType.Cylinder)
+	local halves = { blackBig, whiteBig, whiteDot, blackDot }
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		if t > life then
+			conn:Disconnect()
+			for _, p in ipairs(halves) do
+				fadeOut(p, 0.4)
+			end
+			fadeOut(rim, 0.4)
+			return
+		end
+		local a = t * 2.4
+		local ax, az = math.cos(a) * r * 0.5, math.sin(a) * r * 0.5
+		local lay = CFrame.Angles(0, 0, math.rad(90))
+		blackBig.CFrame = CF(g + V(ax, 0.06, az)) * lay
+		whiteBig.CFrame = CF(g + V(-ax, 0.07, -az)) * lay
+		whiteDot.CFrame = CF(g + V(ax, 0.1, az)) * lay
+		blackDot.CFrame = CF(g + V(-ax, 0.11, -az)) * lay
+	end)
+	if opts.shake then
+		shake(0.4)
+	end
 end
 
 ------------------------------------------------------------------------
@@ -65056,6 +65287,23 @@ return {
 	["하늘에 검은 구멍이 열려 둘레의 적을 세 번 빨아들이며 짓누른다. 마지막에 구멍이 뒤집혀 흰 빛으로 터지며 새 하늘이 열린다"] = "A black hole opens in the sky, pulling in and crushing nearby enemies three times. Finally it turns inside out, bursting into white light as a new sky opens",
 	["태초이전"] = "Before the Beginning",
 	["초 오의 (그동안 무적). 세상이 어두워지고 가까운 적 여덟의 둘레 공간이 네 번 거듭 깨진다. 마지막에 모든 것이 한 점으로 삼켜졌다가 둘레 40칸이 흰 빛으로 다시 태어난다"] = "Super ultimate (invincible meanwhile). The world darkens and the space around the eight nearest enemies shatters four times over. Finally everything is swallowed into one point, and 40 studs around you are reborn in white light",
+	["무극신권이 끝에 닿은 자리. 무극 이전, 흑과 백이 아직 나뉘지 않은 혼돈을 주먹에 담았다. 먹으로 천마를 빚어 타고 달리며, 손이 닿는 곳마다 세상이 다시 그려진다."] = "Where the Limitless Fist reaches its end. It holds the chaos before the Limitless, when black and white were not yet divided. You ride a heavenly steed shaped from ink, and wherever your hand lands the world is drawn anew.",
+	["혼돈체: 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 20% 짧음. 무극신권의 기술이 모두 한 단계 위로 올라섰다. R은 먹으로 빚은 천마를 타고 내달린다 (그동안 무적). 초 오의(X)가 있다"] = "Chaos Body: the sturdiest blocks and parries (posture ×1.5), all cooldowns 20% shorter. Every Limitless Fist technique has risen a step higher. R rides a heavenly steed of ink (invincible meanwhile). Has a super ultimate (X)",
+	["⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (무극신권을 익히고 여섯 번 모두 환생한 몸으로)"] = "⚒ Forged from materials at the Style Forge in southwest Cheongun Village (knowing the Limitless Fist, after all six rebirths)",
+	["혼원수"] = "Primal Hand",
+	["역혼수"] = "Reverse Chaos Hand",
+	["혼돈환"] = "Chaos Circle",
+	["귀원장"] = "Return-to-Origin Palm",
+	["개천장"] = "Sky-Opening Palm",
+	["혼돈승천"] = "Chaos Ascent",
+	["음양혼돈구"] = "Yin-Yang Chaos Orbs",
+	["검은 구슬과 흰 구슬이 서로 감아 돌며 앞으로 나아가 둘레의 적을 빨아들인다. 두 구슬이 하나로 합쳐지는 순간 안으로 무너지며 금빛으로 터진다"] = "A black orb and a white orb coil around each other as they advance, drawing in nearby enemies. The moment they merge into one, they collapse inward and burst in gold",
+	["묵마천행"] = "Ink Steed's Heavenly Ride",
+	["먹으로 천마를 빚어 올라탄다 (그동안 무적). 세 번 박차고 30칸을 내달리며 발굽마다 먹이 튀어 적을 베고, 마지막에 앞발을 들어 내리찍으면 먹의 물결이 둘레로 터진다"] = "Shapes a heavenly steed from ink and mounts it (invincible meanwhile). Spurs it three times to charge 30 studs, ink splashing from every hoof to cut enemies, and finally rears and stamps, bursting a wave of ink all around",
+	["혼돈태극"] = "Chaos Taiji",
+	["세상의 빛깔이 빠지고 발밑에 40칸 넓이의 태극이 그려진다. 태극이 돌며 둘레의 적을 세 번 가운데로 감아 들인다. 마지막에 흑과 백이 하나로 섞이며 금빛 새 하늘이 열린다"] = "The world loses its color and a taiji 40 studs wide is drawn underfoot. It spins, reeling nearby enemies to the center three times. Finally black and white blend into one and a golden new sky opens",
+	["초 오의 (그동안 무적). 하늘만 한 먹의 천마를 타고 네 번 내달린다. 지나는 길마다 가까운 적의 둘레 공간이 깨진다. 마지막에 모든 것이 한 점으로 삼켜졌다가 둘레 40칸이 금빛으로 다시 태어난다"] = "Super ultimate (invincible meanwhile). Ride a sky-sized steed of ink and charge four times. Along the way the space around nearby enemies shatters. Finally everything is swallowed into one point, and 40 studs around you are reborn in gold",
+	["⚒ %s은(는) %s을(를) 익힌 몸이어야 벼릴 수 있어요"] = "⚒ To forge %s you must first learn %s",
 }
 ]]></string>
           </Properties>
@@ -85493,6 +85741,12 @@ function UIB.buildForge()
 				table.insert(parts, string.format('<font color="%s">%s %s/%s</font>', good and "#8CE68C" or "#FF8C78", label, h, w))
 			end
 			req("♻ 환생", s.rebirth or 0, r.rebirth)
+			for _, sid in ipairs(r.needStyles or {}) do
+				local ns = Config.STYLE_BY_ID[sid]
+				local have = s.styles and table.find(s.styles, sid) ~= nil
+				ok = ok and have
+				table.insert(parts, string.format('<font color="%s">%s %s</font>', have and "#8CE68C" or "#FF8C78", ns and ns.icon or "🥋", ns and ns.name or sid))
+			end
 			req("🧩 비급 조각", s.shards or 0, r.shards)
 			req("💠 천정", s.skyGems or 0, r.gems, true)
 			for _, M in ipairs(Config.SKY_MATS) do

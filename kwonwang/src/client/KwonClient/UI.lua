@@ -2255,6 +2255,12 @@ function UIB.buildForge()
 				table.insert(parts, string.format('<font color="%s">%s %s/%s</font>', good and "#8CE68C" or "#FF8C78", label, h, w))
 			end
 			req("♻ 환생", s.rebirth or 0, r.rebirth)
+			for _, sid in ipairs(r.needStyles or {}) do
+				local ns = Config.STYLE_BY_ID[sid]
+				local have = s.styles and table.find(s.styles, sid) ~= nil
+				ok = ok and have
+				table.insert(parts, string.format('<font color="%s">%s %s</font>', have and "#8CE68C" or "#FF8C78", ns and ns.icon or "🥋", ns and ns.name or sid))
+			end
 			req("🧩 비급 조각", s.shards or 0, r.shards)
 			req("💠 천정", s.skyGems or 0, r.gems, true)
 			for _, M in ipairs(Config.SKY_MATS) do

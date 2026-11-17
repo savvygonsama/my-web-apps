@@ -790,12 +790,12 @@ function Skills.run(f: any, move: any, ctx: any)
 					local h = scaled(st.hit, sc)
 					local list = nearestList(f, st.range or 30, st.n or 3)
 					if #list == 0 then
-						Push:FireAllClients("skillfx", { kind = "forgeStep", vfx = st.vfx, shape = "circle", at = base + fwd * 10, from = base, dir = fwd, radius = st.radius, col = st.col, big = st.big, style = style })
+						Push:FireAllClients("skillfx", { kind = "forgeStep", m = f.model, life = st.life, vfx = st.vfx, shape = "circle", at = base + fwd * 10, from = base, dir = fwd, radius = st.radius, col = st.col, big = st.big, style = style })
 					end
 					local done: { [any]: boolean } = {}
 					for _, o in ipairs(list) do
 						local at = o.root.Position
-						Push:FireAllClients("skillfx", { kind = "forgeStep", vfx = st.vfx, shape = "circle", at = at, from = base, dir = fwd, radius = st.radius, col = st.col, big = st.big, style = style })
+						Push:FireAllClients("skillfx", { kind = "forgeStep", m = f.model, life = st.life, vfx = st.vfx, shape = "circle", at = at, from = base, dir = fwd, radius = st.radius, col = st.col, big = st.big, style = style })
 						for _, v in ipairs(hostilesNear(f, at, st.radius)) do
 							if not done[v] then
 								done[v] = true
@@ -810,6 +810,10 @@ function Skills.run(f: any, move: any, ctx: any)
 				elseif st.at == "target" then
 					local near = nearestList(f, st.range or 30, 1)
 					origin = near[1] and near[1].root.Position or (base + fwd * 8)
+				end
+				if forged and not st.hit then
+					Push:FireAllClients("skillfx", { kind = "forgeStep", m = f.model, life = st.life, vfx = st.vfx, col = st.col, shape = "circle", at = origin, from = base, dir = fwd, radius = st.radius, big = st.big, style = style })
+					return
 				end
 				local h = scaled(st.hit, sc)
 				local victims: { any } = {}
@@ -832,7 +836,7 @@ function Skills.run(f: any, move: any, ctx: any)
 				else
 					victims = hostilesNear(f, origin, st.radius)
 				end
-				Push:FireAllClients("skillfx", { kind = forged and "forgeStep" or "sinStep", vfx = st.vfx, col = st.col, shape = st.shape, at = origin, from = base, dir = fwd, radius = st.radius, inner = st.inner, length = st.length, width = st.width, angle = st.angle, big = st.big, label = st.name, style = style })
+				Push:FireAllClients("skillfx", { kind = forged and "forgeStep" or "sinStep", m = f.model, life = st.life, vfx = st.vfx, col = st.col, shape = st.shape, at = origin, from = base, dir = fwd, radius = st.radius, inner = st.inner, length = st.length, width = st.width, angle = st.angle, big = st.big, label = st.name, style = style })
 				for _, o in ipairs(victims) do
 					if st.pull then
 						pullTo(o, origin, st.pull)

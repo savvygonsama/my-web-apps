@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.23" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.24" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7364,51 +7364,54 @@ do
 		},
 	})
 
-	-- 🌌 혼돈개천권 [신]: 공간을 삼키고 터뜨리는 혼돈
+	-- 🌌 혼돈개천권 [신]: 무극신권의 끝. 흑과 백이 나뉘기 전의 혼돈, 먹으로 빚은 천마
 	add({
-		id = "hondon", name = "혼돈개천권", hanja = "混沌開天拳", icon = "🌌", grade = "신", fx = "subspace",
-		color = Color3.fromRGB(170, 120, 255), color2 = Color3.fromRGB(255, 240, 200),
-		palette = { Color3.fromRGB(150, 90, 255), Color3.fromRGB(255, 245, 220), Color3.fromRGB(40, 20, 70) },
-		desc = "하늘과 땅이 나뉘기 전의 혼돈을 주먹에 담았다. 주먹이 닿는 곳마다 공간이 삼켜지고 금이 가며, 끝에는 무너진 자리에서 새 하늘이 열린다.",
-		gimmick = "혼돈체: 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 20% 짧음. 기술마다 공간을 삼켰다가 터뜨린다. 초 오의(X)가 있다",
-		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (여섯 번 모두 환생한 몸으로)",
-		deflect = 0.34, postureMult = 1.5, speed = 1.2, cdMult = 0.8, dashCd = 0.55, stance = "stance_subspace",
+		id = "hondon", name = "혼돈개천권", hanja = "混沌開天拳", icon = "🌌", grade = "신", fx = "void",
+		color = Color3.fromRGB(235, 235, 245), color2 = Color3.fromRGB(255, 214, 120),
+		palette = { Color3.fromRGB(16, 16, 20), Color3.fromRGB(248, 248, 252), Color3.fromRGB(255, 210, 110) },
+		desc = "무극신권이 끝에 닿은 자리. 무극 이전, 흑과 백이 아직 나뉘지 않은 혼돈을 주먹에 담았다. 먹으로 천마를 빚어 타고 달리며, 손이 닿는 곳마다 세상이 다시 그려진다.",
+		gimmick = "혼돈체: 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 20% 짧음. 무극신권의 기술이 모두 한 단계 위로 올라섰다. R은 먹으로 빚은 천마를 타고 내달린다 (그동안 무적). 초 오의(X)가 있다",
+		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (무극신권을 익히고 여섯 번 모두 환생한 몸으로)",
+		deflect = 0.34, postureMult = 1.5, speed = 1.2, cdMult = 0.8, dashCd = 0.55, stance = "stance_mugeuk",
 		combo = {
-			{ id = "hd1", name = "혼돈장", pose = "void_palm_r", dur = 0.32, lunge = 4, hits = { hit(0.14, 6, 5, 34, 24, 0.4, 14, nil, true) } },
-			{ id = "hd2", name = "열공퇴", pose = "roundhouse", dur = 0.38, lunge = 3, hits = { hit(0.18, 7, 7, 34, 26, 0.5, 18, nil, true) } },
-			{ id = "hd3", name = "흡공권", pose = "back_spin_kick", dur = 0.44, lunge = 3, hits = { hit(0.2, 6, 5, 46, 34, 0.6, 22, 12, true), hit(0.3, 6, 5, 30, 20, 0.4, 14, nil, true) } },
-			{ id = "hd4", name = "붕천장", pose = "void_push", dur = 0.5, lunge = 2, hits = { hit(0.26, 8, 9, 78, 70, 0.8, 40, 12, true) } },
+			{ id = "hd1", name = "혼원수", pose = "void_palm_r", dur = 0.32, lunge = 4, hits = { hit(0.14, 6, 5, 34, 24, 0.4, 14, nil, true) } },
+			{ id = "hd2", name = "역혼수", pose = "void_palm_l", dur = 0.34, lunge = 4, hits = { hit(0.15, 7, 6, 34, 26, 0.5, 18, nil, true) } },
+			{ id = "hd3", name = "혼돈환", pose = "void_circle", dur = 0.44, lunge = 2, hits = { hit(0.2, 6, 7, 46, 34, 0.6, 22, 12, true), hit(0.32, 6, 7, 30, 20, 0.4, 14, nil, true) } },
+			{ id = "hd4", name = "귀원장", pose = "void_push", dur = 0.5, lunge = 2, hits = { hit(0.26, 8, 9, 78, 70, 0.8, 40, 12, true) } },
 		},
-		heavy = { id = "hdH", name = "허공일지", pose = "void_point", dur = 0.62, lunge = 10, hits = { hit(0.3, 14, 6, 130, 140, 1.1, 70, 10, true) } },
-		finisher = { id = "hdF", name = "개천승천", pose = "void_push", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		heavy = { id = "hdH", name = "개천장", pose = "void_sink", dur = 0.62, lunge = 6, hits = { hit(0.3, 10, 9, 130, 140, 1.1, 70, 10, true) } },
+		finisher = { id = "hdF", name = "혼돈승천", pose = "void_push", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
 		skills = {
-			E = { id = "hdE", name = "혼돈구", desc = "앞에 검은 혼돈의 구슬을 띄운다. 구슬이 둘레의 적을 빨아들인 뒤 안으로 무너지며 터진다", pose = "void_push", dur = 0.9, cd = 7, chi = 22,
+			E = { id = "hdE", name = "음양혼돈구", desc = "검은 구슬과 흰 구슬이 서로 감아 돌며 앞으로 나아가 둘레의 적을 빨아들인다. 두 구슬이 하나로 합쳐지는 순간 안으로 무너지며 금빛으로 터진다", pose = "void_point", dur = 0.9, cd = 7, chi = 22,
 				mech = seq({
-					{ t = 0.3, shape = "circle", at = "front", dist = 14, radius = 10, pull = 30, vfx = "voidOrb", col = 1, hit = hit(0, 0, 0, 60, 60, 0.6, 0) },
-					{ t = 0.78, shape = "circle", at = "front", dist = 14, radius = 11, vfx = "implode", col = 2, hit = hit(0, 0, 0, 110, 110, 1.0, 40, 14) },
+					{ t = 0.3, shape = "circle", at = "front", dist = 14, radius = 10, pull = 30, vfx = "yinyang", hit = hit(0, 0, 0, 60, 60, 0.6, 0) },
+					{ t = 0.78, shape = "circle", at = "front", dist = 14, radius = 11, vfx = "implode", col = 3, hit = hit(0, 0, 0, 110, 110, 1.0, 40, 14) },
 				}) },
-			R = { id = "hdR", name = "천붕지열", desc = "손끝으로 땅을 가리키면 발밑에 별 모양 금이 가고, 앞으로 공간이 찢어지며, 가까운 적 셋의 둘레 공간이 유리처럼 깨진다", pose = "void_point", dur = 1.1, cd = 9, chi = 26,
+			R = { id = "hdR", name = "묵마천행", desc = "먹으로 천마를 빚어 올라탄다 (그동안 무적). 세 번 박차고 30칸을 내달리며 발굽마다 먹이 튀어 적을 베고, 마지막에 앞발을 들어 내리찍으면 먹의 물결이 둘레로 터진다", pose = "void_sink", dur = 1.3, cd = 9, chi = 26,
+				mech = { kind = "forgeSeq", iframes = true, steps = {
+					{ t = 0.05, shape = "circle", at = "self", radius = 1, life = 1.3, vfx = "inkHorse" },
+					{ t = 0.25, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkSplash", col = 1, hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
+					{ t = 0.5, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkSplash", col = 1, hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
+					{ t = 0.75, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkSplash", col = 1, hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
+					{ t = 1.05, shape = "circle", at = "self", radius = 13, vfx = "inkStomp", col = 3, hit = hit(0, 0, 0, 70, 90, 1.0, 40, 16) },
+				} } },
+			G = { id = "hdG", name = "혼돈태극", desc = "세상의 빛깔이 빠지고 발밑에 40칸 넓이의 태극이 그려진다. 태극이 돌며 둘레의 적을 세 번 가운데로 감아 들인다. 마지막에 흑과 백이 하나로 섞이며 금빛 새 하늘이 열린다", pose = "ult_taiji", dur = 2.5, cd = 28, chi = 100, armor = true,
 				mech = seq({
-					{ t = 0.35, shape = "circle", at = "self", radius = 10, vfx = "starCrack", col = 1, hit = hit(0, 0, 0, 50, 60, 0.6, 30, 10) },
-					{ t = 0.65, shape = "line", at = "self", length = 30, width = 7, vfx = "rift", col = 2, hit = hit(0, 0, 0, 70, 80, 0.8, 40) },
-					{ t = 0.95, at = "each", n = 3, range = 30, radius = 6, vfx = "shatter", col = 2, hit = hit(0, 0, 0, 40, 50, 0.6, 20, 14) },
-				}) },
-			G = { id = "hdG", name = "혼돈개천", desc = "하늘에 검은 구멍이 열려 둘레의 적을 세 번 빨아들이며 짓누른다. 마지막에 구멍이 뒤집혀 흰 빛으로 터지며 새 하늘이 열린다", pose = "ult_origin", dur = 2.5, cd = 28, chi = 100, armor = true,
-				mech = seq({
-					{ t = 0.5, shape = "circle", at = "self", radius = 26, pull = 40, vfx = "blackhole", col = 3, hit = hit(0, 0, 0, 30, 40, 0.5, 0) },
+					{ t = 0.4, shape = "circle", at = "self", radius = 26, pull = 40, life = 1.9, vfx = "taiji", hit = hit(0, 0, 0, 30, 40, 0.5, 0) },
 					{ t = 0.9, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "voidPulse", col = 1, hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
-					{ t = 1.3, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "voidPulse", col = 1, hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
+					{ t = 1.3, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "voidPulse", col = 2, hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
 					{ t = 1.7, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "voidPulse", col = 1, hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
 					{ t = 2.2, shape = "circle", at = "self", radius = 28, vfx = "genesis", big = true, hit = hit(0, 0, 0, 260, 300, 1.6, 60, 30) },
 				}) },
-			X = { id = "hdX", name = "태초이전", desc = "초 오의 (그동안 무적). 세상이 어두워지고 가까운 적 여덟의 둘레 공간이 네 번 거듭 깨진다. 마지막에 모든 것이 한 점으로 삼켜졌다가 둘레 40칸이 흰 빛으로 다시 태어난다", pose = "ult_star", dur = 3.6, cd = 55, chi = 150, armor = true,
+			X = { id = "hdX", name = "태초이전", desc = "초 오의 (그동안 무적). 하늘만 한 먹의 천마를 타고 네 번 내달린다. 지나는 길마다 가까운 적의 둘레 공간이 깨진다. 마지막에 모든 것이 한 점으로 삼켜졌다가 둘레 40칸이 금빛으로 다시 태어난다", pose = "ult_star", dur = 3.8, cd = 55, chi = 150, armor = true,
 				mech = { kind = "forgeSeq", iframes = true, steps = {
-					{ t = 0.6, at = "each", n = 8, range = 40, radius = 7, vfx = "shatter", col = 1, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
-					{ t = 1.1, at = "each", n = 8, range = 40, radius = 7, vfx = "voidOrb", col = 3, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
-					{ t = 1.6, at = "each", n = 8, range = 40, radius = 7, vfx = "shatter", col = 2, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
-					{ t = 2.1, at = "each", n = 8, range = 40, radius = 7, vfx = "implode", col = 1, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
-					{ t = 2.6, shape = "circle", at = "self", radius = 40, pull = 50, vfx = "blackhole", col = 3, hit = hit(0, 0, 0, 40, 60, 0.6, 0) },
-					{ t = 3.2, shape = "circle", at = "self", radius = 40, vfx = "genesis", big = true, hit = hit(0, 0, 0, 420, 480, 1.8, 80, 30) },
+					{ t = 0.05, shape = "circle", at = "self", radius = 1, life = 2.4, big = true, vfx = "inkHorse" },
+					{ t = 0.5, dash = 12, at = "each", n = 8, range = 30, radius = 7, vfx = "shatter", col = 1, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
+					{ t = 1.0, dash = 12, at = "each", n = 8, range = 30, radius = 7, vfx = "inkSplash", col = 1, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
+					{ t = 1.5, dash = 12, at = "each", n = 8, range = 30, radius = 7, vfx = "shatter", col = 2, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
+					{ t = 2.0, dash = 12, at = "each", n = 8, range = 30, radius = 7, vfx = "inkSplash", col = 1, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
+					{ t = 2.7, shape = "circle", at = "self", radius = 40, pull = 50, vfx = "blackhole", col = 1, hit = hit(0, 0, 0, 40, 60, 0.6, 0) },
+					{ t = 3.3, shape = "circle", at = "self", radius = 40, vfx = "genesis", big = true, hit = hit(0, 0, 0, 420, 480, 1.8, 80, 30) },
 				} } },
 		},
 	})
@@ -7418,7 +7421,7 @@ end
 Config.FORGE = {
 	{ style = "samwon", rebirth = 1, shards = 40, gems = 1500, coinShares = 20, mats = { bloodmoon = 12, thunderstone = 10, tidepearl = 12 } },
 	{ style = "guryong", rebirth = 3, shards = 150, gems = 4000, coinShares = 40, mats = { thunderstone = 25, stardust = 20, petal = 30, bloodmoon = 20 } },
-	{ style = "hondon", rebirth = 6, shards = 400, gems = 10000, coinShares = 60, mats = { petal = 40, wine = 10, bloodmoon = 40, thunderstone = 40, tidepearl = 40, stardust = 40 } },
+	{ style = "hondon", rebirth = 6, needStyles = { "mugeuk" }, shards = 400, gems = 10000, coinShares = 60, mats = { petal = 40, wine = 10, bloodmoon = 40, thunderstone = 40, tidepearl = 40, stardust = 40 } },
 }
 Config.FORGE_BY_STYLE = {}
 for _, r in ipairs(Config.FORGE) do

@@ -3,6 +3,7 @@
 --   구룡패천권: 금빛 발톱 · 용의 아가리 · 헤엄치는 금룡 · 똬리 · 내리꽂는 용 · 용왕관
 --   혼돈개천권: 혼돈의 구슬 · 무너짐 · 별 모양 금 · 찢어진 공간 · 유리처럼 깨지는 공간 · 검은 구멍 · 새 하늘
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
 
@@ -396,6 +397,222 @@ VFX.genesis = function(d, c, c2)
 	Fx.debris(g, 12, 30, c)
 	Fx.flash(g + V(0, 8, 0), WHITE, r * 2.5, 6, 0.6)
 	shake(1.5)
+end
+
+------------------------------------------------------------------------
+-- 혼돈개천권 (무극신권의 끝): 음양 구슬 · 먹의 천마 · 먹 튀김 · 태극
+------------------------------------------------------------------------
+local INK = Color3.fromRGB(16, 16, 20)
+local PAPER = Color3.fromRGB(248, 248, 252)
+local INKGOLD = Color3.fromRGB(255, 210, 110)
+
+VFX.yinyang = function(d)
+	local at = d.at + V(0, 3, 0)
+	local from = (d.from :: Vector3) + V(0, 3, 0)
+	local orbs = {}
+	for k = 0, 1 do
+		local o = piece(V(2.4, 2.4, 2.4), CF(from), k == 0 and INK or PAPER, 0, Enum.PartType.Ball)
+		if k == 0 then
+			o.Material = Enum.Material.Glass
+		end
+		table.insert(orbs, o)
+	end
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = math.clamp((os.clock() - t0) / 0.42, 0, 1)
+		local c = from:Lerp(at, t)
+		local r = 3 * (1 - t) + 0.4
+		for k, o in ipairs(orbs) do
+			local a = t * math.pi * 5 + k * math.pi
+			o.CFrame = CF(c + V(math.cos(a) * r, math.sin(a * 0.5) * 0.6, math.sin(a) * r))
+		end
+		if t >= 1 then
+			conn:Disconnect()
+			for _, o in ipairs(orbs) do
+				fadeOut(o, 0.2, V(0.4, 0.4, 0.4))
+			end
+		end
+	end)
+	-- 둘레에서 먹 방울이 빨려 든다
+	for k = 0, 11 do
+		local a = k / 12 * math.pi * 2
+		local m = piece(V(0.7, 0.7, 0.7), CF(at + V(math.cos(a) * (d.radius or 10), (math.random() - 0.5) * 3, math.sin(a) * (d.radius or 10))), k % 2 == 0 and INK or PAPER, 0, Enum.PartType.Ball)
+		tween(m, 0.45, { Position = at, Size = V(0.1, 0.1, 0.1) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		Debris:AddItem(m, 0.5)
+	end
+end
+
+-- 먹의 천마: 탄 사람 아래 (big = 하늘만 한 말이 머리 위 뒤에서 함께 내달린다)
+local function ell(size: Vector3, color: Color3, mat: Enum.Material?, alpha: number?): Part
+	local p = piece(size, CF(), color, alpha or 0)
+	p.Material = mat or Enum.Material.SmoothPlastic
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.Sphere
+	mesh.Parent = p
+	return p
+end
+VFX.inkHorse = function(d)
+	local model = d.m
+	local root = typeof(model) == "Instance" and model:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return
+	end
+	local big = d.big == true
+	local k = big and 3.2 or 1.15
+	local life = d.life or 1.2
+	local parts: { { any } } = {}
+	local function add(p: Part, off: CFrame, swing: number?)
+		table.insert(parts, { p, off, swing or 0 })
+		return p
+	end
+	-- 몸 · 목 · 머리 (먹), 갈기와 꼬리 (흰 빛), 금빛 눈, 다리 넷 (앞뒤로 젓는다)
+	add(ell(V(2.6, 2.6, 6) * k, INK), CF(0, 0, 0))
+	add(ell(V(1.5, 3, 1.6) * k, INK), CF(0, 1.6, -2.6) * CFrame.Angles(math.rad(-30), 0, 0))
+	add(ell(V(1.2, 1.3, 2.6) * k, INK), CF(0, 2.9, -3.7) * CFrame.Angles(math.rad(25), 0, 0))
+	for _, sx in ipairs({ -1, 1 }) do
+		add(piece(V(0.3, 0.3, 0.3) * k, CF(), INKGOLD, 0, Enum.PartType.Ball), CF(sx * 0.55, 3.2, -4.0))
+		add(ell(V(0.25, 0.8, 0.4) * k, INK), CF(sx * 0.35, 3.8, -3.2))
+	end
+	for j = 0, 5 do
+		add(ell(V(0.25, 1.4, 0.7) * k, PAPER, Enum.Material.Neon, 0.1), CF(0, 2.6 - j * 0.35, -2.8 + j * 0.45) * CFrame.Angles(math.rad(-50), 0, 0))
+	end
+	for j = 0, 3 do
+		add(ell(V(0.35, 0.35, 1.6) * k, PAPER, Enum.Material.Neon, 0.15), CF(0, 0.6 - j * 0.45, 3.4 + j * 0.9) * CFrame.Angles(math.rad(-25 - j * 10), 0, 0))
+	end
+	local legs = {}
+	for _, lg in ipairs({ { -0.8, -2.1, 0 }, { 0.8, -2.1, math.pi }, { -0.8, 2.1, math.pi }, { 0.8, 2.1, 0 } }) do
+		local p = ell(V(0.6, 3.2, 0.6) * k, INK)
+		table.insert(legs, { p, CF(lg[1], -1.6, lg[2]), lg[3] })
+		local hoof = piece(V(0.7, 0.4, 0.7) * k, CF(), INKGOLD, 0)
+		hoof.Material = Enum.Material.Neon
+		table.insert(legs, { hoof, CF(lg[1], -3.15, lg[2]), lg[3], true })
+	end
+	-- 몸에서 먹이 연기처럼 흩어진다
+	local smoke = Instance.new("ParticleEmitter")
+	smoke.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	smoke.Color = ColorSequence.new(INK)
+	smoke.Size = NumberSequence.new(2.2 * k, 4 * k)
+	smoke.Transparency = NumberSequence.new(0.35, 1)
+	smoke.Lifetime = NumberRange.new(0.6, 1)
+	smoke.Rate = big and 60 or 30
+	smoke.Speed = NumberRange.new(1, 3)
+	smoke.SpreadAngle = Vector2.new(60, 60)
+	smoke.Parent = parts[1][1]
+	local glit = Instance.new("ParticleEmitter")
+	glit.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	glit.Color = ColorSequence.new(INKGOLD)
+	glit.LightEmission = 1
+	glit.Size = NumberSequence.new(0.4 * k, 0)
+	glit.Lifetime = NumberRange.new(0.5, 0.9)
+	glit.Rate = 20
+	glit.Speed = NumberRange.new(2, 5)
+	glit.SpreadAngle = Vector2.new(180, 180)
+	glit.Parent = parts[1][1]
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		if not root.Parent or t > life then
+			conn:Disconnect()
+			for _, q in ipairs(parts) do
+				fadeOut(q[1], 0.35)
+			end
+			for _, q in ipairs(legs) do
+				fadeOut(q[1], 0.35)
+			end
+			Fx.burst("dust", root.Position, INK, 16, 1.4 * k / 1.15)
+			return
+		end
+		local look = root.CFrame.LookVector
+		local flat = V(look.X, 0, look.Z)
+		flat = flat.Magnitude > 0.01 and flat.Unit or V(0, 0, -1)
+		local base = big and (root.Position + V(0, 11, 0) - flat * 4) or (root.Position + V(0, -0.7, 0))
+		local bob = math.sin(t * 16) * 0.25 * k
+		local body = CFrame.lookAt(base, base + flat) * CF(0, bob, 0) * CFrame.Angles(math.sin(t * 16) * 0.06, 0, 0)
+		local scale = k
+		for _, q in ipairs(parts) do
+			local off = q[2]
+			q[1].CFrame = body * CF(off.Position * scale) * off.Rotation
+		end
+		for _, q in ipairs(legs) do
+			local off = q[2]
+			local sw = math.sin(t * 16 + q[3]) * 0.7
+			local hip = body * CF(off.X * scale, -0.9 * scale, off.Z * scale) * CFrame.Angles(sw, 0, 0)
+			if q[4] then
+				q[1].CFrame = hip * CF(0, -2.25 * scale, 0)
+			else
+				q[1].CFrame = hip * CF(0, -0.7 * scale, 0)
+			end
+		end
+	end)
+	Fx.flash(root.Position, PAPER, 20, 2, 0.3)
+end
+VFX.inkSplash = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 7
+	for k = 0, 9 do
+		local a = k / 10 * math.pi * 2 + math.random() * 0.4
+		local blot = ell(V(1.2, 0.6, 1.2) * (0.6 + math.random() * 0.8), INK, Enum.Material.SmoothPlastic, 0)
+		blot.CFrame = CF(g + V(0, 1, 0))
+		tween(blot, 0.35, { CFrame = CF(g + V(math.cos(a) * r, 0.3, math.sin(a) * r)), Size = V(2.4, 0.2, 2.4) })
+		task.delay(0.6, function()
+			fadeOut(blot, 0.5)
+		end)
+	end
+	local stain = disc(g + V(0, 0.2, 0), r * 0.4, INK, 0.2, 0.9, r)
+	stain.Material = Enum.Material.SmoothPlastic
+	Fx.burst("spark", g + V(0, 1, 0), INKGOLD, 6, 1)
+end
+VFX.inkStomp = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 13
+	local wave = piece(V(1.6, 4, 4), CF(g + V(0, 0.8, 0)) * CFrame.Angles(0, 0, math.rad(90)), INK, 0.1, Enum.PartType.Cylinder)
+	wave.Material = Enum.Material.SmoothPlastic
+	tween(wave, 0.4, { Size = V(0.3, r * 2.2, r * 2.2), Transparency = 1 })
+	Debris:AddItem(wave, 0.45)
+	Fx.ring(g + V(0, 0.6, 0), INKGOLD, 3, r * 2, 0.45)
+	Fx.debris(g, 6, 18, INK)
+	Fx.flash(g + V(0, 3, 0), INKGOLD, 24, 3, 0.3)
+	shake(0.7)
+end
+-- 땅에 그려지는 태극 (흑백 반원 둘 + 작은 눈 둘). 돌다가 사라진다
+VFX.taiji = function(d)
+	local g = ground(d.at) + V(0, 0.25, 0)
+	local r = d.radius or 26
+	local life = d.life or 1.8
+	local plate = disc(g, r, PAPER, 0.15, life + 0.4)
+	plate.Material = Enum.Material.SmoothPlastic
+	-- 흑과 백의 큰 원 둘이 서로를 쫓으며 돌고, 그 안에 반대 빛깔의 눈이 박힌다
+	local blackBig = piece(V(0.3, r, r), CF(), INK, 0.05, Enum.PartType.Cylinder)
+	local whiteDot = piece(V(0.32, r * 0.25, r * 0.25), CF(), PAPER, 0, Enum.PartType.Cylinder)
+	local blackDot = piece(V(0.32, r * 0.25, r * 0.25), CF(), INK, 0, Enum.PartType.Cylinder)
+	local whiteBig = piece(V(0.31, r, r), CF(), PAPER, 0.05, Enum.PartType.Cylinder)
+	local rim = piece(V(0.35, r * 2.05, r * 2.05), CF(g - V(0, 0.05, 0)) * CFrame.Angles(0, 0, math.rad(90)), INKGOLD, 0.3, Enum.PartType.Cylinder)
+	local halves = { blackBig, whiteBig, whiteDot, blackDot }
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		if t > life then
+			conn:Disconnect()
+			for _, p in ipairs(halves) do
+				fadeOut(p, 0.4)
+			end
+			fadeOut(rim, 0.4)
+			return
+		end
+		local a = t * 2.4
+		local ax, az = math.cos(a) * r * 0.5, math.sin(a) * r * 0.5
+		local lay = CFrame.Angles(0, 0, math.rad(90))
+		blackBig.CFrame = CF(g + V(ax, 0.06, az)) * lay
+		whiteBig.CFrame = CF(g + V(-ax, 0.07, -az)) * lay
+		whiteDot.CFrame = CF(g + V(ax, 0.1, az)) * lay
+		blackDot.CFrame = CF(g + V(-ax, 0.11, -az)) * lay
+	end)
+	if opts.shake then
+		shake(0.4)
+	end
 end
 
 ------------------------------------------------------------------------

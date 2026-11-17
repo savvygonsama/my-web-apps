@@ -3220,6 +3220,13 @@ function Actions.forge(player: Player, id: any)
 		toast(player, string.format("⚒ %s은(는) 환생 %d번을 넘긴 몸이어야 벼릴 수 있어요 (지금 %d번)", style.name, r.rebirth, p.rebirth or 0))
 		return
 	end
+	for _, sid in ipairs(r.needStyles or {}) do
+		if not p.styles[sid] then
+			local ns = Config.STYLE_BY_ID[sid]
+			toast(player, string.format("⚒ %s은(는) %s을(를) 익힌 몸이어야 벼릴 수 있어요", style.name, ns and ns.name or sid))
+			return
+		end
+	end
 	local idx = Calc.realm(p)
 	local coins = Config.forgeCoins(r, idx)
 	local miss = {}
