@@ -775,7 +775,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			f.iframeUntil = math.max(f.iframeUntil, os.clock() + (total + 0.4) / sp)
 		end
 		-- 3.99.23판 제작소 권법 (forgeSeq): 같은 연쇄에 연출 이름 (vfx) 을 실어 보낸다. at = "each" 면 가까운 적 n 마다 따로 터진다 (한 적은 한 번만)
-		Push:FireAllClients("skillfx", { kind = forged and "forgeStart" or "sinStart", m = f.model, dur = total / sp, style = style })
+		Push:FireAllClients("skillfx", { kind = forged and "forgeStart" or "sinStart", m = f.model, dur = total / sp, style = style, mid = move.id })
 		for _, st in ipairs(m.steps) do
 			after(st.t, function()
 				local base = f.root.Position
