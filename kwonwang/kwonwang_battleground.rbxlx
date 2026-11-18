@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.36" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.37" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4882,6 +4882,11 @@ local function battleRaw(style: any): number
 					add(mech.slam, 1)
 				elseif k == "line" then
 					add(mech.hit, 2)
+				elseif k == "forgeSeq" or k == "sinSeq" then
+					-- 3.99.37판: 연쇄 기술은 단계마다 한 번씩 (예전엔 0으로 셈해 배틀그라운드에서 지나치게 세졌다)
+					for _, st in ipairs(mech.steps or {}) do
+						add(st.hit, 1)
+					end
 				else
 					add(mech.hit, mech.hitsEach or 1)
 					add(mech.final, 1)
@@ -7725,6 +7730,33 @@ do
 			end
 			if mv and m and FREE[m.kind] and mv.dur and mv.dur > 0.95 then
 				mv.dur = 0.95
+			end
+		end
+	end
+end
+
+-- 3.99.37판 권법 검토: 새로 만든 권법 넷의 기술 피해가 같은 등급보다 높았다 (기술 초당 피해 기준). 같은 등급 가운데 위쪽에 오게 줄인다
+--   삼원혼천권 ×0.75 (신화) · 구룡패천권 ×0.72 (권왕) · 혼돈개천권 ×0.67 (신) · 귀화백골장 ×0.65 (윤회). 연타는 그대로
+do
+	local CUT = { samwon = 0.75, guryong = 0.72, hondon = 0.67, gwihwa = 0.65 }
+	local function cut(t: any, k: number)
+		if type(t) ~= "table" then
+			return
+		end
+		if type(t.dmg) == "number" then
+			t.dmg *= k
+		end
+		for _, v in pairs(t) do
+			if type(v) == "table" then
+				cut(v, k)
+			end
+		end
+	end
+	for id, k in pairs(CUT) do
+		local st = Config.STYLE_BY_ID[id]
+		if st then
+			for _, mv in pairs(st.skills) do
+				cut(mv.mech, k)
 			end
 		end
 	end
