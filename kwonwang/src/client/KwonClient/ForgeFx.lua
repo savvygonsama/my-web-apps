@@ -1031,7 +1031,15 @@ VFX.inkSteed = function(d)
 		local flat = V(look.X, 0, look.Z)
 		flat = flat.Magnitude > 0.01 and flat.Unit or V(0, 0, -1)
 		-- 다리가 땅에 닿게 몸을 띄운다 (탄 사람은 먹 속에 반쯤 잠긴다). 하늘의 말은 머리 위 뒤쪽
-		local base = big and (root.Position + V(0, 18, 0) - flat * 8) or (root.Position + V(0, 3.3 * k - 3.4, 0))
+		local base
+		if d.ride then
+			-- 3.99.41판 천지미분: 거대한 먹 말을 직접 탄다 (서버가 몸을 들어 올려 등 위에 앉힌다)
+			base = root.Position - V(0, 0.3 * k + 2.2, 0) + flat * 0.8 * k
+		elseif big then
+			base = root.Position + V(0, 18, 0) - flat * 8
+		else
+			base = root.Position + V(0, 3.3 * k - 3.4, 0)
+		end
 		local body = CFrame.lookAt(base, base + flat) * CF(0, math.sin(t * 16) * 0.2 * k, 0)
 		holder.CFrame = body
 		for _, e in ipairs(eyes) do
@@ -1049,7 +1057,14 @@ VFX.inkSteed = function(d)
 			local u = 0.5 + 0.5 * math.sin(t * s.f + s.ph)
 			local p = a:Lerp(b, u)
 			local jx, jy = math.sin(t * 23 + s.j) * 0.3, math.cos(t * 19 + s.j) * 0.3
-			s.b.p.CFrame = body * CF((p + V(jx, jy, 0)) * k) * CFrame.Angles(t * 3, s.j, 0)
+			local cf = body * CF((p + V(jx, jy, 0)) * k) * CFrame.Angles(t * 3, s.j, 0)
+			-- 합쳐지며 생긴다: 처음 0.6초는 하늘 사방에 흩어진 먹이 말의 자리로 모여든다
+			if d.form and t < 0.6 then
+				s.far = s.far or (root.Position + V((math.random() - 0.5) * 120, 40 + math.random() * 30, (math.random() - 0.5) * 120))
+				local q = t / 0.6
+				cf = CF(s.far:Lerp(cf.Position, q * q)) * cf.Rotation
+			end
+			s.b.p.CFrame = cf
 		end
 	end)
 	Fx.flash(root.Position, BRUSH_GOLD, 18, 1.5, 0.3)
@@ -1141,8 +1156,753 @@ function ForgeFx.init(o: any)
 	opts = o or {}
 end
 
+------------------------------------------------------------------------
+-- 3.99.41판 빛 줄기 도구 (먹 줄기 엔진을 빛깔마다): 붓끝 · 휘몰아치는 획 · 소용돌이 · 뱀 · 짐승 뼈대
+------------------------------------------------------------------------
+local calligraphy: (Vector3, string, number) -> ()
+local TEX_FIRE = "rbxasset://textures/particles/fire_main.dds"
+local TEX_SPARK = "rbxasset://textures/particles/sparkles_main.dds"
+local TEX_SMOKE = "rbxasset://textures/particles/smoke_main.dds"
+local function gBrush(width: number, life: number, c1: Color3, c2: Color3, glow: boolean): Brush
+	local b = brush(width, life, c1, glow)
+	b.tr.Color = ColorSequence.new(c1, c2)
+	if glow then
+		b.tr.LightEmission = 1
+		b.tr.LightInfluence = 0
+	end
+	return b
+end
+local function gStroke(from: Vector3, to: Vector3, time: number, width: number, wave: number, c1: Color3, c2: Color3, glow: boolean?, life: number?)
+	local b = gBrush(width, life or 0.45, c1, c2, glow ~= false)
+	local dir = to - from
+	local side = dir.Magnitude > 0.01 and dir.Unit:Cross(V(0, 1, 0)) or V(1, 0, 0)
+	if side.Magnitude < 0.01 then
+		side = V(1, 0, 0)
+	end
+	side = side.Unit
+	local ph = math.random() * 6.3
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local k = math.min(1, (os.clock() - t0) / time)
+		local p = from:Lerp(to, k) + side * math.sin(k * math.pi * 2.5 + ph) * wave * (1 - k * 0.6) + V(0, math.sin(k * math.pi) * wave * 0.5, 0)
+		b.p.CFrame = CF(p) * CFrame.Angles(k * 6, ph, 0)
+		if k >= 1 then
+			conn:Disconnect()
+			dropBrush(b, life or 0.45)
+		end
+	end)
+end
+local function gEmit(at: Vector3, tex: string, c1: Color3, c2: Color3, n: number, size: number, speed: number, life: number, light: number?, accel: Vector3?)
+	local holder = piece(V(0.1, 0.1, 0.1), CF(at), WHITE, 1)
+	local e = Instance.new("ParticleEmitter")
+	e.Texture = tex
+	e.Color = ColorSequence.new(c1, c2)
+	e.LightEmission = light or 1
+	e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, size), NumberSequenceKeypoint.new(1, 0) })
+	e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 1) })
+	e.Lifetime = NumberRange.new(life * 0.6, life)
+	e.Rate = 0
+	e.Speed = NumberRange.new(speed * 0.4, speed)
+	e.SpreadAngle = Vector2.new(180, 180)
+	e.Acceleration = accel or V(0, 2, 0)
+	e.Drag = 1.5
+	e.Parent = holder
+	e:Emit(n)
+	Debris:AddItem(holder, life + 0.2)
+end
+local function gSwirl(center: () -> Vector3, n: number, r: number, h: number, life: number, c1: Color3, c2: Color3, opt: any?)
+	local o = opt or {}
+	local list = {}
+	for i = 1, n do
+		local alt = o.c3 and i % 4 == 0
+		local b = gBrush((o.width or 0.6) * (0.6 + math.random() * 0.8), o.trail or 0.5, alt and o.c3 or c1, c2, o.glow ~= false)
+		table.insert(list, { b = b, f1 = 1.2 + math.random() * 2.4, f2 = 1.5 + math.random() * 3, f3 = 0.9 + math.random() * 2.2, p1 = math.random() * 6.3, p2 = math.random() * 6.3, p3 = math.random() * 6.3, rk = 0.55 + math.random() * 0.6 })
+	end
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		local c = center()
+		if t > life then
+			conn:Disconnect()
+			for _, sx in ipairs(list) do
+				dropBrush(sx.b, o.trail or 0.5)
+			end
+			return
+		end
+		local k = t / life
+		local rr = r * (o.converge and (1 - 0.85 * k * k) or 1) * (o.grow and math.min(1, t / 0.25) or 1) * (o.expand and (0.2 + k) or 1)
+		for _, sx in ipairs(list) do
+			local a = t * sx.f1 * (o.speed or 1) + sx.p1
+			local x = math.cos(a) * rr * sx.rk + math.sin(t * sx.f3 + sx.p3) * rr * 0.2
+			local z = math.sin(a) * rr * sx.rk + math.cos(t * sx.f2 + sx.p2) * rr * 0.2
+			local y = (o.flat and 0.3 or math.sin(t * sx.f2 + sx.p2) * h * 0.5) + (o.rise and k * o.rise or 0)
+			sx.b.p.CFrame = CF(c + V(x, y, z)) * CFrame.Angles(t * sx.f3, a, 0)
+		end
+	end)
+end
+-- 뱀 / 용: 머리가 path(u) 를 따라가고 몸 줄기 n개가 조금씩 늦게 따라간다 (굽이친다)
+local function gSerpent(path: (number) -> Vector3, time: number, n: number, width: number, c1: Color3, c2: Color3, lag: number?)
+	local list = {}
+	for i = 1, n do
+		table.insert(list, { b = gBrush(width * (1 - (i - 1) / n * 0.6), 0.35, i == 1 and c2 or c1, c2, true), d = (i - 1) * (lag or 0.035), o = V(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * width })
+	end
+	local t0 = os.clock()
+	local total = time + n * (lag or 0.035)
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		if t > total then
+			conn:Disconnect()
+			for _, sx in ipairs(list) do
+				dropBrush(sx.b, 0.35)
+			end
+			return
+		end
+		for i, sx in ipairs(list) do
+			local u = math.clamp((t - sx.d) / time, 0, 1)
+			local w = math.sin(t * 14 + i * 0.7) * width * 0.4
+			sx.b.p.CFrame = CF(path(u) + sx.o + V(w, w * 0.5, 0)) * CFrame.Angles(t * 5, i, 0)
+		end
+	end)
+end
+-- 빛 줄기 짐승: 뼈대 (선분들) 를 따라 줄기가 쉬지 않고 긁어 짐승을 그린다. place() 가 몸의 자리 (CFrame) 를 준다
+local function gBeast(bones: { { Vector3 } }, place: (number) -> CFrame?, life: number, k: number, c1: Color3, c2: Color3, per: number?, legSwing: { number }?)
+	local strands = {}
+	for si in ipairs(bones) do
+		for _ = 1, per or 3 do
+			table.insert(strands, { b = gBrush(0.5 * k * (0.7 + math.random() * 0.6), 0.3, c1, c2, true), seg = si, f = 5 + math.random() * 6, ph = math.random() * 6.3, j = math.random() * 6.3 })
+		end
+	end
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		local body = place(t)
+		if not body or t > life then
+			conn:Disconnect()
+			for _, sx in ipairs(strands) do
+				dropBrush(sx.b, 0.3)
+			end
+			return
+		end
+		for _, sx in ipairs(strands) do
+			local seg = bones[sx.seg]
+			local a, b = seg[1], seg[2]
+			if legSwing and table.find(legSwing, sx.seg) then
+				b = b + V(0, 0, math.sin(t * 18 + sx.seg * 1.7) * 1.2)
+			end
+			local u = 0.5 + 0.5 * math.sin(t * sx.f + sx.ph)
+			local p = a:Lerp(b, u)
+			sx.b.p.CFrame = body * CF((p + V(math.sin(t * 23 + sx.j) * 0.25, math.cos(t * 19 + sx.j) * 0.25, 0)) * k) * CFrame.Angles(t * 3, sx.j, 0)
+		end
+	end)
+end
+local function gClaw(at: Vector3, dir: Vector3, size: number, c1: Color3, c2: Color3, n: number?)
+	local right = V(-dir.Z, 0, dir.X)
+	local m = n or 4
+	for i = 1, m do
+		local off = right * ((i - (m + 1) / 2) * size * 0.28)
+		local from = at + off + V(0, size * 0.7, 0) - dir * size * 0.4
+		local to = at + off * 1.3 + V(0, -size * 0.2, 0) + dir * size * 0.6
+		gStroke(from, to, 0.12, size * 0.16, size * 0.08, c1, c2, true, 0.35)
+	end
+end
+
+------------------------------------------------------------------------
+-- 🕸 천잠사수: 하늘누에의 실 (가늘고 빛나는 흰 금빛 실)
+------------------------------------------------------------------------
+local SILK, SILK2, SILK3 = Color3.fromRGB(235, 242, 255), Color3.fromRGB(255, 225, 160), Color3.fromRGB(150, 170, 220)
+VFX.silkShot = function(d)
+	local from = (d.from :: Vector3) + V(0, 2.6, 0)
+	local dir = d.dir :: Vector3
+	local len = d.length or 24
+	local right = V(-dir.Z, 0, dir.X)
+	for i = 1, 6 do
+		local to = from + dir * len + right * ((i - 3.5) * 1.8) + V(0, (math.random() - 0.5) * 3, 0)
+		gStroke(from, to, 0.16 + i * 0.01, 0.18, 0.6, SILK, SILK2, true, 0.6)
+	end
+	gEmit(from + dir * len * 0.5, TEX_SPARK, SILK, SILK2, 14, 0.5, 6, 0.6)
+end
+VFX.silkBind = function(d)
+	local at = d.at + V(0, 2.5, 0)
+	gSwirl(function()
+		return at
+	end, 10, (d.radius or 5) * 0.9, 4, 0.4, SILK, SILK2, { width = 0.18, trail = 0.5, converge = true, speed = 2 })
+	task.delay(0.38, function()
+		-- 당겨 끊어지는 실: 사방으로 튀는 가는 획
+		for i = 1, 8 do
+			local a = i / 8 * math.pi * 2
+			gStroke(at, at + V(math.cos(a) * 7, (math.random() - 0.5) * 4, math.sin(a) * 7), 0.12, 0.2, 0.3, SILK, SILK2, true, 0.4)
+		end
+		gEmit(at, TEX_SPARK, SILK2, SILK, 16, 0.6, 10, 0.5)
+		pcall(Fx.sound, "swing", 0.6, 1.4, at)
+	end)
+end
+-- 거미줄: 가운데에서 바깥으로 뻗는 실 열둘 + 둘레를 감는 고리 셋
+local function web(g: Vector3, r: number, life: number, tilt: number?)
+	for i = 1, 12 do
+		local a = i / 12 * math.pi * 2
+		gStroke(g, g + V(math.cos(a) * r, tilt and math.sin(a) * tilt or 0, math.sin(a) * r), 0.16, 0.16, 0.2, SILK, SILK2, true, life)
+	end
+	for ring = 1, 3 do
+		local rr = r * ring / 3.4
+		local b = gBrush(0.14, life, SILK, SILK2, true)
+		local t0 = os.clock()
+		local conn
+		conn = RunService.RenderStepped:Connect(function()
+			local k = math.min(1, (os.clock() - t0) / 0.3)
+			local a = k * math.pi * 2
+			b.p.CFrame = CF(g + V(math.cos(a) * rr, tilt and math.sin(a) * tilt * ring / 3.4 or 0, math.sin(a) * rr))
+			if k >= 1 then
+				conn:Disconnect()
+				dropBrush(b, life)
+			end
+		end)
+	end
+end
+VFX.silkWeb = function(d)
+	local g = ground(d.at) + V(0, 0.4, 0)
+	web(g, d.radius or 13, d.life or 0.6)
+end
+VFX.silkSnap = function(d)
+	local g = ground(d.at) + V(0, 1, 0)
+	local r = d.radius or 14
+	for i = 1, 12 do
+		local a = i / 12 * math.pi * 2
+		gStroke(g + V(math.cos(a) * r, 0, math.sin(a) * r), g + V(0, 2, 0), 0.14, 0.2, 0.4, SILK, SILK2, true, 0.35)
+	end
+	task.delay(0.15, function()
+		gEmit(g + V(0, 2, 0), TEX_SPARK, SILK2, SILK, 30, 0.7, 14, 0.6)
+		Fx.flash(g + V(0, 2, 0), SILK2, r * 2, 2, 0.2)
+		shake(0.4)
+	end)
+end
+VFX.silkDome = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 22
+	local life = d.life or 1.5
+	-- 땅에서 하늘로 솟는 실 기둥 열여섯, 꼭대기에서 엮이는 그물 지붕
+	for i = 1, 16 do
+		local a = i / 16 * math.pi * 2
+		local base = g + V(math.cos(a) * r, 0, math.sin(a) * r)
+		gStroke(base, g + V(0, r * 0.9, 0), 0.3, 0.2, 1.5, SILK, SILK2, true, life)
+	end
+	task.delay(0.3, function()
+		web(g + V(0, r * 0.9, 0), r * 0.7, life - 0.3, 3)
+	end)
+	gSwirl(function()
+		return g + V(0, r * 0.5, 0)
+	end, 10, r * 0.9, r * 0.6, life, SILK, SILK2, { width = 0.15, trail = 0.9, speed = 0.5 })
+end
+VFX.silkCut = function(d)
+	local at = d.at + V(0, 2.5, 0)
+	local a = math.random() * math.pi
+	local dir = V(math.cos(a), 0, math.sin(a))
+	gStroke(at - dir * 12 + V(0, 3, 0), at + dir * 12 - V(0, 2, 0), 0.1, 0.25, 0.2, SILK, SILK2, true, 0.35)
+	gStroke(at + dir:Cross(V(0, 1, 0)) * 12 + V(0, 2, 0), at - dir:Cross(V(0, 1, 0)) * 12, 0.1, 0.25, 0.2, SILK2, SILK, true, 0.35)
+	gEmit(at, TEX_SPARK, SILK, SILK2, 10, 0.5, 8, 0.4)
+end
+VFX.silkCollapse = function(d)
+	local g = ground(d.at) + V(0, 3, 0)
+	local r = d.radius or 18
+	gSwirl(function()
+		return g
+	end, 24, r * 1.2, r * 0.8, 0.45, SILK, SILK2, { width = 0.25, trail = 0.4, converge = true, speed = 2.2, c3 = SILK3 })
+	task.delay(0.42, function()
+		for i = 1, 20 do
+			local a = i / 20 * math.pi * 2
+			gStroke(g, g + V(math.cos(a) * r * 1.4, (math.random() - 0.3) * r * 0.6, math.sin(a) * r * 1.4), 0.18, 0.3, 0.6, SILK, SILK2, true, 0.5)
+		end
+		gEmit(g, TEX_SPARK, SILK2, SILK, 50, 0.9, 20, 0.8)
+		Fx.ring(ground(d.at) + V(0, 0.5, 0), SILK2, 3, r * 2.4, 0.5)
+		Fx.flash(g, SILK, r * 2.4, 4, 0.3)
+		shake(1)
+	end)
+end
+
+------------------------------------------------------------------------
+-- 🐍 만독천수: 독사 (빛나는 초록 · 보라 줄기) · 독안개 (입자) · 독꽃
+------------------------------------------------------------------------
+local VENOM, VENOM2, VENOMD = Color3.fromRGB(150, 255, 90), Color3.fromRGB(180, 90, 255), Color3.fromRGB(30, 20, 40)
+local function venomFog(at: Vector3, r: number, life: number, n: number)
+	gEmit(at, TEX_SMOKE, VENOM:Lerp(VENOMD, 0.3), VENOM2:Lerp(VENOMD, 0.5), n, r * 0.7, r * 0.5, life, 0.25, V(0, 1, 0))
+end
+VFX.venomSnake = function(d)
+	local from = (d.from :: Vector3) + V(0, 2.2, 0)
+	local dir = d.dir :: Vector3
+	local len = d.length or 24
+	local right = V(-dir.Z, 0, dir.X)
+	for s = -1, 1 do
+		local ph = s * 1.3
+		gSerpent(function(u)
+			return from + dir * len * u + right * (math.sin(u * math.pi * 4 + ph) * 2.2 + s * 1.5) + V(0, math.sin(u * math.pi) * 1.5, 0)
+		end, 0.32, 8, 0.9, s == 0 and VENOM2 or VENOM, VENOM:Lerp(WHITE, 0.4), 0.025)
+	end
+end
+VFX.venomBurst = function(d)
+	local at = d.at + V(0, 2, 0)
+	venomFog(at, d.radius or 8, 1.4, 30)
+	gEmit(at, TEX_SPARK, VENOM, VENOM2, 24, 0.7, 14, 0.6)
+	for i = 1, 8 do
+		local a = i / 8 * math.pi * 2
+		gStroke(at, at + V(math.cos(a) * 8, math.random() * 4, math.sin(a) * 8), 0.18, 0.6, 1, VENOM, VENOM2, true, 0.4)
+	end
+	pcall(Fx.sound, "splash", 0.6, 0.7, at)
+	shake(0.35)
+end
+VFX.venomMist = function(d)
+	local g = ground(d.at) + V(0, 2, 0)
+	local r = d.radius or 12
+	local life = d.life or 1.3
+	venomFog(g, r, life + 0.6, 50)
+	gSwirl(function()
+		return g
+	end, 12, r * 0.85, 2, life, VENOM, VENOM2, { width = 0.7, trail = 0.7, speed = 1.3, c3 = VENOM2 })
+end
+VFX.venomPulse = function(d)
+	local g = ground(d.at) + V(0, 1.5, 0)
+	local r = d.radius or 12
+	gSwirl(function()
+		return g
+	end, 14, r, 1, 0.35, VENOM, VENOM2, { width = 0.8, trail = 0.35, converge = true, speed = 2.4 })
+	venomFog(g, r * 0.7, 0.9, 16)
+end
+VFX.venomSea = function(d)
+	local g = ground(d.at) + V(0, 0.5, 0)
+	local r = d.radius or 24
+	local life = d.life or 1.9
+	local pool = piece(V(0.2, 2, 2), CF(g - V(0, 0.3, 0)) * CFrame.Angles(0, 0, math.rad(90)), VENOMD, 0.25, Enum.PartType.Cylinder)
+	pool.Material = Enum.Material.SmoothPlastic
+	tween(pool, 0.4, { Size = V(0.2, r * 2, r * 2) })
+	task.delay(life, function()
+		fadeOut(pool, 0.5)
+	end)
+	gSwirl(function()
+		return g
+	end, 26, r * 0.95, 0.6, life, VENOM, VENOM2, { width = 1.2, trail = 1, grow = true, speed = 0.7, flat = true, c3 = VENOM2 })
+	for _ = 1, 4 do
+		task.delay(math.random() * life * 0.8, function()
+			venomFog(g + V((math.random() - 0.5) * r, 1, (math.random() - 0.5) * r), r * 0.4, 1, 10)
+		end)
+	end
+end
+VFX.venomFang = function(d)
+	local g = ground(d.at)
+	local base = g + V((math.random() - 0.5) * 10, -1, (math.random() - 0.5) * 10)
+	local top = g + V(0, 9, 0)
+	gSerpent(function(u)
+		if u < 0.6 then
+			return base:Lerp(top, u / 0.6)
+		end
+		return top:Lerp(g + V(0, 1.5, 0), (u - 0.6) / 0.4)
+	end, 0.3, 7, 1, VENOM, VENOM2, 0.02)
+	task.delay(0.3, function()
+		gEmit(g + V(0, 1.5, 0), TEX_SPARK, VENOM, VENOM2, 12, 0.6, 9, 0.4)
+		venomFog(g + V(0, 1.5, 0), 4, 0.8, 8)
+	end)
+end
+VFX.venomBloom = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 22
+	-- 땅에서 솟는 독꽃: 꽃잎 열둘 (휘어 오르는 줄기) 이 벌어졌다가 가운데에서 터진다
+	for i = 1, 12 do
+		local a = i / 12 * math.pi * 2
+		local tip = g + V(math.cos(a) * r * 0.8, r * 0.6, math.sin(a) * r * 0.8)
+		gSerpent(function(u)
+			local mid = g + V(math.cos(a) * r * 0.25, r * 0.5, math.sin(a) * r * 0.25)
+			if u < 0.5 then
+				return g:Lerp(mid, u * 2)
+			end
+			return mid:Lerp(tip, (u - 0.5) * 2)
+		end, 0.4, 5, 1.6, i % 2 == 0 and VENOM2 or VENOM, VENOM:Lerp(WHITE, 0.5), 0.03)
+	end
+	task.delay(0.5, function()
+		venomFog(g + V(0, 4, 0), r, 1.6, 60)
+		gEmit(g + V(0, 4, 0), TEX_SPARK, VENOM, VENOM2, 60, 1, 26, 0.9)
+		Fx.ring(g + V(0, 0.5, 0), VENOM, 3, r * 2.4, 0.5)
+		Fx.flash(g + V(0, 5, 0), VENOM, r * 2.4, 4, 0.35)
+		pcall(Fx.sound, "splash", 0.9, 0.5, g)
+		shake(1.1)
+	end)
+end
+VFX.venomCloud = function(d)
+	local at = d.at + V(0, 1.5, 0)
+	venomFog(at, d.radius or 9, 1.1, 22)
+	gSwirl(function()
+		return at
+	end, 8, (d.radius or 9) * 0.8, 1.5, 0.35, VENOM, VENOM2, { width = 0.6, trail = 0.3, converge = true, speed = 2 })
+end
+
+------------------------------------------------------------------------
+-- 👻 귀화백골장: 푸른 귀화 (빛 줄기 + 불 입자) · 망자의 손 (빛으로 그린 손가락) · 해골
+------------------------------------------------------------------------
+local GHOST, GHOST2, GHOSTD = Color3.fromRGB(120, 230, 255), Color3.fromRGB(235, 250, 255), Color3.fromRGB(10, 26, 34)
+local function specterFlame(at: Vector3, size: number, life: number)
+	gEmit(at, TEX_FIRE, GHOST, GHOST2, math.floor(10 + size * 4), size, size * 1.6, life, 1, V(0, size * 3, 0))
+end
+VFX.specterFire = function(d)
+	local at = ground(d.at) + V(0, 2, 0)
+	local from = (d.from :: Vector3) + V(0, 3.5, 0)
+	-- 귀화가 휘어 날아든다 (꼬리를 끄는 혼)
+	gSerpent(function(u)
+		local mid = from:Lerp(at, 0.5) + V(0, 6, 0)
+		local a = from:Lerp(mid, u)
+		local b = mid:Lerp(at, u)
+		return a:Lerp(b, u)
+	end, 0.22, 6, d.big and 1.6 or 0.9, GHOST, GHOST2, 0.02)
+	task.delay(0.22, function()
+		specterFlame(at, d.big and 3.5 or 2, 0.7)
+		gSwirl(function()
+			return at
+		end, 6, d.big and 5 or 3, 3, 0.5, GHOST, GHOST2, { width = 0.4, trail = 0.4, rise = 4 })
+		if d.big then
+			Fx.flash(at, GHOST, 26, 3, 0.3)
+			shake(0.5)
+		end
+	end)
+end
+local function specterHand(at: Vector3)
+	-- 손가락 다섯이 땅에서 솟아 움켜쥔다
+	for f = -2, 2 do
+		local base = at + V(f * 0.55, -0.5, 0)
+		local tip = at + V(f * 0.3, 4.2 - math.abs(f) * 0.4, -0.4)
+		gStroke(base, tip, 0.14, 0.32, 0.25, GHOST2, GHOST, true, 0.45)
+		task.delay(0.15, function()
+			gStroke(tip, at + V(f * 0.15, 2.4, -1.4), 0.12, 0.28, 0.1, GHOST2, GHOST, true, 0.35)
+		end)
+	end
+end
+VFX.specterHands = function(d)
+	if d.length then
+		local from, dir = d.from :: Vector3, d.dir :: Vector3
+		for i = 1, 6 do
+			task.delay(i * 0.04, function()
+				specterHand(ground(from + dir * (d.length * i / 6)) + V((math.random() - 0.5) * 2, 0, (math.random() - 0.5) * 2))
+			end)
+		end
+	else
+		local g = ground(d.at)
+		specterHand(g + V(-1, 0, 0))
+		specterHand(g + V(1, 0, 0.5))
+		specterFlame(g + V(0, 1, 0), 1.6, 0.5)
+	end
+end
+VFX.specterCircle = function(d)
+	local g = ground(d.at) + V(0, 0.4, 0)
+	local r = d.radius or 22
+	local disk = piece(V(0.2, r * 2, r * 2), CF(g - V(0, 0.2, 0)) * CFrame.Angles(0, 0, math.rad(90)), GHOSTD, 0.3, Enum.PartType.Cylinder)
+	disk.Material = Enum.Material.SmoothPlastic
+	task.delay(1.6, function()
+		fadeOut(disk, 0.4)
+	end)
+	-- 둘레를 도는 혼 줄기와 바깥의 귀화 여덟
+	gSwirl(function()
+		return g
+	end, 18, r * 0.95, 1, 1.8, GHOST, GHOST2, { width = 0.6, trail = 0.8, flat = true, speed = 0.9 })
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		specterFlame(g + V(math.cos(a) * r * 0.9, 1, math.sin(a) * r * 0.9), 2, 1.4)
+	end
+end
+-- 빛 줄기로 그린 해골 (둥근 머리 · 눈구멍 둘 · 턱) 이 떠올랐다가 터진다
+VFX.specterSkull = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 24
+	local c = g + V(0, 9, 0)
+	local s = r * 0.32
+	local head: { { Vector3 } } = {}
+	for i = 0, 11 do
+		local a1, a2 = i / 12 * math.pi * 2, (i + 1) / 12 * math.pi * 2
+		table.insert(head, { V(math.cos(a1) * s, math.sin(a1) * s * 0.9 + s * 0.3, 0), V(math.cos(a2) * s, math.sin(a2) * s * 0.9 + s * 0.3, 0) })
+	end
+	table.insert(head, { V(-s * 0.55, s * 0.3, 0), V(-s * 0.2, s * 0.1, 0) })
+	table.insert(head, { V(s * 0.55, s * 0.3, 0), V(s * 0.2, s * 0.1, 0) })
+	table.insert(head, { V(-s * 0.5, -s * 0.55, 0), V(s * 0.5, -s * 0.55, 0) })
+	local cam = workspace.CurrentCamera
+	gBeast(head, function(t)
+		local look = cam and (cam.CFrame.Position - c) or V(0, 0, 1)
+		return t < 0.5 and CFrame.lookAt(c, c + V(look.X, 0, look.Z)) or nil
+	end, 0.5, 1, GHOST2, GHOST, 2)
+	specterFlame(c + V(-s * 0.4, s * 0.2, 0), 2, 0.6)
+	specterFlame(c + V(s * 0.4, s * 0.2, 0), 2, 0.6)
+	task.delay(0.5, function()
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			specterFlame(g + V(math.cos(a) * r * 0.7, 1, math.sin(a) * r * 0.7), 2.4, 0.8)
+			gStroke(c, g + V(math.cos(a) * r, 0.5, math.sin(a) * r), 0.22, 0.8, 2, GHOST, GHOST2, true, 0.4)
+		end
+		Fx.ring(g + V(0, 0.5, 0), GHOST, 4, r * 2.2, 0.5)
+		Fx.flash(c, GHOST, r * 2.2, 5, 0.4)
+		shake(1.2)
+	end)
+end
+
+------------------------------------------------------------------------
+-- 혼돈개천권 먹 매듭 (패시브) · 혼돈화신 (몸을 휘감는 먹)
+------------------------------------------------------------------------
+VFX.inkKnot = function(d)
+	local at = d.at + V(0, 2, 0)
+	inkSwirl(function()
+		return at
+	end, 10, (d.radius or 11) * 0.7, 3, 0.3, { converge = true, width = 1.1, trail = 0.3, gold = true, speed = 2.4 })
+	task.delay(0.28, function()
+		inkBurst(at, (d.radius or 11) * 0.8, false)
+	end)
+end
+local auraOn: { [Model]: boolean } = {}
+local function inkAvatar(model: Model)
+	if auraOn[model] then
+		return
+	end
+	auraOn[model] = true
+	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not root then
+		auraOn[model] = nil
+		return
+	end
+	-- 화신이 되는 순간: 먹이 한 점에서 터지고 하늘에 「化身」
+	inkBurst(root.Position, 12, true)
+	calligraphy(root.Position + V(0, 30, 0), "化身", 1.8)
+	local function alive(): boolean
+		return model.Parent ~= nil and model:GetAttribute("Twilight") == true and model:GetAttribute("Style") == "hondon"
+	end
+	task.spawn(function()
+		while alive() do
+			inkSwirl(function()
+				return root.Position + V(0, 0.5, 0)
+			end, 10, 3.4, 5, 1.05, { width = 0.7, trail = 0.5, gold = true, speed = 1.5 })
+			task.wait(1)
+		end
+		auraOn[model] = nil
+	end)
+end
+function ForgeFx.watchAvatar(model: Model)
+	local function check()
+		if model:GetAttribute("Twilight") == true and model:GetAttribute("Style") == "hondon" then
+			inkAvatar(model)
+		end
+	end
+	model:GetAttributeChangedSignal("Twilight"):Connect(check)
+	check()
+end
+
+------------------------------------------------------------------------
+-- 사신천왕권 (다시): 빛 줄기로 그린 네 신수. 백호 (E) · 주작 둘 (R) · 청룡 (G) · 넷이 함께 (X) · 사신진 (패시브)
+------------------------------------------------------------------------
+local TIGER, TIGER2 = Color3.fromRGB(245, 248, 255), Color3.fromRGB(150, 200, 255)
+local BIRD, BIRD2 = Color3.fromRGB(255, 110, 50), Color3.fromRGB(255, 225, 120)
+local AZURE, AZURE2 = Color3.fromRGB(80, 170, 255), Color3.fromRGB(200, 245, 255)
+local TURTLE, TURTLE2 = Color3.fromRGB(70, 60, 110), Color3.fromRGB(150, 255, 210)
+local TIGER_BONES: { { Vector3 } } = {
+	{ V(0, 0, 2.6), V(0, 0.2, -2.4) }, { V(0, -0.6, 2.2), V(0, -0.5, -2.2) },
+	{ V(0, 0.2, -2.4), V(0, 0.9, -3.4) }, { V(-0.6, 1.0, -3.3), V(0.6, 1.0, -3.3) }, { V(0, 0.9, -3.4), V(0, 0.2, -4.4) },
+	{ V(0, 0.2, 2.6), V(0, 1.6, 4.6) },
+	{ V(-0.7, -0.4, -2), V(-0.7, -2.6, -2.4) }, { V(0.7, -0.4, -2), V(0.7, -2.6, -1.6) },
+	{ V(-0.7, -0.4, 2), V(-0.7, -2.6, 1.6) }, { V(0.7, -0.4, 2), V(0.7, -2.6, 2.4) },
+}
+local function sashinLightDash(d)
+	local pts = d.pts
+	if not pts or #pts < 2 then
+		return
+	end
+	local a, b = pts[1], pts[#pts]
+	local dir = (b - a)
+	dir = V(dir.X, 0, dir.Z).Magnitude > 0.1 and V(dir.X, 0, dir.Z).Unit or V(0, 0, -1)
+	local T0 = (d.cut or 0) + (d.charge or 0.25)
+	local run = 0.35
+	gBeast(TIGER_BONES, function(t)
+		local u = math.clamp((t - T0) / run, 0, 1)
+		if t > T0 + run + 0.25 then
+			return nil
+		end
+		local p = a:Lerp(b, u) + V(0, 1.2, 0)
+		return CFrame.lookAt(p, p + dir) * CF(0, math.abs(math.sin(t * 14)) * 0.6, 0)
+	end, T0 + run + 0.3, 1.5, TIGER, TIGER2, 3, { 7, 8, 9, 10 })
+	task.delay(T0, function()
+		local n = 6
+		for i = 1, n do
+			task.delay(i * run / n, function()
+				gClaw(a:Lerp(b, i / n) + V(0, 1, 0), dir, 4.5, TIGER, TIGER2, 4)
+			end)
+		end
+	end)
+end
+local function phoenix(path: (number) -> Vector3, time: number, side: number)
+	-- 몸 줄기 (불꽃 꼬리) + 날개 획 (날갯짓)
+	gSerpent(path, time, 7, 1.2, BIRD, BIRD2, 0.03)
+	local t0 = os.clock()
+	local wings = { gBrush(0.9, 0.35, BIRD, BIRD2, true), gBrush(0.9, 0.35, BIRD, BIRD2, true) }
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		local u = math.min(1, t / time)
+		local p = path(u)
+		local p2 = path(math.min(1, u + 0.02))
+		local fwd = (p2 - p).Magnitude > 0.01 and (p2 - p).Unit or V(0, 0, -1)
+		local right = fwd:Cross(V(0, 1, 0))
+		local flap = math.sin(t * 22) * 2.4
+		for wi, w in ipairs(wings) do
+			local sx = wi == 1 and 1 or -1
+			w.p.CFrame = CF(p + right * sx * 3.6 + V(0, flap, 0) - fwd * 1.2)
+		end
+		if u >= 1 then
+			conn:Disconnect()
+			for _, w in ipairs(wings) do
+				dropBrush(w, 0.35)
+			end
+		end
+	end)
+end
+local function sashinTwinDiscs(d)
+	local from, dir = d.from, d.dir
+	if not from or not dir then
+		return
+	end
+	dir = V(dir.X, 0, dir.Z).Magnitude > 0.01 and V(dir.X, 0, dir.Z).Unit or V(0, 0, -1)
+	local right = V(-dir.Z, 0, dir.X)
+	local dist, swing, time = d.dist or 30, d.swing or 9, math.max(0.2, d.time or 0.6)
+	for _, sx in ipairs({ 1, -1 }) do
+		phoenix(function(u)
+			return from + V(0, 3, 0) + dir * dist * u + right * sx * math.sin(u * math.pi) * swing
+		end, time, sx)
+	end
+	task.delay(time, function()
+		local at = from + dir * dist + V(0, 2, 0)
+		gEmit(at, TEX_FIRE, BIRD, BIRD2, 40, 3, 18, 0.7, 1, V(0, 6, 0))
+		for i = 1, 10 do
+			local a = i / 10 * math.pi * 2
+			gStroke(at, at + V(math.cos(a) * 10, math.random() * 5, math.sin(a) * 10), 0.2, 1, 1.5, BIRD, BIRD2, true, 0.4)
+		end
+		shake(0.5)
+	end)
+end
+local function sashinOnepunch(d)
+	local r = d.m and d.m:FindFirstChild("HumanoidRootPart")
+	local from = d.from or (r and r.Position)
+	if not from then
+		return
+	end
+	local dir = d.dir or (r and r.CFrame.LookVector) or V(0, 0, -1)
+	dir = V(dir.X, 0, dir.Z).Magnitude > 0.01 and V(dir.X, 0, dir.Z).Unit or V(0, 0, -1)
+	local range = d.range or 54
+	local delay = d.delay or 1
+	-- 모으는 동안: 몸 둘레를 감아 오르는 푸른 용 줄기
+	gSwirl(function()
+		return from + V(0, 1, 0)
+	end, 12, 4, 3, delay, AZURE, AZURE2, { width = 0.9, trail = 0.5, rise = 6, speed = 1.8 })
+	task.delay(delay, function()
+		-- 지르는 순간: 거대한 청룡이 앞으로 솟구쳐 휩쓴다 (줄기 서른 개가 한 몸)
+		local right = V(-dir.Z, 0, dir.X)
+		gSerpent(function(u)
+			return from + V(0, 3, 0) + dir * range * u + right * math.sin(u * math.pi * 3) * 5 + V(0, math.sin(u * math.pi) * 9, 0)
+		end, 0.55, 30, 3.2, AZURE, AZURE2, 0.012)
+		for i = 1, 3 do
+			gSerpent(function(u)
+				return from + V(0, 3, 0) + dir * range * u + right * (math.sin(u * math.pi * 3 + i) * 7) + V(0, math.sin(u * math.pi) * (6 + i * 2), 0)
+			end, 0.6, 8, 1.2, AZURE2, WHITE, 0.02)
+		end
+		task.delay(0.5, function()
+			local at = from + dir * range + V(0, 3, 0)
+			gEmit(at, TEX_SPARK, AZURE, AZURE2, 60, 1.2, 24, 0.8)
+			Fx.flash(at, AZURE, 40, 4, 0.35)
+		end)
+		shake(1)
+	end)
+end
+local GOD = { { TIGER, TIGER2 }, { BIRD, BIRD2 }, { AZURE, AZURE2 }, { TURTLE, TURTLE2 } }
+local function sashinStorm(d)
+	local r = d.m and d.m:FindFirstChild("HumanoidRootPart")
+	if not r then
+		return
+	end
+	local dur = d.dur or 2.4
+	local c = r.Position
+	-- 네 신수의 빛 줄기 고리가 하늘을 돌며 차례로 내리꽂힌다
+	for q = 1, 4 do
+		local col = GOD[q]
+		gSwirl(function()
+			return c + V(0, 22 + q * 3, 0)
+		end, 10, 14 + q * 3, 4, dur, col[1], col[2], { width = 1.4, trail = 0.6, speed = 0.8 + q * 0.15 })
+	end
+	local n = math.floor(dur / 0.3)
+	for i = 1, n do
+		task.delay(0.3 + i * 0.3, function()
+			local col = GOD[(i - 1) % 4 + 1]
+			local a = math.random() * math.pi * 2
+			local at = ground(c + V(math.cos(a) * math.random() * 26, 0, math.sin(a) * math.random() * 26))
+			gSerpent(function(u)
+				return (c + V(0, 26, 0)):Lerp(at + V(0, 1, 0), u)
+			end, 0.22, 8, 1.8, col[1], col[2], 0.015)
+			task.delay(0.22, function()
+				gEmit(at + V(0, 1, 0), TEX_SPARK, col[1], col[2], 16, 0.8, 12, 0.5)
+			end)
+		end)
+	end
+	task.delay(dur, function()
+		-- 마지막: 현무의 등껍질 (육각 줄기) 이 하늘에서 내려와 짓누른다
+		local g = ground(c)
+		for i = 0, 5 do
+			local a1, a2 = i / 6 * math.pi * 2, (i + 1) / 6 * math.pi * 2
+			gStroke(g + V(math.cos(a1) * 30, 30, math.sin(a1) * 30), g + V(math.cos(a2) * 30, 0.5, math.sin(a2) * 30), 0.3, 2.5, 1, TURTLE2, TURTLE, true, 0.6)
+		end
+		Fx.ring(g + V(0, 0.5, 0), TURTLE2, 4, 66, 0.6)
+		Fx.flash(g + V(0, 6, 0), WHITE, 70, 5, 0.4)
+		shake(1.4)
+	end)
+end
+local function sashinPulse(d)
+	local at = d.at + V(0, 1.5, 0)
+	for q = 1, 4 do
+		local a = q / 4 * math.pi * 2
+		gStroke(at + V(math.cos(a) * 12, 6, math.sin(a) * 12), at, 0.18, 1, 2, GOD[q][1], GOD[q][2], true, 0.4)
+	end
+	task.delay(0.18, function()
+		gEmit(at, TEX_SPARK, WHITE, AZURE2, 24, 0.8, 14, 0.5)
+	end)
+end
+local SASHIN = { lightDash = sashinLightDash, twinDiscs = sashinTwinDiscs, onepunch = sashinOnepunch, stormcloud = sashinStorm, pulse = sashinPulse }
+function ForgeFx.sashin(data: any): boolean
+	local fn = SASHIN[data.kind]
+	if not fn then
+		return false
+	end
+	local ok, err = pcall(fn, data)
+	if not ok then
+		warn("[권왕] 사신천왕권 연출 오류:", data.kind, err)
+	end
+	return true
+end
+-- 연출을 이 모듈이 그리는 패시브 (pulse fx 이름)
+local OWN_PULSE = { inkKnot = true, venomCloud = true }
+
 -- 3.99.38판 손맛: 혼돈개천권은 맞힐 때마다 먹이 튄다 (강타 · 기술은 크게)
 function ForgeFx.hit(styleId: string, pos: Vector3, heavy: boolean, skill: boolean)
+	local big = heavy or skill
+	if styleId == "janwol" then
+		-- 실이 채찍처럼 휘감긴다
+		for _ = 1, big and 4 or 2 do
+			local a = math.random() * math.pi * 2
+			gStroke(pos + V(math.cos(a) * 5, 2, math.sin(a) * 5), pos, 0.1, 0.16, 0.6, SILK, SILK2, true, 0.35)
+		end
+		gEmit(pos, TEX_SPARK, SILK, SILK2, big and 12 or 5, 0.4, 7, 0.35)
+		return
+	elseif styleId == "noeun" then
+		gEmit(pos, TEX_SMOKE, VENOM:Lerp(VENOMD, 0.3), VENOM2:Lerp(VENOMD, 0.5), big and 10 or 4, big and 3 or 1.8, 3, 0.8, 0.25)
+		gEmit(pos, TEX_SPARK, VENOM, VENOM2, big and 10 or 5, 0.4, 7, 0.35)
+		return
+	elseif styleId == "gwihwa" then
+		gEmit(pos, TEX_FIRE, GHOST, GHOST2, big and 16 or 7, big and 1.6 or 1, 5, 0.5, 1, V(0, 6, 0))
+		return
+	elseif styleId == "sashin" then
+		local col = GOD[math.random(4)]
+		gEmit(pos, TEX_SPARK, col[1], col[2], big and 14 or 6, 0.5, 9, 0.4)
+		if big then
+			gClaw(pos, V(math.random() - 0.5, 0, math.random() - 0.5).Unit, 3.5, col[1], col[2], 3)
+		end
+		return
+	end
 	if styleId == "hondon" then
 		local n = (heavy or skill) and 6 or 3
 		for _ = 1, n do
@@ -1203,7 +1963,7 @@ local function inkScreen(dur: number)
 	end)
 end
 -- 하늘에 크게 쓰이는 붓글씨 (초 오의)
-local function calligraphy(at: Vector3, text: string, life: number)
+calligraphy = function(at: Vector3, text: string, life: number)
 	local anchor = piece(V(0.1, 0.1, 0.1), CF(at), WHITE, 1)
 	local bb = Instance.new("BillboardGui")
 	bb.Size = UDim2.fromScale(52, 26)
@@ -1230,10 +1990,17 @@ local function calligraphy(at: Vector3, text: string, life: number)
 end
 
 function ForgeFx.handles(data: any): boolean
-	return data.kind == "forgeStart" or data.kind == "forgeStep"
+	return data.kind == "forgeStart" or data.kind == "forgeStep" or (data.kind == "pulse" and OWN_PULSE[data.fx or ""] == true)
 end
 
 function ForgeFx.run(data: any)
+	if data.kind == "pulse" then
+		local fn = VFX[data.fx or ""]
+		if fn and typeof(data.at) == "Vector3" then
+			pcall(fn, data, WHITE, WHITE, {})
+		end
+		return
+	end
 	if data.kind == "forgeStart" and data.style == "hondon" and (data.mid == "hdG" or data.mid == "hdX") and typeof(data.m) == "Instance" then
 		local r0 = data.m:FindFirstChild("HumanoidRootPart")
 		local cam = workspace.CurrentCamera

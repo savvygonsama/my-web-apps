@@ -140,6 +140,11 @@ local function watchChar(char: Model)
 		char:WaitForChild("Humanoid", 10)
 		Anim.watch(char)
 	end)
+	-- 3.99.41판 혼돈화신: 먹 줄기가 몸을 휘감는다
+	task.spawn(function()
+		char:WaitForChild("HumanoidRootPart", 10)
+		pcall(ForgeFx.watchAvatar, char)
+	end)
 	-- 금강 법신 (금빛 거인), 번개·일순 베기 동안 사라짐
 	char:GetAttributeChangedSignal("Giant"):Connect(function()
 		Ults.watchGiant(char)
@@ -1975,7 +1980,7 @@ function handlers.hit(data: any)
 			end
 			Fx.hitstop({ a, t }, hs)
 			Fx.styleHit(data.style, pos, data.heavy, dir)
-			if data.style == "hondon" then
+			if data.style == "hondon" or data.style == "janwol" or data.style == "noeun" or data.style == "gwihwa" or data.style == "sashin" then
 				pcall(ForgeFx.hit, data.style, pos, data.heavy == true, data.skill == true)
 			end
 			if data.style == "gumiho" or data.style == "heukyeom" then
@@ -2401,9 +2406,10 @@ function handlers.skillfx(data: any)
 		Arts.init({ shake = shake, flash = UI.flash, fov = fovPunch })
 	end
 	-- 3.75판 사신천왕권: 기본 연출 위에 신수의 혼령을 덧그린다
+	-- 3.99.41판: 빛 줄기로 다시 그린 네 신수 (예전 덩어리 혼령 대신)
 	if data.style == "sashin" then
-		PassArts.init({ shake = shake, tint = tint, fov = fovPunch })
-		PassArts.overlay(data)
+		ForgeFx.init({ shake = shake })
+		ForgeFx.sashin(data)
 	end
 	-- 3.41판 게임패스 권법의 기술 연출
 	if PassArts.handles(data) then

@@ -776,6 +776,20 @@ function Skills.run(f: any, move: any, ctx: any)
 		end
 		-- 3.99.23판 제작소 권법 (forgeSeq): 같은 연쇄에 연출 이름 (vfx) 을 실어 보낸다. at = "each" 면 가까운 적 n 마다 따로 터진다 (한 적은 한 번만)
 		Push:FireAllClients("skillfx", { kind = forged and "forgeStart" or "sinStart", m = f.model, dur = total / sp, style = style, mid = move.id })
+		-- 3.99.41판: 타는 기술 (천지미분) 은 그동안 몸을 들어 올린다 (거대한 말의 등 위)
+		if forged and m.ride and f.hum then
+			local R = m.ride
+			after(R.from or 0, function()
+				local hum = f.hum
+				local base = hum.HipHeight
+				hum.HipHeight = base + R.hip
+				task.delay((R.dur or 2) / sp, function()
+					if hum.Parent then
+						hum.HipHeight = math.max(0, hum.HipHeight - R.hip)
+					end
+				end)
+			end)
+		end
 		for _, st in ipairs(m.steps) do
 			after(st.t, function()
 				local base = f.root.Position
@@ -812,7 +826,7 @@ function Skills.run(f: any, move: any, ctx: any)
 					origin = near[1] and near[1].root.Position or (base + fwd * 8)
 				end
 				if forged and not st.hit then
-					Push:FireAllClients("skillfx", { kind = "forgeStep", m = f.model, life = st.life, vfx = st.vfx, col = st.col, shape = "circle", at = origin, from = base, dir = fwd, radius = st.radius, big = st.big, style = style })
+					Push:FireAllClients("skillfx", { kind = "forgeStep", m = f.model, life = st.life, ride = st.ride, form = st.form, vfx = st.vfx, col = st.col, shape = "circle", at = origin, from = base, dir = fwd, radius = st.radius, big = st.big, style = style })
 					return
 				end
 				local h = scaled(st.hit, sc)
