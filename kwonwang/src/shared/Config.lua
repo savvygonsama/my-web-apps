@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.29" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.30" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4673,6 +4673,40 @@ Config.TOWER = {
 	},
 	bosses = { "heukho", "hyeolrang", "bingma", "hyeolma", "cheonma", "yeomje", "sawang", "cheonmun" },
 }
+
+-- 3.99.30판 문하생: 제자를 한 명 들여 키운다. 맡긴 일은 내가 없을 때도 시간만큼 쌓이고 (열두 시간까지), 문하생 마당에서 받는다
+--   일: 수련 (제자 경지가 빨리 오른다) · 채집 (천상 재료 · 비급 조각) · 심부름 (은자). 제자 경지가 높을수록 가져오는 양이 많다
+Config.DISCIPLE = {
+	yard = Vector3.new(-122, 0, 176), -- 문하생 마당 (제작소 옆)
+	hireShares = 5, -- 들일 때 은자 몫
+	capSec = 12 * 3600,
+	maxLv = 16,
+	xpPerHour = { train = 12, gather = 4, errand = 4 },
+	lvBonus = 0.15, -- 경지 하나마다 가져오는 양 +15%
+	gather = { mats = 0.8, shards = 0.4 }, -- 한 시간에 (경지 1)
+	errand = { shares = 0.5 }, -- 한 시간에 은자 몫 (경지 1)
+	names = { "청아", "소운", "백린", "무진", "하랑", "설화", "도윤", "연비", "진혁", "운서", "단아", "효월", "강모", "초희", "석우", "한결" },
+	robes = { Color3.fromRGB(90, 120, 170), Color3.fromRGB(170, 70, 60), Color3.fromRGB(80, 140, 90), Color3.fromRGB(60, 60, 70), Color3.fromRGB(200, 190, 170), Color3.fromRGB(140, 90, 160) },
+	styles = { "samjae", "taeheo", "geumgang", "maehwa", "muyeong", "byeokryeok", "chwi" },
+}
+function Config.discipleNeed(lv: number): number
+	return math.floor(20 * lv ^ 1.35)
+end
+-- 맡긴 일이 secs초 동안 쌓은 것 (재료 수는 소수 그대로, 받을 때 서버가 나눈다)
+function Config.discipleYield(d: any, secs: number): any
+	local D = Config.DISCIPLE
+	local h = math.clamp(secs, 0, D.capSec) / 3600
+	local k = 1 + D.lvBonus * ((d.lv or 1) - 1)
+	local job = d.job or "train"
+	local out = { xp = (D.xpPerHour[job] or 4) * h, mats = 0, shards = 0, shares = 0 }
+	if job == "gather" then
+		out.mats = D.gather.mats * h * k
+		out.shards = D.gather.shards * h * k
+	elseif job == "errand" then
+		out.shares = D.errand.shares * h * k
+	end
+	return out
+end
 
 -- 3.99.29판 악몽의 탑: 천층탑 옆에 선 검은 탑. 천층탑 30층을 넘긴 자만 들어간다. 훨씬 세고 가파르며, 매주 (월요일 0시, 한국 시각) 저주가 하나 걸린다
 --   기록은 천층탑과 따로 (최고 기록 · 이번 주 기록), 이번 주 순위는 탑 앞 순위판. 이번 주에 다섯 층마다 처음 넘으면 천정 · 두루마리

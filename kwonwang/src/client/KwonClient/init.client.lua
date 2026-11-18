@@ -248,6 +248,23 @@ RunService.RenderStepped:Connect(function()
 	end
 end)
 
+-- 3.99.30판 문하생: 제자도 권법 자세로 선다
+task.spawn(function()
+	local df = workspace:WaitForChild("Disciples", 600)
+	if not df then
+		return
+	end
+	local function add(m: Instance)
+		if m:IsA("Model") then
+			watchChar(m)
+		end
+	end
+	for _, m in ipairs(df:GetChildren()) do
+		add(m)
+	end
+	df.ChildAdded:Connect(add)
+end)
+
 -- 사부: 권법 자세로 서 있다가, 가까이 오면 가끔 시범을 보인다
 task.spawn(function()
 	local masters = workspace:WaitForChild("Masters")

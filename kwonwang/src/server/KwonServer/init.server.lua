@@ -72,6 +72,7 @@ type Profile = {
 	mqv: number?, -- 3.74판: 부탁 기록의 판 (부탁이 길어지기 전에 다 끝낸 사람은 끝난 그대로)
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
 	enh: { [string]: number }?, -- 3.41판 게임패스 권법의 강화 단계 (0 ~ 15)
+	disciple: any?, -- 3.99.30판 문하생 { name, robe, style, lv, xp, job, since }
 	nmBest: number?, -- 3.99.29판 악몽의 탑 최고 층
 	nmWeek: number?, -- 악몽의 탑: 이번 주 기록의 주 번호
 	nmWeekBest: number?, -- 악몽의 탑: 그 주의 최고 층
@@ -288,6 +289,20 @@ local function sanitize(data: any): Profile
 	p.lastSeen = math.floor(num(data.lastSeen, 1e11))
 	p.attDay = math.floor(num(data.attDay, 1e7))
 	p.nmBest = math.floor(num(data.nmBest, 1e5))
+	if type(data.disciple) == "table" then
+		local d = data.disciple
+		local D = Config.DISCIPLE
+		p.disciple = {
+			name = type(d.name) == "string" and table.find(D.names, d.name) and d.name or D.names[1],
+			robe = math.clamp(math.floor(num(d.robe, #D.robes)), 1, #D.robes),
+			style = (type(d.style) == "string" and Config.STYLE_BY_ID[d.style]) and d.style or "samjae",
+			lv = math.clamp(math.floor(num(d.lv, D.maxLv)), 1, D.maxLv),
+			xp = num(d.xp, 1e9),
+			job = (d.job == "gather" or d.job == "errand") and d.job or "train",
+			since = math.floor(num(d.since, 1e11)),
+			frac = num(d.frac, 10),
+		}
+	end
 	p.nmWeek = math.floor(num(data.nmWeek, 1e7))
 	p.nmWeekBest = math.floor(num(data.nmWeekBest, 1e5))
 	p.refine = {}
@@ -1287,6 +1302,15 @@ local function pushState(player: Player)
 		enh = p.enh,
 		shards = p.shards or 0,
 		refine = p.refine or {},
+		disciple = p.disciple and {
+			name = p.disciple.name,
+			lv = p.disciple.lv,
+			xp = math.floor(p.disciple.xp),
+			need = Config.discipleNeed(p.disciple.lv),
+			job = p.disciple.job,
+			style = p.disciple.style,
+			away = os.time() - p.disciple.since,
+		} or nil,
 		scrolls = p.scrolls,
 		pity = p.pity,
 		towerBest = p.towerBest,
@@ -3349,6 +3373,132 @@ function Actions.refine(player: Player, id: any)
 	refreshFighter(player)
 	Push:FireClient(player, "forged", { style = style.id })
 	toast(player, string.format("🔨 %s %s +%d · 피해 +%d%%", style.icon, style.name, lv + 1, math.floor((lv + 1) * Config.REFINE.dmg * 100 + 0.5)))
+	pushState(player)
+end
+
+-- 3.99.30판 문하생: 맡긴 일이 쌓은 것을 받는다 (경지가 오르면 이름표도 바꾼다)
+function Actions.discipleClaim(player: Player, quiet: boolean?)
+	local p = profiles[player]
+	local d = p and p.disciple
+	if not p or not d then
+		return
+	end
+	local D = Config.DISCIPLE
+	local now = os.time()
+	local secs = now - (d.since or now)
+	d.since = now
+	if secs < 60 then
+		if not quiet then
+			toast(player, "🧑‍🎓 " .. d.name .. ": 아직 가져온 것이 없어요")
+		end
+		return
+	end
+	local y = Config.discipleYield(d, secs)
+	local got = {}
+	d.xp += y.xp
+	local ups = 0
+	while d.lv < D.maxLv and d.xp >= Config.discipleNeed(d.lv) do
+		d.xp -= Config.discipleNeed(d.lv)
+		d.lv += 1
+		ups += 1
+	end
+	if d.lv >= D.maxLv then
+		d.xp = math.min(d.xp, Config.discipleNeed(d.lv))
+	end
+	-- 재료는 소수를 모아 둔다 (frac)
+	local matsF = y.mats + (d.frac or 0)
+	local nMats = math.floor(matsF)
+	d.frac = matsF - nMats
+	if nMats > 0 then
+		local tally = {}
+		for _ = 1, nMats do
+			local M = Config.SKY_MATS[math.random(#Config.SKY_MATS)]
+			p.mats[M.id] = (p.mats[M.id] or 0) + 1
+			tally[M.id] = (tally[M.id] or 0) + 1
+		end
+		for _, M in ipairs(Config.SKY_MATS) do
+			if tally[M.id] then
+				table.insert(got, M.icon .. " " .. tally[M.id])
+			end
+		end
+	end
+	local nShards = math.floor(y.shards + math.random())
+	if y.shards > 0 and nShards > 0 then
+		p.shards = (p.shards or 0) + nShards
+		table.insert(got, "🧩 " .. nShards)
+	end
+	if y.shares > 0 then
+		local c = math.floor(y.shares * Config.productCoins((Calc.realm(p))))
+		p.coins += c
+		table.insert(got, "💰 " .. Config.formatNumber(c))
+	end
+	local st = states[player]
+	if st then
+		st.dirty = true
+	end
+	Npc.labelDisciple(player, d)
+	local h, m = math.floor(math.min(secs, D.capSec) / 3600), math.floor(math.min(secs, D.capSec) % 3600 / 60)
+	local when = h > 0 and string.format("%d시간 %d분", h, m) or string.format("%d분", m)
+	local msg = string.format("🧑‍🎓 %s이(가) %s 동안 일했어요", d.name, when)
+	if #got > 0 then
+		msg ..= " · " .. table.concat(got, "  ")
+	end
+	if ups > 0 then
+		msg ..= string.format(" · 경지가 올라 %s!", Config.Realms[d.lv].name)
+	end
+	toast(player, msg)
+	pushState(player)
+end
+
+function Actions.disciple(player: Player, what: any, arg: any)
+	local p = profiles[player]
+	if not p or BATTLE then
+		return
+	end
+	local D = Config.DISCIPLE
+	if what == "hire" then
+		if p.disciple then
+			toast(player, "🧑‍🎓 제자는 한 명만 들일 수 있어요")
+			return
+		end
+		local cost = D.hireShares * Config.productCoins((Calc.realm(p)))
+		if p.coins < cost then
+			toast(player, string.format("💰 제자를 들이려면 은자 %s가 필요해요", Config.formatNumber(cost)))
+			return
+		end
+		p.coins -= cost
+		p.disciple = { name = D.names[math.random(#D.names)], robe = math.random(#D.robes), style = D.styles[math.random(#D.styles)], lv = 1, xp = 0, job = "train", since = os.time(), frac = 0 }
+		Npc.spawnDisciple(player, p.disciple)
+		toast(player, "🧑‍🎓 " .. p.disciple.name .. "을(를) 제자로 들였어요! 문하생 마당에서 일을 맡기세요")
+	elseif not p.disciple then
+		return
+	elseif what == "claim" then
+		Actions.discipleClaim(player)
+		return
+	elseif what == "job" and (arg == "train" or arg == "gather" or arg == "errand") then
+		if p.disciple.job ~= arg then
+			Actions.discipleClaim(player, true)
+			p.disciple.job = arg
+		end
+	elseif what == "name" then
+		local old = p.disciple.name
+		repeat
+			p.disciple.name = D.names[math.random(#D.names)]
+		until p.disciple.name ~= old
+		Npc.labelDisciple(player, p.disciple)
+	elseif what == "style" and type(arg) == "string" and p.styles[arg] then
+		p.disciple.style = arg
+		Npc.labelDisciple(player, p.disciple)
+	elseif what == "robe" then
+		p.disciple.robe = p.disciple.robe % #D.robes + 1
+		Npc.spawnDisciple(player, p.disciple)
+	else
+		return
+	end
+	local st = states[player]
+	if st then
+		st.dirty = true
+	end
 	pushState(player)
 end
 
@@ -5981,6 +6131,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			Combat.mount(f, m.id)
 		end
 		pushState(player)
+	elseif action == "disciple" then
+		Actions.disciple(player, a1, a2)
 	elseif action == "forge" then
 		Actions.forge(player, a1)
 	elseif action == "refine" then
@@ -6233,6 +6385,11 @@ if W.awaken then
 		local AM = Config.AWAKEN_MASTER
 		Push:FireClient(player, "dialog", { who = "🔥 " .. AM.name, title = "‘" .. AM.quote .. "’", text = "깨달음을 모두 얻고 숙련을 끝까지 올린 권법이 있다면, 권법 창에서 '🔥 각성 시련'을 골라라. 각성한 네 그림자를 넘으면 그 권법이 다시 태어난다." })
 		Push:FireClient(player, "open", { page = "styles" })
+	end)
+end
+if W.disciple then
+	W.disciple.Triggered:Connect(function(player: Player)
+		Push:FireClient(player, "open", { page = "disciple" })
 	end)
 end
 if W.forge then
@@ -7599,6 +7756,12 @@ local function onPlayerAdded(player: Player)
 			end
 		end
 	end
+	-- 3.99.30판 문하생: 들어와 있는 동안 문하생 마당에 선다
+	if not BATTLE and ok and profile.disciple then
+		task.spawn(function()
+			pcall(Npc.spawnDisciple, player, profile.disciple)
+		end)
+	end
 	-- 3.99.27판 출석: 하루에 한 번 (한국 시각 자정에 바뀐다). 이어서 들어올수록 크고 일곱째 날이 가장 크다. 하루라도 빠지면 첫날부터
 	if not BATTLE and ok then
 		local A = Config.ATTEND
@@ -7678,6 +7841,7 @@ local function onPlayerRemoving(player: Player)
 	end
 	Tower.ended(player, "left")
 	Maze.ended(player, "left")
+	pcall(Npc.despawnDisciple, player)
 	-- 시험 중에 나가면 시험의 상대를 거둔다 (쓰러지지 않는 사부가 남지 않게)
 	pcall(Trial.ended, player, false)
 	-- 관문·윤회의 시련 중에 나가면 수호자를 거둔다 (주인 없는 보스가 남지 않게)

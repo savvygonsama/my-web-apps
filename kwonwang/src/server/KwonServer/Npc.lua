@@ -1010,6 +1010,91 @@ function Npc.spawnLineGiver(line: string, onTalk: (Player) -> ())
 	model.Parent = mf
 end
 
+-- 3.99.30판 문하생: 사람마다 제자 하나가 문하생 마당의 자리에 서서 권법 자세로 수련한다 (그 사람이 들어와 있는 동안)
+local discipleModels: { [Player]: Model } = {}
+local discipleSpots: { [number]: Player } = {}
+function Npc.spawnDisciple(owner: Player, d: any)
+	Npc.despawnDisciple(owner)
+	local D = Config.DISCIPLE
+	local df = workspace:FindFirstChild("Disciples") or Instance.new("Folder")
+	df.Name = "Disciples"
+	df.Parent = workspace
+	local slot = 1
+	while discipleSpots[slot] do
+		slot += 1
+	end
+	discipleSpots[slot] = owner
+	local robe = D.robes[d.robe or 1] or D.robes[1]
+	local trim = robe:Lerp(Color3.new(1, 1, 1), 0.45)
+	local model = body({ head = SKIN, torso = robe, arms = robe:Lerp(trim, 0.2), legs = robe:Lerp(Color3.new(0, 0, 0), 0.35) }, 0.9)
+	model.Name = "Disciple_" .. owner.UserId
+	local hum = model:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		hum.WalkSpeed = 0
+	end
+	wear(model, "UpperTorso", "Sash", Vector3.new(2.1, 0.28, 1.08), CFrame.new(0, -0.55, 0), trim)
+	wear(model, "Head", "Band", Vector3.new(1.25, 0.22, 1.25), CFrame.new(0, 0.25, 0), trim)
+	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
+	local up = (hum and hum.HipHeight or 2) + root.Size.Y / 2
+	-- 자리: 두 줄로 넷씩 (마당 가운데를 본다)
+	local col, row = (slot - 1) % 4, math.floor((slot - 1) / 4) % 3
+	local at = D.yard + Vector3.new(-9 + col * 6, 0.6, -4 + row * 6)
+	model:PivotTo(CFrame.lookAt(at + Vector3.new(0, up, 0), at + Vector3.new(0, up, -10)))
+	root.Anchored = true
+	model:SetAttribute("NPC", true)
+	model:SetAttribute("Style", d.style or "samjae")
+	model:SetAttribute("Owner", owner.UserId)
+	local head = model:FindFirstChild("Head") :: BasePart?
+	if head then
+		local g = Instance.new("BillboardGui")
+		g.Name = "DiscipleTag"
+		g.Size = UDim2.new(0, 260, 0, 52)
+		g.StudsOffset = Vector3.new(0, 2.6, 0)
+		g.LightInfluence = 0
+		g.MaxDistance = 50
+		local l = Instance.new("TextLabel")
+		l.Name = "Label"
+		l.BackgroundTransparency = 1
+		l.Size = UDim2.fromScale(1, 1)
+		l.Font = Enum.Font.GothamBlack
+		l.TextScaled = true
+		l.TextColor3 = Color3.fromRGB(235, 225, 200)
+		l.TextStrokeTransparency = 0.3
+		l.Parent = g
+		g.Parent = head
+	end
+	model.Parent = df
+	discipleModels[owner] = model
+	Npc.labelDisciple(owner, d)
+	return model
+end
+function Npc.labelDisciple(owner: Player, d: any)
+	local model = discipleModels[owner]
+	local head = model and model:FindFirstChild("Head")
+	local g = head and head:FindFirstChild("DiscipleTag")
+	local l = g and g:FindFirstChild("Label")
+	if l and l:IsA("TextLabel") then
+		local realm = Config.Realms[math.clamp(d.lv or 1, 1, #Config.Realms)]
+		l.Text = string.format("%s의 제자 %s · %s", owner.DisplayName, d.name or "", realm and realm.name or "")
+	end
+	if model then
+		model:SetAttribute("Style", d.style or "samjae")
+	end
+end
+function Npc.despawnDisciple(owner: Player)
+	local m = discipleModels[owner]
+	if m then
+		m:Destroy()
+		discipleModels[owner] = nil
+	end
+	for k, v in pairs(discipleSpots) do
+		if v == owner then
+			discipleSpots[k] = nil
+		end
+	end
+end
+
 function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 	local mf = Instance.new("Folder")
 	mf.Name = "Masters"

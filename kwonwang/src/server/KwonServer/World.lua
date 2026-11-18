@@ -792,6 +792,28 @@ local function village(out: any)
 	sign(shopSign, Enum.NormalId.Front, { { "🧪 만물상", Color3.fromRGB(255, 220, 140), 1 } })
 	out.shop = prompt(stall, "물건 보기", "만물상", "Shop")
 
+	-- 3.99.30판 문하생 마당 (제작소 옆): 낮은 돌담 안의 흙마당, 수련 말뚝, 게시판에서 T
+	do
+		local Y = Config.DISCIPLE.yard
+		local g = Instance.new("Folder")
+		g.Name = "DiscipleYard"
+		g.Parent = f
+		part({ Name = "YardGround", Size = Vector3.new(30, 0.6, 22), Position = Y + Vector3.new(0, 0.3, 2), Color = Color3.fromRGB(165, 140, 105), Material = Enum.Material.Ground, Parent = g })
+		for _, wl in ipairs({ { 0, -9, 30.8, 0.8 }, { -15, 2, 0.8, 22 }, { 15, 2, 0.8, 22 } }) do
+			part({ Name = "YardWall", Size = Vector3.new(wl[3], 1.4, wl[4]), Position = Y + Vector3.new(wl[1], 0.7, wl[2]), Color = STONE, Material = Enum.Material.Granite, Parent = g })
+		end
+		for k = 0, 3 do
+			part({ Name = "YardPost", Size = Vector3.new(0.8, 4, 0.8), Position = Y + Vector3.new(-9 + k * 6, 2, -7.4), Color = WOOD, Material = Enum.Material.Wood, Parent = g })
+		end
+		local yboard = part({ Name = "YardBoard", Size = Vector3.new(8, 4, 0.4), Position = Y + Vector3.new(0, 4.4, 13.4), Color = Color3.fromRGB(70, 50, 34), Material = Enum.Material.Wood, Parent = g })
+		for _, sx in ipairs({ -1, 1 }) do
+			part({ Name = "YardBoardLeg", Size = Vector3.new(0.5, 6.4, 0.5), Position = Y + Vector3.new(sx * 3.6, 3.2, 13.6), Color = WOOD, Material = Enum.Material.Wood, Parent = g })
+		end
+		sign(yboard, Enum.NormalId.Back, { { "🧑‍🎓 문하생 마당", Color3.fromRGB(255, 220, 150), 0.6 }, { "제자를 들이고 일을 맡긴다", Color3.fromRGB(235, 225, 210), 0.4 } })
+		sign(yboard, Enum.NormalId.Front, { { "🧑‍🎓 문하생 마당", Color3.fromRGB(255, 220, 150), 0.6 }, { "제자를 들이고 일을 맡긴다", Color3.fromRGB(235, 225, 210), 0.4 } })
+		out.disciple = prompt(yboard, "제자 보기", "🧑‍🎓 문하생 마당", "DiscipleYard")
+	end
+
 	-- 3.99.23판 권법 제작소 (마을 남서쪽 모퉁이): 붉은 기둥 정자 아래 청동 단로, 모루 둘, 뒤편에 세 권법의 좌대
 	do
 		local at = Config.FORGE_AT

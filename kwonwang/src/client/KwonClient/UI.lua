@@ -803,7 +803,7 @@ local pages: { [string]: Frame } = {}
 local refreshers: { [string]: (boolean?) -> () } = {}
 local current = ""
 local state: any = nil
-local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", forge = "⚒ 권법 제작소", ach = "🏆 업적과 칭호", dex = "📖 도감" }
+local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", forge = "⚒ 권법 제작소", disciple = "🧑‍🎓 문하생", ach = "🏆 업적과 칭호", dex = "📖 도감" }
 
 local function makePage(name: string): Frame
 	local f = new("Frame", { Position = UDim2.new(0, 16, 0, 56), Size = UDim2.new(1, -32, 1, -68), BackgroundTransparency = 1, Visible = false, Parent = window })
@@ -2201,6 +2201,83 @@ function UI.manualReveal(results: { any })
 	Gacha.play(results, function()
 		UI.openPage("shop", { tab = "manuals" })
 	end)
+end
+
+------------------------------------------------------------------------
+-- 3.99.30판 문하생: 제자 들이기 · 일 맡기기 · 가져온 것 받기 (문하생 마당 게시판에서 열린다)
+------------------------------------------------------------------------
+function UIB.buildDisciple()
+	local page = makePage("disciple")
+	local D = Config.DISCIPLE
+	local title = text({ Size = UDim2.new(1, 0, 0, 34), TextSize = 24, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 220, 150), Parent = page })
+	local info = text({ Position = UDim2.new(0, 0, 0, 38), Size = UDim2.new(1, 0, 0, 48), TextSize = 16, TextColor3 = C.dim, TextYAlignment = Enum.TextYAlignment.Top, RichText = true, Parent = page })
+	local jobs: { [string]: TextButton } = {}
+	local JOBS = {
+		{ "train", "🥋 수련", "제자 경지가 빨리 오른다" },
+		{ "gather", "🌿 채집", "천상 재료 · 비급 조각" },
+		{ "errand", "📦 심부름", "은자" },
+	}
+	for i, j in ipairs(JOBS) do
+		local b = button({ Position = UDim2.new((i - 1) / 3, 4, 0, 96), Size = UDim2.new(1 / 3, -8, 0, 70), Text = j[2] .. "\n" .. j[3], TextSize = 16, BackgroundColor3 = C.panel, Parent = page }, function()
+			Request:FireServer("disciple", "job", j[1])
+		end)
+		jobs[j[1]] = b
+	end
+	local pending = text({ Position = UDim2.new(0, 0, 0, 176), Size = UDim2.new(1, 0, 0, 52), TextSize = 16, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = page })
+	local claim = button({ Position = UDim2.new(0, 4, 0, 236), Size = UDim2.new(0.5, -8, 0, 56), Text = "🎁 가져온 것 받기", TextSize = 19, BackgroundColor3 = Color3.fromRGB(200, 140, 50), Parent = page }, function()
+		Request:FireServer("disciple", "claim")
+	end)
+	local hire = button({ Position = UDim2.new(0.5, 4, 0, 236), Size = UDim2.new(0.5, -8, 0, 56), Text = "🧑‍🎓 제자 들이기", TextSize = 19, BackgroundColor3 = Color3.fromRGB(70, 130, 90), Parent = page }, function()
+		Request:FireServer("disciple", "hire")
+	end)
+	local nameBtn = button({ Position = UDim2.new(0, 4, 0, 300), Size = UDim2.new(1 / 3, -8, 0, 44), Text = "✏ 이름 바꾸기", TextSize = 15, Parent = page }, function()
+		Request:FireServer("disciple", "name")
+	end)
+	local robeBtn = button({ Position = UDim2.new(1 / 3, 4, 0, 300), Size = UDim2.new(1 / 3, -8, 0, 44), Text = "👘 옷 빛깔", TextSize = 15, Parent = page }, function()
+		Request:FireServer("disciple", "robe")
+	end)
+	local styleBtn = button({ Position = UDim2.new(2 / 3, 4, 0, 300), Size = UDim2.new(1 / 3, -8, 0, 44), Text = "🥋 지금 내 권법 가르치기", TextSize = 15, Parent = page }, function()
+		if state and state.style then
+			Request:FireServer("disciple", "style", state.style)
+		end
+	end)
+	refreshers.disciple = function()
+		local s = state or {}
+		local d = s.disciple
+		hire.Visible = d == nil
+		claim.Visible = d ~= nil
+		nameBtn.Visible, robeBtn.Visible, styleBtn.Visible = d ~= nil, d ~= nil, d ~= nil
+		for _, b in pairs(jobs) do
+			b.Visible = d ~= nil
+		end
+		if not d then
+			title.Text = "🧑‍🎓 아직 제자가 없다"
+			info.Text = string.format("제자를 들이면 내가 없을 때도 맡긴 일을 한다 (열두 시간까지 쌓인다). 들이는 값: 은자 %s", Config.formatNumber(D.hireShares * Config.productCoins(s.realm or 1)))
+			pending.Text = ""
+			return
+		end
+		local realm = Config.Realms[math.clamp(d.lv, 1, #Config.Realms)]
+		local st = Config.STYLE_BY_ID[d.style or ""]
+		title.Text = string.format("🧑‍🎓 %s · %s", d.name, realm and realm.name or "")
+		info.Text = string.format("경지 %d/%d · 수련 %d/%d · 익힌 권법 %s", d.lv, D.maxLv, d.xp, d.need, st and (st.icon .. " " .. st.name) or "")
+		for id, b in pairs(jobs) do
+			b.BackgroundColor3 = d.job == id and Color3.fromRGB(200, 140, 50) or C.panel
+		end
+		local y = Config.discipleYield(d, d.away or 0)
+		local parts = { string.format("수련 +%d", math.floor(y.xp)) }
+		if y.mats >= 1 then
+			table.insert(parts, string.format("천상 재료 약 %d", math.floor(y.mats)))
+		end
+		if y.shards >= 1 then
+			table.insert(parts, string.format("🧩 약 %d", math.floor(y.shards)))
+		end
+		if y.shares > 0 then
+			table.insert(parts, "💰 " .. Config.formatNumber(math.floor(y.shares * Config.productCoins(s.realm or 1))))
+		end
+		local h = math.floor(math.min(d.away or 0, D.capSec) / 3600)
+		local m = math.floor(math.min(d.away or 0, D.capSec) % 3600 / 60)
+		pending.Text = string.format('<font color="#FFD27A">쌓인 것 (%d시간 %d분%s)</font>\n%s', h, m, (d.away or 0) >= D.capSec and ", 가득" or "", table.concat(parts, "  ·  "))
+	end
 end
 
 ------------------------------------------------------------------------
@@ -5114,6 +5191,7 @@ function UI.init(req: RemoteEvent)
 	UIB.buildManuals()
 	UIB.buildSkyShop()
 	UIB.buildForge()
+	UIB.buildDisciple()
 	UIB.buildHelp()
 	UIB.buildTest()
 	UIB.buildMap()
