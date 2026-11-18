@@ -69,6 +69,8 @@ No text, no labels.
 
 - **첫 보정 결과(2026-11-18)**: 배경·선 굵기·채도·말풍선·한글 모두 02와 거의 같음(채도 평균 차 약 5%, 2:3 비율, 848×1264). 어긋난 곳은 **씨알 눈썹이 빠져 순한 얼굴이 됨** 하나 → Gem의 씨알 문장에 "ALWAYS two short slanted eyebrows above the eyes, even when smiling"을 넣는다. 해상도가 1024보다 작게 나오므로 받을 때 원본 크기로 내려받는다. 눈썹 보강 문장으로 다시 그린 결과 씨알 눈썹이 들어가 **보정 통과**. Gemini 프롬프트는 [0] 시작 메시지(이 화 전용 규칙, 이미지 만들지 말 것) + 장면별 메시지(한 메시지 한 장면, 핵심 규칙을 매번 짧게 반복) 형식으로 준다.
 
+- **8화 2컷 흔들림(2026-11-18)**: 선 굵기·명암은 기준과 같았지만 채도가 51 → 65로 오르고, 꽃·반짝이·볼터치가 스티커 같은 다른 그림체로 붙고, 이지 눈에 애니메이션 하이라이트가 생겼다. 원인은 프롬프트의 장식 지시("sparkle in the eye", "tiny flowers", "pink blush"). **Gemini에서는 장식 단어를 쓰지 않는다.** 격차는 말풍선 모양(구름/네모)과 배경 톤, 표정으로만 낸다. 눈은 늘 단색 점(이지 청록 쪽 눈은 청록 점, 하이라이트 없음). 색은 "same muted saturation as the anchor, teal stays a muted dark teal #2A8F96"을 장면마다 반복. 장면마다 02와 그 화 핵심 캐릭터 시트를 다시 첨부한다. 이지 얼굴 참고는 `webtoon/ep03-6`(09번 파일).
+
 ### STYLE LOCK G1 (Gemini용, 글자 그대로 붙여 넣기)
 ```
 STYLE LOCK G1 — apply to EVERY image in this webtoon.
