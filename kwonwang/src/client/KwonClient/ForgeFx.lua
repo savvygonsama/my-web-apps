@@ -924,11 +924,11 @@ local function inkStroke(from: Vector3, to: Vector3, time: number, width: number
 end
 -- 먹 터짐: 획이 사방으로 튀고 먹물이 번진다
 local function inkBurst(at: Vector3, r: number, big: boolean?)
-	local n = big and 16 or 9
+	local n = big and 24 or 12
 	for i = 1, n do
 		local a = i / n * math.pi * 2 + math.random() * 0.3
 		local to = at + V(math.cos(a) * r, (math.random() - 0.2) * r * 0.5, math.sin(a) * r)
-		inkStroke(at, to, 0.22 + math.random() * 0.12, big and 1.1 or 0.7, r * 0.2, i % 6 == 0)
+		inkStroke(at, to, 0.22 + math.random() * 0.12, big and 1.8 or 1.0, r * 0.25, i % 6 == 0)
 	end
 	-- 번진 먹: 크기가 다른 먹 자국 여럿이 겹쳐 고르지 않게 번진다 (조금 오래 남는다)
 	local g0 = ground(at)
@@ -958,18 +958,19 @@ VFX.inkLash = function(d)
 	local from = (d.from :: Vector3) + V(0, 2.5, 0)
 	local dir = d.dir :: Vector3
 	local len = d.length or 26
-	for i = 1, 7 do
-		local side = V(-dir.Z, 0, dir.X) * ((i - 4) * 0.7)
-		inkStroke(from + side * 0.3, from + dir * len + side + V(0, (math.random() - 0.5) * 2, 0), 0.22 + i * 0.015, 0.8, 2.2, i == 4)
+	for i = 1, 11 do
+		local side = V(-dir.Z, 0, dir.X) * ((i - 6) * 0.9)
+		inkStroke(from + side * 0.3, from + dir * (len + 4) + side + V(0, (math.random() - 0.5) * 4, 0), 0.22 + i * 0.012, 1.5, 3.5, i == 6 or i == 3)
 	end
+	Fx.flash(from + dir * len * 0.5, BRUSH_GOLD, 26, 1.5, 0.2)
 end
 VFX.inkBind = function(d)
 	local at = d.at + V(0, 2, 0)
 	inkSwirl(function()
 		return at
-	end, 8, d.radius or 6, 3, 0.55, { converge = true, width = 0.6, trail = 0.35 })
+	end, 12, (d.radius or 6) * 1.4, 5, 0.55, { converge = true, width = 1.0, trail = 0.4, gold = true })
 	task.delay(0.5, function()
-		inkBurst(at, (d.radius or 6) * 1.2, d.big)
+		inkBurst(at, (d.radius or 6) * 1.7, d.big)
 	end)
 end
 -- R 묵마천행: 먹 줄기가 쉬지 않고 말의 뼈대를 따라 긁고 엉키며 말을 그린다 (탄 사람 밑에서 함께 달린다)
@@ -992,14 +993,14 @@ VFX.inkSteed = function(d)
 		return
 	end
 	local big = d.big == true
-	local k = big and 3.4 or 1.25
+	local k = big and 5 or 1.8
 	local life = d.life or 1.3
 	local strands = {}
 	for si, seg in ipairs(HORSE) do
 		local per = (si == 5 or si == 6) and 3 or 4
 		for j = 1, per do
 			local gold = (si == 5 and j == 1) or (si == 4 and j == 1)
-			table.insert(strands, { b = brush((big and 1.6 or 0.55) * (0.7 + math.random() * 0.6), big and 0.45 or 0.3, gold and BRUSH_GOLD or INK2, gold), seg = si, f = 5 + math.random() * 6, ph = math.random() * 6.3, j = math.random() * 6.3 })
+			table.insert(strands, { b = brush((big and 2.6 or 0.9) * (0.7 + math.random() * 0.6), big and 0.5 or 0.35, gold and BRUSH_GOLD or INK2, gold), seg = si, f = 5 + math.random() * 6, ph = math.random() * 6.3, j = math.random() * 6.3 })
 		end
 	end
 	local holder = piece(V(0.1, 0.1, 0.1), CF(root.Position), WHITE, 1)
@@ -1023,13 +1024,14 @@ VFX.inkSteed = function(d)
 			for _, e in ipairs(eyes) do
 				fadeOut(e[1], 0.3)
 			end
-			inkBurst(root.Position - V(0, 1.5, 0), big and 14 or 7, big)
+			inkBurst(root.Position - V(0, 1.5, 0), big and 22 or 11, big)
 			return
 		end
 		local look = root.CFrame.LookVector
 		local flat = V(look.X, 0, look.Z)
 		flat = flat.Magnitude > 0.01 and flat.Unit or V(0, 0, -1)
-		local base = big and (root.Position + V(0, 12, 0) - flat * 5) or (root.Position + V(0, -0.6, 0))
+		-- 다리가 땅에 닿게 몸을 띄운다 (탄 사람은 먹 속에 반쯤 잠긴다). 하늘의 말은 머리 위 뒤쪽
+		local base = big and (root.Position + V(0, 18, 0) - flat * 8) or (root.Position + V(0, 3.3 * k - 3.4, 0))
 		local body = CFrame.lookAt(base, base + flat) * CF(0, math.sin(t * 16) * 0.2 * k, 0)
 		holder.CFrame = body
 		for _, e in ipairs(eyes) do
@@ -1054,17 +1056,17 @@ VFX.inkSteed = function(d)
 end
 VFX.inkHoof = function(d)
 	local g = ground(d.at)
-	inkBurst(g + V(0, 0.5, 0), d.radius or 6, false)
-	shake(0.25)
+	inkBurst(g + V(0, 0.5, 0), (d.radius or 6) * 1.5, false)
+	shake(0.35)
 end
 VFX.inkRear = function(d)
 	local g = ground(d.at)
 	inkSwirl(function()
 		return g + V(0, 1.5, 0)
-	end, 10, (d.radius or 12) * 0.4, 2, 0.35, { width = 0.9, trail = 0.3, grow = true })
+	end, 16, (d.radius or 12) * 0.6, 4, 0.35, { width = 1.4, trail = 0.35, grow = true, gold = true })
 	task.delay(0.3, function()
-		inkBurst(g + V(0, 1, 0), d.radius or 12, true)
-		Fx.ring(g + V(0, 0.5, 0), BRUSH_GOLD, 3, (d.radius or 12) * 2, 0.45)
+		inkBurst(g + V(0, 1, 0), (d.radius or 12) * 1.4, true)
+		Fx.ring(g + V(0, 0.5, 0), BRUSH_GOLD, 3, (d.radius or 12) * 2.8, 0.5)
 		shake(0.7)
 	end)
 end
@@ -1076,10 +1078,10 @@ VFX.inkSea = function(d)
 	-- 바닥에 번지는 먹 (낮게 깔린 소용돌이)
 	inkSwirl(function()
 		return g
-	end, 28, r * 0.8, 0.8, life, { width = 1.6, trail = 1.1, grow = true, speed = 0.7, drips = 30, gold = true })
+	end, 36, r * 1.05, 1.4, life, { width = 2.4, trail = 1.2, grow = true, speed = 0.7, drips = 40, gold = true })
 	local stain = piece(V(0.2, 2, 2), CF(g) * CFrame.Angles(0, 0, math.rad(90)), INK2, 0.35, Enum.PartType.Cylinder)
 	stain.Material = Enum.Material.SmoothPlastic
-	tween(stain, 0.5, { Size = V(0.2, r * 2, r * 2) })
+	tween(stain, 0.5, { Size = V(0.2, r * 2.4, r * 2.4) })
 	task.delay(life, function()
 		fadeOut(stain, 0.5)
 	end)
@@ -1091,9 +1093,9 @@ VFX.inkTendrils = function(d)
 		local a = i / 8 * math.pi * 2 + math.random() * 0.4
 		local base = g + V(math.cos(a) * r * 0.85, 0, math.sin(a) * r * 0.85)
 		-- 바깥에서 솟아 가운데로 휘어 들어오는 먹 촉수
-		inkStroke(base, base + V(0, 9 + math.random() * 4, 0), 0.18, 1.2, 1.5, i % 4 == 0)
+		inkStroke(base, base + V(0, 16 + math.random() * 6, 0), 0.18, 2.2, 2.5, i % 4 == 0)
 		task.delay(0.18, function()
-			inkStroke(base + V(0, 11, 0), g + V(0, 2, 0), 0.25, 1.1, 3, false)
+			inkStroke(base + V(0, 19, 0), g + V(0, 2, 0), 0.25, 2, 5, false)
 		end)
 	end
 	shake(0.35)
@@ -1104,11 +1106,12 @@ VFX.inkCore = function(d)
 	local at = g + V(0, 4, 0)
 	inkSwirl(function()
 		return at
-	end, 34, r * 0.75, 8, 0.5, { converge = true, width = 1.5, trail = 0.45, gold = true, speed = 1.8 })
+	end, 40, r * 1.0, 12, 0.5, { converge = true, width = 2.2, trail = 0.5, gold = true, speed = 1.8 })
 	task.delay(0.42, function()
-		inkBurst(at, r, true)
-		inkBurst(at + V(0, 3, 0), r * 0.6, true)
-		Fx.ring(g + V(0, 0.5, 0), BRUSH_GOLD, 4, r * 2.2, 0.55)
+		inkBurst(at, r * 1.3, true)
+		inkBurst(at + V(0, 5, 0), r * 0.8, true)
+		Fx.ring(g + V(0, 0.5, 0), BRUSH_GOLD, 4, r * 2.8, 0.6)
+		Fx.ring(g + V(0, 6, 0), PAPER, 4, r * 2.2, 0.5)
 		Fx.flash(at, WHITE, r * 2.5, 5, 0.35)
 		shake(1.3)
 	end)
@@ -1116,12 +1119,12 @@ end
 -- X 천지미분: 하늘을 휘감는 먹의 용 (줄기 수십 개가 한 몸으로 엉켜 굽이친다) 이 적에게 내리꽂힌다
 VFX.inkDragonDive = function(d)
 	local g = ground(d.at)
-	local sky = g + V((math.random() - 0.5) * 40, 45, (math.random() - 0.5) * 40)
-	for i = 1, 5 do
-		inkStroke(sky + V((math.random() - 0.5) * 3, (math.random() - 0.5) * 3, (math.random() - 0.5) * 3), g + V(0, 1, 0), 0.24 + i * 0.012, 1.4, 6, i == 3)
+	local sky = g + V((math.random() - 0.5) * 60, 70, (math.random() - 0.5) * 60)
+	for i = 1, 9 do
+		inkStroke(sky + V((math.random() - 0.5) * 5, (math.random() - 0.5) * 5, (math.random() - 0.5) * 5), g + V(0, 1, 0), 0.26 + i * 0.01, 2.4, 9, i == 5 or i == 2)
 	end
-	task.delay(0.27, function()
-		inkBurst(g + V(0, 1, 0), d.radius or 8, false)
+	task.delay(0.3, function()
+		inkBurst(g + V(0, 1, 0), (d.radius or 8) * 1.5, false)
 		shake(0.3)
 	end)
 end
@@ -1130,7 +1133,7 @@ VFX.inkHeaven = function(d)
 	local r = d.radius or 40
 	inkSwirl(function()
 		return g + V(0, 14, 0)
-	end, 40, r * 0.85, 22, d.life or 2.2, { width = 2.4, trail = 1.3, speed = 0.55, gold = true, drips = 45 })
+	end, 48, r * 1.15, 34, d.life or 2.2, { width = 3.2, trail = 1.4, speed = 0.55, gold = true, drips = 60 })
 end
 
 ------------------------------------------------------------------------
@@ -1203,7 +1206,7 @@ end
 local function calligraphy(at: Vector3, text: string, life: number)
 	local anchor = piece(V(0.1, 0.1, 0.1), CF(at), WHITE, 1)
 	local bb = Instance.new("BillboardGui")
-	bb.Size = UDim2.fromScale(28, 14)
+	bb.Size = UDim2.fromScale(52, 26)
 	bb.LightInfluence = 0
 	bb.AlwaysOnTop = false
 	bb.MaxDistance = 400
@@ -1239,7 +1242,7 @@ function ForgeFx.run(data: any)
 			shake(0.6)
 		end
 		if r0 and r0:IsA("BasePart") and data.mid == "hdX" then
-			calligraphy(r0.Position + V(0, 34, 0), "混沌", 3.2)
+			calligraphy(r0.Position + V(0, 55, 0), "混沌", 3.2)
 		end
 	end
 	if data.kind == "forgeStart" then

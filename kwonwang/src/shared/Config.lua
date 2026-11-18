@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.39" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.40" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7481,9 +7481,9 @@ do
 		finisher = { id = "hdF", name = "혼돈승천", pose = "void_push", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
 		skills = {
 			-- 3.99.38판 새로: 먹 줄기가 엉키고 감기고 터지는 기술 넷
-			E = { id = "hdE", name = "묵사박", desc = "손끝에서 먹 줄기 일곱이 휘몰아치며 앞으로 26칸을 가른다. 가까운 적 셋에게 먹이 엉켜 감겼다가 한꺼번에 터진다", pose = "void_point", dur = 0.8, cd = 7, chi = 22,
+			E = { id = "hdE", name = "묵사박", desc = "손끝에서 먹 줄기 일곱이 휘몰아치며 앞으로 30칸을 가른다. 가까운 적 셋에게 먹이 엉켜 감겼다가 한꺼번에 터진다", pose = "void_point", dur = 0.8, cd = 7, chi = 22,
 				mech = seq({
-					{ t = 0.12, shape = "line", at = "self", length = 26, width = 6, vfx = "inkLash", hit = hit(0, 0, 0, 80, 70, 0.7, 10) },
+					{ t = 0.12, shape = "line", at = "self", length = 30, width = 7, vfx = "inkLash", hit = hit(0, 0, 0, 80, 70, 0.7, 10) },
 					{ t = 0.5, at = "each", n = 3, range = 26, radius = 6, vfx = "inkBind", hit = hit(0, 0, 0, 90, 90, 0.9, 30, 12) },
 				}) },
 			R = { id = "hdR", name = "묵마천행", desc = "먹 줄기가 쉬지 않고 엉키며 그려 내는 천마를 타고 세 번 박차 30칸을 내달린다 (그동안 무적). 발굽마다 먹이 튀어 적을 베고, 마지막에 앞발을 들어 내리찍으면 먹이 사방으로 터진다", pose = "void_sink", dur = 1.3, cd = 9, chi = 26,
@@ -7492,26 +7492,26 @@ do
 					{ t = 0.25, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkHoof", hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
 					{ t = 0.5, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkHoof", hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
 					{ t = 0.75, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkHoof", hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
-					{ t = 1.05, shape = "circle", at = "self", radius = 13, vfx = "inkRear", hit = hit(0, 0, 0, 80, 90, 1.0, 40, 16) },
+					{ t = 1.05, shape = "circle", at = "self", radius = 16, vfx = "inkRear", hit = hit(0, 0, 0, 80, 90, 1.0, 40, 16) },
 				} } },
-			G = { id = "hdG", name = "혼돈묵해", desc = "발밑에서 먹이 엉키며 둘레 26칸에 바다처럼 번진다. 먹 촉수가 세 번 솟아 적을 가운데로 감아 들이고, 마지막에 모든 먹이 한 점으로 모였다가 금빛으로 터진다", pose = "ult_taiji", dur = 2.4, cd = 28, chi = 100, armor = true,
+			G = { id = "hdG", name = "혼돈묵해", desc = "발밑에서 먹이 엉키며 둘레 32칸에 바다처럼 번진다. 먹 촉수가 세 번 솟아 적을 가운데로 감아 들이고, 마지막에 모든 먹이 한 점으로 모였다가 금빛으로 터진다", pose = "ult_taiji", dur = 2.4, cd = 28, chi = 100, armor = true,
 				mech = seq({
-					{ t = 0.3, shape = "circle", at = "self", radius = 26, pull = 40, life = 2.1, vfx = "inkSea", hit = hit(0, 0, 0, 30, 40, 0.5, 0) },
-					{ t = 0.8, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "inkTendrils", hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
-					{ t = 1.2, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "inkTendrils", hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
-					{ t = 1.6, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "inkTendrils", hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
-					{ t = 2.1, shape = "circle", at = "self", radius = 28, vfx = "inkCore", big = true, hit = hit(0, 0, 0, 270, 300, 1.6, 60, 30) },
+					{ t = 0.3, shape = "circle", at = "self", radius = 32, pull = 40, life = 2.1, vfx = "inkSea", hit = hit(0, 0, 0, 30, 40, 0.5, 0) },
+					{ t = 0.8, shape = "circle", at = "self", radius = 30, pull = 30, vfx = "inkTendrils", hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
+					{ t = 1.2, shape = "circle", at = "self", radius = 30, pull = 30, vfx = "inkTendrils", hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
+					{ t = 1.6, shape = "circle", at = "self", radius = 30, pull = 30, vfx = "inkTendrils", hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
+					{ t = 2.1, shape = "circle", at = "self", radius = 34, vfx = "inkCore", big = true, hit = hit(0, 0, 0, 270, 300, 1.6, 60, 30) },
 				}) },
-			X = { id = "hdX", name = "천지미분", desc = "초 오의 (그동안 무적). 하늘이 먹으로 엉키고, 하늘만 한 먹의 천마가 머리 위에서 함께 내달린다. 먹의 용이 네 번 적 여덟에게 내리꽂히고, 마지막에 모든 먹이 한 점으로 삼켜졌다가 둘레 40칸이 금빛으로 터진다", pose = "ult_star", dur = 3.6, cd = 55, chi = 150, armor = true,
+			X = { id = "hdX", name = "천지미분", desc = "초 오의 (그동안 무적). 하늘이 먹으로 엉키고, 하늘만 한 먹의 천마가 머리 위에서 함께 내달린다. 먹의 용이 네 번 적 여덟에게 내리꽂히고, 마지막에 모든 먹이 한 점으로 삼켜졌다가 둘레 46칸이 금빛으로 터진다", pose = "ult_star", dur = 3.6, cd = 55, chi = 150, armor = true,
 				mech = { kind = "forgeSeq", iframes = true, steps = {
-					{ t = 0.05, shape = "circle", at = "self", radius = 40, life = 3.3, vfx = "inkHeaven" },
+					{ t = 0.05, shape = "circle", at = "self", radius = 46, life = 3.3, vfx = "inkHeaven" },
 					{ t = 0.1, shape = "circle", at = "self", radius = 1, life = 2.6, big = true, vfx = "inkSteed" },
 					{ t = 0.5, dash = 10, at = "each", n = 8, range = 32, radius = 7, vfx = "inkDragonDive", hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
 					{ t = 1.0, dash = 10, at = "each", n = 8, range = 32, radius = 7, vfx = "inkDragonDive", hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
 					{ t = 1.5, dash = 10, at = "each", n = 8, range = 32, radius = 7, vfx = "inkDragonDive", hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
 					{ t = 2.0, dash = 10, at = "each", n = 8, range = 32, radius = 7, vfx = "inkDragonDive", hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
-					{ t = 2.6, shape = "circle", at = "self", radius = 40, pull = 50, life = 0.8, vfx = "inkSea", hit = hit(0, 0, 0, 40, 60, 0.6, 0) },
-					{ t = 3.2, shape = "circle", at = "self", radius = 40, vfx = "inkCore", big = true, hit = hit(0, 0, 0, 430, 480, 1.8, 80, 30) },
+					{ t = 2.6, shape = "circle", at = "self", radius = 46, pull = 50, life = 0.8, vfx = "inkSea", hit = hit(0, 0, 0, 40, 60, 0.6, 0) },
+					{ t = 3.2, shape = "circle", at = "self", radius = 46, vfx = "inkCore", big = true, hit = hit(0, 0, 0, 430, 480, 1.8, 80, 30) },
 				} } },
 		},
 	})
