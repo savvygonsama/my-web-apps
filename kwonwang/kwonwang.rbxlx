@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.41" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.42" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -5174,7 +5174,9 @@ function Config.productLine(it: any, realmIdx: number): string
 end
 -- 3.42판: 극 · 신 권법이 게이지를 채웠을 때의 모습 이름 (예전엔 극 일월신권의 '황혼 · 일월극변' 이 모든 극 · 신 권법에 떴다)
 function Config.geukForm(style: any): (string, string, string)
-	if style.godForm then
+	if style.inkForm then
+		return "🖌 혼돈화신", "혼돈을 채우면 25초 동안 먹 줄기가 몸을 휘감고 기술이 화신의 기술로 바뀐다", "혼돈"
+	elseif style.godForm then
 		return "✨ 신의 모습", "신을 채우면 쓰러질 때까지 몸이 떠올라 신의 모습이 되고 기술이 모두 바뀐다", "신"
 	elseif style.geukHaste then
 		return "🌠 초가속", "극을 채우면 잠시 초가속 (걸음 ×1.6 · 잔상 타격) 이 되고 기술이 모두 바뀐다", "극"
@@ -7789,6 +7791,7 @@ do
 	if st then
 		st.pulse = { every = 3, kind = "inkKnot", radius = 11, delay = 0.15, name = "먹 매듭", dmg = 56, posture = 46, stun = 0.45, kb = 12, up = 3, pull = 18 }
 		st.geukGauge = { max = 100, hit = 2, skillHit = 1, hurt = 4, cut = 1.2, dur = 25 }
+		st.inkForm = true -- 3.99.42판: 황혼 (일월극변) 이 아니라 혼돈화신 (세상은 그대로)
 		local sk = {}
 		for slot, mv in pairs(st.skills) do
 			local c = deepCopy(mv)
@@ -15177,6 +15180,10 @@ function Geuk.trigger(f: any, st: any)
 				end
 			end
 		end)
+		return
+	end
+	-- 3.99.42판 혼돈개천권 · 혼돈화신: 세상은 그대로 (일월극변의 황혼 · 컷씬을 띄우지 않는다). 몸의 먹은 화면이 Twilight 표시를 보고 그린다
+	if st.inkForm then
 		return
 	end
 	local GF = st.godForm
@@ -55471,10 +55478,10 @@ local function inkSwirl(center: () -> Vector3, n: number, r: number, h: number, 
 		local rr = r * (o.converge and (1 - 0.85 * k * k) or 1) * (o.grow and math.min(1, t / 0.25) or 1)
 		for _, s in ipairs(list) do
 			local a = t * s.f1 * (o.speed or 1) + s.p1
-			local x = math.cos(a) * rr * s.rk + math.sin(t * s.f3 + s.p3) * rr * 0.25
-			local z = math.sin(a) * rr * s.rk + math.cos(t * s.f2 + s.p2) * rr * 0.25
-			local y = math.sin(t * s.f2 + s.p2) * h * 0.5 + (o.rise and k * o.rise or 0)
-			s.b.p.CFrame = CF(c + V(x, y, z)) * CFrame.Angles(t * s.f3, a, 0)
+			local x = math.cos(a) * rr * s.rk + math.sin(t * s.f3 * 0.6 + s.p3) * rr * 0.12
+			local z = math.sin(a) * rr * s.rk + math.cos(t * s.f2 * 0.6 + s.p2) * rr * 0.12
+			local y = math.sin(t * s.f2 * 0.7 + s.p2) * h * 0.5 + (o.rise and k * o.rise or 0)
+			s.b.p.CFrame = CF(c + V(x, y, z)) * CFrame.Angles(0, a, 0)
 		end
 		if drip then
 			drip.CFrame = CF(c)
@@ -55483,22 +55490,26 @@ local function inkSwirl(center: () -> Vector3, n: number, r: number, h: number, 
 end
 -- 먹 획 한 줄기가 from 에서 to 로 휘몰아 날아간다 (뱀처럼 굽이치며)
 local function inkStroke(from: Vector3, to: Vector3, time: number, width: number, wave: number, gold: boolean?)
-	local b = brush(width, 0.5, gold and BRUSH_GOLD or INK2, gold)
+	-- 3.99.42판: 붓질처럼 (지그재그 대신 한 번 크게 휘는 곡선, 처음엔 빠르고 끝에서 느려지며 가늘어진다)
+	local b = brush(width, 0.6, gold and BRUSH_GOLD or INK2, gold)
 	local dir = to - from
 	local side = dir.Magnitude > 0.01 and dir.Unit:Cross(V(0, 1, 0)) or V(1, 0, 0)
 	if side.Magnitude < 0.01 then
 		side = V(1, 0, 0)
 	end
-	local ph = math.random() * 6.3
+	local ctrl = from:Lerp(to, 0.45) + side.Unit * (math.random() - 0.5) * 2 * wave + V(0, wave * (0.3 + math.random() * 0.5), 0)
 	local t0 = os.clock()
 	local conn
 	conn = RunService.RenderStepped:Connect(function()
 		local k = math.min(1, (os.clock() - t0) / time)
-		local p = from:Lerp(to, k) + side.Unit * math.sin(k * math.pi * 3 + ph) * wave * (1 - k) + V(0, math.sin(k * math.pi) * wave * 0.4, 0)
-		b.p.CFrame = CF(p) * CFrame.Angles(k * 7, ph, 0)
+		local e = 1 - (1 - k) * (1 - k)
+		local p = from:Lerp(ctrl, e):Lerp(ctrl:Lerp(to, e), e)
+		b.p.CFrame = CF(p) * CFrame.Angles(0, math.atan2(dir.X, dir.Z), 0)
+		b.a0.Position = V(0, width / 2 * (1 - k * 0.6), 0)
+		b.a1.Position = V(0, -width / 2 * (1 - k * 0.6), 0)
 		if k >= 1 then
 			conn:Disconnect()
-			dropBrush(b, 0.5)
+			dropBrush(b, 0.6)
 		end
 	end)
 end
@@ -55553,6 +55564,122 @@ VFX.inkBind = function(d)
 		inkBurst(at, (d.radius or 6) * 1.7, d.big)
 	end)
 end
+-- 3.99.42판 빔 뼈대: 꼬리 (Trail) 는 빨리 달리면 뒤로 번져 형체가 사라졌다. 몸에 붙은 형체는 빔 (Beam) 으로 그린다
+--   뼈마다 빔 셋, 굽은 정도 (CurveSize) 가 쉬지 않고 출렁여 먹 획이 엉키듯 흐른다. 빔은 그 순간의 자리에만 그려져 번지지 않는다
+local worldAnchor: BasePart? = nil
+local function anchorPart(): BasePart
+	if not worldAnchor or not worldAnchor.Parent then
+		local p = Instance.new("Part")
+		p.Name = "BeamAnchor"
+		p.Anchored = true
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+		p.Transparency = 1
+		p.Size = V(0.1, 0.1, 0.1)
+		p.CFrame = CFrame.identity
+		p.Parent = folder
+		worldAnchor = p
+	end
+	return worldAnchor :: BasePart
+end
+type BeamSeg = { a0: Attachment, a1: Attachment, beam: Beam, w0: number, w1: number, f: number, ph: number, amp: number }
+local function beamSeg(c1: Color3, c2: Color3, w0: number, w1: number, glow: boolean, amp: number): BeamSeg
+	local ap = anchorPart()
+	local a0 = Instance.new("Attachment")
+	a0.Parent = ap
+	local a1 = Instance.new("Attachment")
+	a1.Parent = ap
+	local b = Instance.new("Beam")
+	b.Attachment0 = a0
+	b.Attachment1 = a1
+	b.Color = ColorSequence.new(c1, c2)
+	b.Width0 = w0
+	b.Width1 = w1
+	b.Segments = 14
+	b.FaceCamera = true
+	b.LightEmission = glow and 1 or 0
+	b.LightInfluence = glow and 0 or 0.35
+	b.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.05), NumberSequenceKeypoint.new(0.5, 0), NumberSequenceKeypoint.new(1, 0.15) })
+	b.Parent = ap
+	return { a0 = a0, a1 = a1, beam = b, w0 = w0, w1 = w1, f = 3 + math.random() * 5, ph = math.random() * 6.3, amp = amp }
+end
+local function killBeam(b: BeamSeg, fade: number)
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local k = math.min(1, (os.clock() - t0) / fade)
+		b.beam.Transparency = NumberSequence.new(k)
+		b.beam.Width0 = b.w0 * (1 - k * 0.6)
+		b.beam.Width1 = b.w1 * (1 - k * 0.6)
+		if k >= 1 then
+			conn:Disconnect()
+			b.beam:Destroy()
+			b.a0:Destroy()
+			b.a1:Destroy()
+		end
+	end)
+end
+-- 뼈대 짐승을 빔으로 그린다. place(t) → 몸 CFrame (nil 이면 끝), legs = 다리 뼈 번호 (박자에 맞춰 젓는다)
+-- opt: per (뼈마다 빔 수), w (굵기), gold (금빛 빔 뼈 번호들), form (처음에 사방에서 모여든다 · 그 자리), amp (출렁임)
+local function beamBeast(bones: { { Vector3 } }, place: (number) -> CFrame?, life: number, k: number, c1: Color3, c2: Color3, opt: any?): () -> ()
+	local o = opt or {}
+	local segs = {}
+	for si in ipairs(bones) do
+		for j = 1, o.per or 3 do
+			local gold = o.gold and table.find(o.gold, si) ~= nil and j == 1
+			local w = (o.w or 0.55) * k * (0.6 + math.random() * 0.7)
+			local b = beamSeg(gold and (o.goldColor or BRUSH_GOLD) or c1, gold and WHITE or c2, w, w * (0.3 + math.random() * 0.5), gold or o.glow == true, (o.amp or 0.9) * k)
+			table.insert(segs, { b = b, si = si, j = j, jit = V(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * 0.35 })
+		end
+	end
+	local t0 = os.clock()
+	local done = false
+	local conn
+	local function finish()
+		if done then
+			return
+		end
+		done = true
+		conn:Disconnect()
+		for _, sg in ipairs(segs) do
+			killBeam(sg.b, 0.35)
+		end
+	end
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		local body = place(t)
+		if not body or t > life then
+			finish()
+			return
+		end
+		for _, sg in ipairs(segs) do
+			local bone = bones[sg.si]
+			local a, b = bone[1], bone[2]
+			if o.legs and table.find(o.legs, sg.si) then
+				local sw = math.sin(t * (o.gallop or 16) + sg.si * 1.7) * 1.1
+				b = b + V(0, math.max(0, math.sin(t * (o.gallop or 16) + sg.si)) * 0.6, sw)
+			end
+			local wob = V(math.sin(t * 9 + sg.j * 2 + sg.si), math.cos(t * 7 + sg.j * 3), 0) * 0.18
+			local pa = body * ((a + sg.jit + wob) * k)
+			local pb = body * ((b - sg.jit + wob) * k)
+			if o.form and t < o.form then
+				sg.fa = sg.fa or (body.Position + V((math.random() - 0.5) * 140, 30 + math.random() * 40, (math.random() - 0.5) * 140))
+				sg.fb = sg.fb or (sg.fa + V((math.random() - 0.5) * 20, (math.random() - 0.5) * 20, (math.random() - 0.5) * 20))
+				local q = t / o.form
+				q = q * q * (3 - 2 * q)
+				pa = sg.fa:Lerp(pa, q)
+				pb = sg.fb:Lerp(pb, q)
+			end
+			sg.b.a0.Position = pa
+			sg.b.a1.Position = pb
+			sg.b.beam.CurveSize0 = math.sin(t * sg.b.f + sg.b.ph) * sg.b.amp
+			sg.b.beam.CurveSize1 = math.cos(t * sg.b.f * 0.8 + sg.b.ph) * sg.b.amp
+		end
+	end)
+	return finish
+end
+
 -- R 묵마천행: 먹 줄기가 쉬지 않고 말의 뼈대를 따라 긁고 엉키며 말을 그린다 (탄 사람 밑에서 함께 달린다)
 local HORSE: { { Vector3 } } = {
 	{ V(0, 0, 2.4), V(0, 0.3, -2.4) }, -- 등
@@ -55575,79 +55702,58 @@ VFX.inkSteed = function(d)
 	local big = d.big == true
 	local k = big and 5 or 1.8
 	local life = d.life or 1.3
-	local strands = {}
-	for si, seg in ipairs(HORSE) do
-		local per = (si == 5 or si == 6) and 3 or 4
-		for j = 1, per do
-			local gold = (si == 5 and j == 1) or (si == 4 and j == 1)
-			table.insert(strands, { b = brush((big and 2.6 or 0.9) * (0.7 + math.random() * 0.6), big and 0.5 or 0.35, gold and BRUSH_GOLD or INK2, gold), seg = si, f = 5 + math.random() * 6, ph = math.random() * 6.3, j = math.random() * 6.3 })
+	local rootP = root :: BasePart
+	local function bodyAt(t: number): CFrame?
+		if not rootP.Parent then
+			return nil
 		end
+		local look = rootP.CFrame.LookVector
+		local flat = V(look.X, 0, look.Z)
+		flat = flat.Magnitude > 0.01 and flat.Unit or V(0, 0, -1)
+		local base
+		if d.ride then
+			-- 천지미분: 거대한 먹 말을 직접 탄다 (서버가 몸을 들어 올려 등 위에 앉힌다)
+			base = rootP.Position - V(0, 0.3 * k + 2.2, 0) + flat * 0.8 * k
+		elseif big then
+			base = rootP.Position + V(0, 18, 0) - flat * 8
+		else
+			base = rootP.Position + V(0, 3.3 * k - 3.4, 0)
+		end
+		return CFrame.lookAt(base, base + flat) * CF(0, math.sin(t * 16) * 0.2 * k, 0)
 	end
-	local holder = piece(V(0.1, 0.1, 0.1), CF(root.Position), WHITE, 1)
+	-- 먹 획 빔 (뼈마다 셋, 갈기 · 머리는 금빛 하나)
+	beamBeast(HORSE, bodyAt, life, k, INK2, INKEDGE, { per = 3, w = 0.75, gold = { 4, 5 }, legs = { 7, 8, 9, 10 }, form = d.form and 0.6 or nil, amp = 1.1 })
+	-- 몸 둘레를 휘도는 먹 줄기 (꼬리는 짧게: 달려도 번지지 않게)
+	inkSwirl(function()
+		local b = bodyAt(os.clock())
+		return b and b.Position or rootP.Position
+	end, big and 14 or 8, 2.6 * k, 1.5 * k, life, { width = 0.5 * k, trail = 0.12, speed = 2.6, gold = true })
+	local holder = piece(V(0.1, 0.1, 0.1), CF(rootP.Position), WHITE, 1)
 	inkDrips(holder, big and 60 or 26, big and 4 or 1.8)
-	-- 금빛 눈 둘 (먹 속에서 타오른다)
 	local eyes = {}
 	for _, sx in ipairs({ -1, 1 }) do
-		local e = piece(V(0.35, 0.25, 0.35) * k, CF(), BRUSH_GOLD, 0, Enum.PartType.Ball)
-		table.insert(eyes, { e, sx })
+		table.insert(eyes, { piece(V(0.35, 0.25, 0.35) * k, CF(), BRUSH_GOLD, 0, Enum.PartType.Ball), sx })
 	end
 	local t0 = os.clock()
 	local conn
 	conn = RunService.RenderStepped:Connect(function()
 		local t = os.clock() - t0
-		if not root.Parent or t > life then
+		local body = bodyAt(t)
+		if not body or t > life then
 			conn:Disconnect()
-			for _, s in ipairs(strands) do
-				dropBrush(s.b, 0.5)
-			end
 			Debris:AddItem(holder, 0.05)
 			for _, e in ipairs(eyes) do
 				fadeOut(e[1], 0.3)
 			end
-			inkBurst(root.Position - V(0, 1.5, 0), big and 22 or 11, big)
+			inkBurst(rootP.Position - V(0, 1.5, 0), big and 22 or 11, big)
 			return
 		end
-		local look = root.CFrame.LookVector
-		local flat = V(look.X, 0, look.Z)
-		flat = flat.Magnitude > 0.01 and flat.Unit or V(0, 0, -1)
-		-- 다리가 땅에 닿게 몸을 띄운다 (탄 사람은 먹 속에 반쯤 잠긴다). 하늘의 말은 머리 위 뒤쪽
-		local base
-		if d.ride then
-			-- 3.99.41판 천지미분: 거대한 먹 말을 직접 탄다 (서버가 몸을 들어 올려 등 위에 앉힌다)
-			base = root.Position - V(0, 0.3 * k + 2.2, 0) + flat * 0.8 * k
-		elseif big then
-			base = root.Position + V(0, 18, 0) - flat * 8
-		else
-			base = root.Position + V(0, 3.3 * k - 3.4, 0)
-		end
-		local body = CFrame.lookAt(base, base + flat) * CF(0, math.sin(t * 16) * 0.2 * k, 0)
 		holder.CFrame = body
 		for _, e in ipairs(eyes) do
 			e[1].CFrame = body * CF(V(e[2] * 0.45, 2.0, -4.3) * k)
 		end
-		local gal = t * 16
-		for _, s in ipairs(strands) do
-			local seg = HORSE[s.seg]
-			local a, b = seg[1], seg[2]
-			-- 다리는 내닫는 박자에 맞춰 앞뒤로 젓는다
-			if s.seg >= 7 then
-				local sw = math.sin(gal + (s.seg % 2) * math.pi + (s.seg >= 9 and 1.2 or 0)) * 1.1
-				b = b + V(0, math.max(0, math.sin(gal + s.seg)) * 0.6, sw)
-			end
-			local u = 0.5 + 0.5 * math.sin(t * s.f + s.ph)
-			local p = a:Lerp(b, u)
-			local jx, jy = math.sin(t * 23 + s.j) * 0.3, math.cos(t * 19 + s.j) * 0.3
-			local cf = body * CF((p + V(jx, jy, 0)) * k) * CFrame.Angles(t * 3, s.j, 0)
-			-- 합쳐지며 생긴다: 처음 0.6초는 하늘 사방에 흩어진 먹이 말의 자리로 모여든다
-			if d.form and t < 0.6 then
-				s.far = s.far or (root.Position + V((math.random() - 0.5) * 120, 40 + math.random() * 30, (math.random() - 0.5) * 120))
-				local q = t / 0.6
-				cf = CF(s.far:Lerp(cf.Position, q * q)) * cf.Rotation
-			end
-			s.b.p.CFrame = cf
-		end
 	end)
-	Fx.flash(root.Position, BRUSH_GOLD, 18, 1.5, 0.3)
+	Fx.flash(rootP.Position, BRUSH_GOLD, 18, 1.5, 0.3)
 end
 VFX.inkHoof = function(d)
 	local g = ground(d.at)
@@ -55849,35 +55955,8 @@ local function gSerpent(path: (number) -> Vector3, time: number, n: number, widt
 end
 -- 빛 줄기 짐승: 뼈대 (선분들) 를 따라 줄기가 쉬지 않고 긁어 짐승을 그린다. place() 가 몸의 자리 (CFrame) 를 준다
 local function gBeast(bones: { { Vector3 } }, place: (number) -> CFrame?, life: number, k: number, c1: Color3, c2: Color3, per: number?, legSwing: { number }?)
-	local strands = {}
-	for si in ipairs(bones) do
-		for _ = 1, per or 3 do
-			table.insert(strands, { b = gBrush(0.5 * k * (0.7 + math.random() * 0.6), 0.3, c1, c2, true), seg = si, f = 5 + math.random() * 6, ph = math.random() * 6.3, j = math.random() * 6.3 })
-		end
-	end
-	local t0 = os.clock()
-	local conn
-	conn = RunService.RenderStepped:Connect(function()
-		local t = os.clock() - t0
-		local body = place(t)
-		if not body or t > life then
-			conn:Disconnect()
-			for _, sx in ipairs(strands) do
-				dropBrush(sx.b, 0.3)
-			end
-			return
-		end
-		for _, sx in ipairs(strands) do
-			local seg = bones[sx.seg]
-			local a, b = seg[1], seg[2]
-			if legSwing and table.find(legSwing, sx.seg) then
-				b = b + V(0, 0, math.sin(t * 18 + sx.seg * 1.7) * 1.2)
-			end
-			local u = 0.5 + 0.5 * math.sin(t * sx.f + sx.ph)
-			local p = a:Lerp(b, u)
-			sx.b.p.CFrame = body * CF((p + V(math.sin(t * 23 + sx.j) * 0.25, math.cos(t * 19 + sx.j) * 0.25, 0)) * k) * CFrame.Angles(t * 3, sx.j, 0)
-		end
-	end)
+	-- 3.99.42판: 빔으로 (달려도 번지지 않는다)
+	beamBeast(bones, place, life, k, c1, c2, { per = per or 3, legs = legSwing, glow = true, w = 0.45, amp = 0.6, gallop = 18 })
 end
 local function gClaw(at: Vector3, dir: Vector3, size: number, c1: Color3, c2: Color3, n: number?)
 	local right = V(-dir.Z, 0, dir.X)
@@ -56242,18 +56321,25 @@ local function inkAvatar(model: Model)
 		auraOn[model] = nil
 		return
 	end
-	-- 화신이 되는 순간: 먹이 한 점에서 터지고 하늘에 「化身」
-	inkBurst(root.Position, 12, true)
-	calligraphy(root.Position + V(0, 30, 0), "化身", 1.8)
 	local function alive(): boolean
 		return model.Parent ~= nil and model:GetAttribute("Twilight") == true and model:GetAttribute("Style") == "hondon"
 	end
+	-- 화신이 되는 순간: 사방의 먹이 0.3초 만에 몸으로 감겨 들고 하늘에 「化身」
+	inkSwirl(function()
+		return root.Position
+	end, 24, 14, 6, 0.35, { converge = true, width = 1.1, trail = 0.3, gold = true, speed = 3.5 })
+	task.delay(0.33, function()
+		inkBurst(root.Position, 9, true)
+	end)
+	calligraphy(root.Position + V(0, 30, 0), "化身", 1.8)
 	task.spawn(function()
+		task.wait(0.3)
 		while alive() do
+			-- 몸을 빠르게 휘감아 오르는 먹 줄기 (아래에서 위로 감기며 돈다)
 			inkSwirl(function()
-				return root.Position + V(0, 0.5, 0)
-			end, 10, 3.4, 5, 1.05, { width = 0.7, trail = 0.5, gold = true, speed = 1.5 })
-			task.wait(1)
+				return root.Position - V(0, 2.5, 0)
+			end, 14, 2.3, 1, 0.55, { width = 0.55, trail = 0.3, gold = true, speed = 3.6, rise = 5.5 })
+			task.wait(0.45)
 		end
 		auraOn[model] = nil
 	end)
@@ -68065,6 +68151,9 @@ return {
 	["묵마천행 · 화신"] = "Ink Steed's Heavenly Ride · Avatar",
 	["혼돈묵해 · 화신"] = "Sea of Chaos Ink · Avatar",
 	["천지미분 · 화신"] = "Before Heaven and Earth · Avatar",
+	["🖌 혼돈화신"] = "🖌 Avatar of Chaos",
+	["혼돈을 채우면 25초 동안 먹 줄기가 몸을 휘감고 기술이 화신의 기술로 바뀐다"] = "Fill Chaos and for 25 seconds strands of ink wrap your body and your skills become avatar skills",
+	["혼돈"] = "Chaos",
 }
 ]]></string>
           </Properties>

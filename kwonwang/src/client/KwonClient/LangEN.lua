@@ -5041,4 +5041,7 @@ return {
 	["묵마천행 · 화신"] = "Ink Steed's Heavenly Ride · Avatar",
 	["혼돈묵해 · 화신"] = "Sea of Chaos Ink · Avatar",
 	["천지미분 · 화신"] = "Before Heaven and Earth · Avatar",
+	["🖌 혼돈화신"] = "🖌 Avatar of Chaos",
+	["혼돈을 채우면 25초 동안 먹 줄기가 몸을 휘감고 기술이 화신의 기술로 바뀐다"] = "Fill Chaos and for 25 seconds strands of ink wrap your body and your skills become avatar skills",
+	["혼돈"] = "Chaos",
 }

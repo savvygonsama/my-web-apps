@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.41" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.42" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -5154,7 +5154,9 @@ function Config.productLine(it: any, realmIdx: number): string
 end
 -- 3.42판: 극 · 신 권법이 게이지를 채웠을 때의 모습 이름 (예전엔 극 일월신권의 '황혼 · 일월극변' 이 모든 극 · 신 권법에 떴다)
 function Config.geukForm(style: any): (string, string, string)
-	if style.godForm then
+	if style.inkForm then
+		return "🖌 혼돈화신", "혼돈을 채우면 25초 동안 먹 줄기가 몸을 휘감고 기술이 화신의 기술로 바뀐다", "혼돈"
+	elseif style.godForm then
 		return "✨ 신의 모습", "신을 채우면 쓰러질 때까지 몸이 떠올라 신의 모습이 되고 기술이 모두 바뀐다", "신"
 	elseif style.geukHaste then
 		return "🌠 초가속", "극을 채우면 잠시 초가속 (걸음 ×1.6 · 잔상 타격) 이 되고 기술이 모두 바뀐다", "극"
@@ -7769,6 +7771,7 @@ do
 	if st then
 		st.pulse = { every = 3, kind = "inkKnot", radius = 11, delay = 0.15, name = "먹 매듭", dmg = 56, posture = 46, stun = 0.45, kb = 12, up = 3, pull = 18 }
 		st.geukGauge = { max = 100, hit = 2, skillHit = 1, hurt = 4, cut = 1.2, dur = 25 }
+		st.inkForm = true -- 3.99.42판: 황혼 (일월극변) 이 아니라 혼돈화신 (세상은 그대로)
 		local sk = {}
 		for slot, mv in pairs(st.skills) do
 			local c = deepCopy(mv)

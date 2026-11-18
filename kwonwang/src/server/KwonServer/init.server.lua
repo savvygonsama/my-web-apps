@@ -4208,6 +4208,10 @@ function Geuk.trigger(f: any, st: any)
 		end)
 		return
 	end
+	-- 3.99.42판 혼돈개천권 · 혼돈화신: 세상은 그대로 (일월극변의 황혼 · 컷씬을 띄우지 않는다). 몸의 먹은 화면이 Twilight 표시를 보고 그린다
+	if st.inkForm then
+		return
+	end
 	local GF = st.godForm
 	if GF then
 		-- 3.31판 신 삼재권 · 신의 모습: 영역은 없다. 쓰러질 때까지 몸이 떠올라 날아다닌다 (걸음 빨라짐), 기술이 모두 바뀐다
