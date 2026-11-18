@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.28" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.29" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4673,6 +4673,38 @@ Config.TOWER = {
 	},
 	bosses = { "heukho", "hyeolrang", "bingma", "hyeolma", "cheonma", "yeomje", "sawang", "cheonmun" },
 }
+
+-- 3.99.29판 악몽의 탑: 천층탑 옆에 선 검은 탑. 천층탑 30층을 넘긴 자만 들어간다. 훨씬 세고 가파르며, 매주 (월요일 0시, 한국 시각) 저주가 하나 걸린다
+--   기록은 천층탑과 따로 (최고 기록 · 이번 주 기록), 이번 주 순위는 탑 앞 순위판. 이번 주에 다섯 층마다 처음 넘으면 천정 · 두루마리
+Config.NIGHTMARE = {
+	enter = Vector3.new(-196, 0, -112),
+	minTower = 30,
+	powerStart = 220, -- 1층부터 천층탑 약 20층만큼
+	powerGrowth = 1.09, -- 층마다 ×1.09 (천층탑 ×1.07)
+	hp = 1.6, -- 모든 적 체력 ×1.6
+	extra = 1, -- 층마다 적 하나 더
+	bossEvery = 5, -- 다섯 층마다 보스 (천층탑은 열 층)
+	coinMult = 2,
+	milestone = 5, -- 이번 주에 처음 넘을 때마다
+	gemsPerFloor = 30, -- 천정 = 층 × 30
+	tz = 9 * 3600,
+	curses = {
+		{ id = "swift", name = "질풍의 저주", icon = "🌪", desc = "적이 두 배 빠르다", walk = 2 },
+		{ id = "giant", name = "거인의 저주", icon = "🗿", desc = "적의 체력이 세 배", hp = 3 },
+		{ id = "fury", name = "광기의 저주", icon = "🩸", desc = "적이 주는 피해 1.8배", dmg = 1.8 },
+		{ id = "horde", name = "떼의 저주", icon = "🐜", desc = "적이 두 배로 많다 (하나하나는 조금 약하다)", count = 2, power = 0.7 },
+		{ id = "silence", name = "침묵의 저주", icon = "🤐", desc = "오의 · 초 오의를 쓸 수 없다", noUlt = true },
+		{ id = "thirst", name = "갈증의 저주", icon = "🏜", desc = "금창약을 쓸 수 없다", noPotion = true },
+	},
+}
+-- 이번 주 번호 (월요일 0시, 한국 시각에 바뀐다. 1970-01-01은 목요일)
+function Config.nightmareWeek(): number
+	return math.floor((os.time() + Config.NIGHTMARE.tz - 4 * 86400) / (7 * 86400))
+end
+function Config.nightmareCurse(week: number?): any
+	local C = Config.NIGHTMARE.curses
+	return C[((week or Config.nightmareWeek()) % #C) + 1]
+end
 
 ------------------------------------------------------------------------
 -- 비무 백 승: 비무대에서 백 번 이긴 자에게 무쌍신권

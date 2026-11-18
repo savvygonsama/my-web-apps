@@ -1506,8 +1506,35 @@ function handlers.dexReward(data: any)
 	end
 end
 
+-- 3.99.29판 악몽의 탑: 들어가 있는 동안 화면이 어둡고 붉다
+local nmCC: ColorCorrectionEffect? = nil
+local function nightmareTint(on: boolean)
+	if on and not nmCC then
+		local e = Instance.new("ColorCorrectionEffect")
+		e.Name = "KwonNightmare"
+		e.TintColor = Color3.fromRGB(235, 200, 220)
+		e.Saturation = -0.35
+		e.Contrast = 0.2
+		e.Brightness = -0.06
+		e.Parent = Lighting
+		nmCC = e
+	elseif not on and nmCC then
+		nmCC:Destroy()
+		nmCC = nil
+	end
+end
 function handlers.tower(data: any?)
 	UI.setTower(data)
+	nightmareTint(data ~= nil and data.nightmare == true)
+	if data and data.nightmare then
+		local boss = data.boss == true
+		local sub = boss and "👹 이 층의 주인이 기다린다" or "모든 적을 쓰러뜨려라"
+		if data.floor == 1 and data.curse then
+			sub = "이번 주 " .. data.curse .. " · " .. (data.curseDesc or "")
+		end
+		UI.banner(string.format("😈 악몽 %d층", data.floor), sub, boss and Color3.fromRGB(255, 50, 70) or Color3.fromRGB(200, 120, 255))
+		return
+	end
 	if data then
 		local boss = data.boss == true
 		-- 3.99.10판: 무대 이름과 층의 갈래
@@ -1526,7 +1553,11 @@ function handlers.towerClear(data: any)
 	if (data.gems or 0) > 0 then
 		extra ..= string.format("  💎 +%d", data.gems)
 	end
-	UI.banner(string.format("🗼 %d층 돌파!", data.floor), string.format("💰 +%s%s  ·  최고 %d층", Config.formatNumber(data.coins), extra, data.best), Color3.fromRGB(255, 210, 120))
+	if data.nightmare then
+		UI.banner(string.format("😈 악몽 %d층 돌파!", data.floor), string.format("💰 +%s%s  ·  이번 주 최고 %d층", Config.formatNumber(data.coins), extra, data.best), Color3.fromRGB(200, 120, 255))
+	else
+		UI.banner(string.format("🗼 %d층 돌파!", data.floor), string.format("💰 +%s%s  ·  최고 %d층", Config.formatNumber(data.coins), extra, data.best), Color3.fromRGB(255, 210, 120))
+	end
 	Fx.sound("ping", 0.8, 1.2)
 end
 

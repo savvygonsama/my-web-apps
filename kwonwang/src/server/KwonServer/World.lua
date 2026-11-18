@@ -954,6 +954,86 @@ local function village(out: any)
 	end
 	out.tower = prompt(tDoor, "탑에 오르기", "천층탑", "TowerEnter")
 
+	-- 3.99.29판 악몽의 탑: 천층탑 옆의 검은 탑 (검은 층 · 핏빛 기둥 · 보랏빛 창 · 붉은 수정), 앞에 이번 주 순위판
+	do
+		local nAt = Config.NIGHTMARE.enter
+		local ncf = CFrame.lookAt(nAt, Vector3.new(0, 0, 0))
+		local NIGHT = Color3.fromRGB(26, 20, 30)
+		local BLOOD = Color3.fromRGB(120, 16, 24)
+		local VIOLET = Color3.fromRGB(170, 70, 255)
+		part({ Name = "NmPlinth", Size = Vector3.new(26, 2, 26), CFrame = ncf * CFrame.new(0, 1, 0), Color = Color3.fromRGB(40, 34, 42), Material = Enum.Material.Basalt, Parent = f })
+		local ny, nw = 2, 18
+		for i = 1, 9 do
+			local h = i == 1 and 11 or 7
+			part({ Name = "NmStorey", Size = Vector3.new(nw, h, nw), CFrame = ncf * CFrame.new(0, ny + h / 2, 0) * CFrame.Angles(0, (i % 2) * math.rad(8), 0), Color = NIGHT, Material = Enum.Material.Slate, Parent = f })
+			for _, sx in ipairs({ -1, 1 }) do
+				for _, sz in ipairs({ -1, 1 }) do
+					part({ Name = "NmPost", Size = Vector3.new(1, h, 1), CFrame = ncf * CFrame.new(sx * nw / 2, ny + h / 2, sz * nw / 2), Color = BLOOD, Material = Enum.Material.Wood, Parent = f })
+				end
+			end
+			for k = 0, 3 do
+				part({ Name = "NmWindow", Size = Vector3.new(1.6, h * 0.5, 0.3), CFrame = ncf * CFrame.Angles(0, k * math.pi / 2, 0) * CFrame.new(0, ny + h * 0.55, -nw / 2 - 0.1), Color = VIOLET, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			end
+			-- 위로 휘어 오른 검은 처마 끝
+			part({ Name = "NmEave", Size = Vector3.new(nw + 5, 0.8, nw + 5), CFrame = ncf * CFrame.new(0, ny + h + 0.4, 0), Color = Color3.fromRGB(16, 12, 18), Material = Enum.Material.Slate, Parent = f })
+			for k = 0, 3 do
+				part({ Name = "NmHorn", Size = Vector3.new(0.6, 2.4, 0.6), CFrame = ncf * CFrame.Angles(0, k * math.pi / 2 + math.pi / 4, 0) * CFrame.new(0, ny + h + 1.4, -(nw + 5) * 0.7) * CFrame.Angles(math.rad(-30), 0, 0), Color = BLOOD, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+			end
+			ny += h + 0.8
+			nw -= 1.6
+		end
+		local core = crystal(nAt + Vector3.new(0, ny + 6, 0), 3.4, Color3.fromRGB(255, 40, 60), f)
+		local smoke = Instance.new("Smoke")
+		smoke.Color = Color3.fromRGB(40, 10, 50)
+		smoke.Opacity = 0.15
+		smoke.RiseVelocity = 3
+		smoke.Size = 6
+		smoke.Parent = core
+		local nDoor = part({ Name = "NmDoor", Size = Vector3.new(5, 8, 0.6), CFrame = ncf * CFrame.new(0, 6, -9.2), Color = Color3.fromRGB(20, 8, 14), Material = Enum.Material.Slate, Parent = f })
+		local nVeil = part({ Name = "NmVeil", Size = Vector3.new(4.4, 7.4, 0.2), CFrame = ncf * CFrame.new(0, 6, -9.6), Color = VIOLET, Material = Enum.Material.Neon, Transparency = 0.5, CanCollide = false, Parent = f })
+		light(nVeil, VIOLET, 18, 1.6)
+		local nBoard = part({ Name = "NmSign", Size = Vector3.new(11, 3, 0.4), CFrame = ncf * CFrame.new(0, 11.6, -9.5), Color = Color3.fromRGB(20, 10, 14), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		sign(nBoard, Enum.NormalId.Front, { { "😈 악몽의 탑", Color3.fromRGB(255, 90, 110), 0.65 }, { "천층탑 30층을 넘긴 자만", Color3.fromRGB(210, 190, 230), 0.35 } })
+		out.nightmare = prompt(nDoor, "탑에 오르기", "😈 악몽의 탑", "NightmareEnter")
+		-- 이번 주 순위판 (탑 오른쪽 앞)
+		local side = (ncf * CFrame.new(-16, 0, -6)).Position
+		local bcf = CFrame.lookAt(side + Vector3.new(0, 9, 0), Vector3.new(0, 9, 0))
+		for _, sx in ipairs({ -1, 1 }) do
+			part({ Name = "NmBoardPost", Size = Vector3.new(1, 18, 1), CFrame = bcf * CFrame.new(sx * 6.2, -0.5, 0.4), Color = BLOOD, Material = Enum.Material.Wood, Parent = f })
+		end
+		local lb = part({ Name = "NmLeaderboard", Size = Vector3.new(12, 15, 0.5), CFrame = bcf, Color = Color3.fromRGB(18, 12, 18), Material = Enum.Material.Wood, Parent = f })
+		local gui = Instance.new("SurfaceGui")
+		gui.Name = "Board"
+		gui.Face = Enum.NormalId.Front
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.PixelsPerStud = 30
+		gui.LightInfluence = 0.2
+		gui.Parent = lb
+		local list = Instance.new("UIListLayout")
+		list.SortOrder = Enum.SortOrder.LayoutOrder
+		list.Parent = gui
+		local function row(name: string, text: string, h: number, color: Color3, order: number)
+			local l = Instance.new("TextLabel")
+			l.Name = name
+			l.LayoutOrder = order
+			l.BackgroundTransparency = 1
+			l.Size = UDim2.fromScale(1, h)
+			l.Font = Enum.Font.GothamBold
+			l.TextScaled = true
+			l.TextColor3 = color
+			l.TextStrokeTransparency = 0.5
+			l.Text = text
+			l.Parent = gui
+		end
+		row("Title", "😈 이번 주 악몽의 탑", 0.1, Color3.fromRGB(255, 90, 110), 0)
+		row("Sub", "", 0.06, Color3.fromRGB(210, 190, 230), 1)
+		for r = 1, 10 do
+			row("Row" .. r, "", 0.084, r == 1 and Color3.fromRGB(255, 215, 90) or r <= 3 and Color3.fromRGB(230, 230, 240) or Color3.fromRGB(200, 185, 210), 1 + r)
+		end
+		out.boards = out.boards or {}
+		out.nightmareBoard = gui
+	end
+
 	-- 강호 순위표 (북동쪽 모퉁이): 세 개의 큰 판
 	local bAt = Vector3.new(185, 0, -185)
 	local toC = Vector3.new(-bAt.X, 0, -bAt.Z).Unit

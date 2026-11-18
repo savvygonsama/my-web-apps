@@ -72,6 +72,9 @@ type Profile = {
 	mqv: number?, -- 3.74판: 부탁 기록의 판 (부탁이 길어지기 전에 다 끝낸 사람은 끝난 그대로)
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
 	enh: { [string]: number }?, -- 3.41판 게임패스 권법의 강화 단계 (0 ~ 15)
+	nmBest: number?, -- 3.99.29판 악몽의 탑 최고 층
+	nmWeek: number?, -- 악몽의 탑: 이번 주 기록의 주 번호
+	nmWeekBest: number?, -- 악몽의 탑: 그 주의 최고 층
 	refine: { [string]: number }?, -- 3.99.28판 제작소 권법 정련 단계 (0 ~ 10)
 	attDay: number?, -- 3.99.27판 출석: 마지막으로 받은 날 (한국 시각 날짜 번호)
 	attStreak: number?, -- 3.99.27판 출석: 이어서 들어온 날 수
@@ -284,6 +287,9 @@ local function sanitize(data: any): Profile
 	p.shards = math.floor(num(data.shards, 1e6))
 	p.lastSeen = math.floor(num(data.lastSeen, 1e11))
 	p.attDay = math.floor(num(data.attDay, 1e7))
+	p.nmBest = math.floor(num(data.nmBest, 1e5))
+	p.nmWeek = math.floor(num(data.nmWeek, 1e7))
+	p.nmWeekBest = math.floor(num(data.nmWeekBest, 1e5))
 	p.refine = {}
 	if type(data.refine) == "table" then
 		for id, v in pairs(data.refine) do
@@ -2941,6 +2947,13 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 		end
 		f.cds.H = t + Config.HEAVY_CD
 	end
+	if slot == "G" or slot == "X" then
+		local run = Tower.active(player)
+		if run and run.nm and run.curse and run.curse.noUlt then
+			toast(player, "🤐 침묵의 저주: 이번 주 악몽의 탑에서는 오의를 쓸 수 없어요")
+			return
+		end
+	end
 	if slot == "E" or slot == "R" or slot == "G" or slot == "X" then
 		if not Calc.unlocked(p, slot) then
 			toast(player, string.format("🔒 %s: 숙련도 %d에 열려요", move.name, Config.SKILL_UNLOCK[slot]))
@@ -4205,13 +4218,17 @@ Tower = {}
 local towerSlots: { [number]: Player } = {}
 local activeTower: { [Player]: any } = {}
 
-function Tower.start(player: Player, back: Vector3?)
+function Tower.start(player: Player, back: Vector3?, nightmare: boolean?)
 	local p, st = profiles[player], states[player]
 	local f = Combat.fighterOfPlayer(player)
 	if not p or not st or not f or f.dead then
 		return
 	end
 	if activeTower[player] then
+		return
+	end
+	if nightmare and p.towerBest < Config.NIGHTMARE.minTower then
+		toast(player, string.format("😈 악몽의 탑은 천층탑 %d층을 넘긴 자만 들어갈 수 있어요 (지금 최고 %d층)", Config.NIGHTMARE.minTower, p.towerBest))
 		return
 	end
 	if activeTrial[player] or activeGate[player] or Maze.active(player) then
@@ -4241,7 +4258,15 @@ function Tower.start(player: Player, back: Vector3?)
 	towerSlots[slot] = player
 	Train.stop(player)
 	Combat.dismount(f)
-	local run = { slot = slot, center = center, floor = 0, alive = {}, token = 0, back = back }
+	local run: any = { slot = slot, center = center, floor = 0, alive = {}, token = 0, back = back }
+	if nightmare then
+		run.nm = true
+		run.week = Config.nightmareWeek()
+		run.curse = Config.nightmareCurse(run.week)
+		if p.nmWeek ~= run.week then
+			p.nmWeek, p.nmWeekBest = run.week, 0
+		end
+	end
 	activeTower[player] = run
 	local char = player.Character
 	if char then
@@ -4286,7 +4311,12 @@ function Tower.next(player: Player, run: any)
 	local okT, themeName = pcall(World.towerTheme, run.slot, floor)
 	local inTen = ((floor - 1) % 10) + 1
 	local kind = isBoss and "boss" or (T.swarm and table.find(T.swarm.at, inTen) and "swarm") or (T.elite and table.find(T.elite.at, inTen) and "elite") or "normal"
-	Push:FireClient(player, "tower", { floor = floor, best = p.towerBest, boss = isBoss, theme = okT and themeName or nil, kind = kind })
+	local NM = Config.NIGHTMARE
+	if run.nm then
+		isBoss = floor % NM.bossEvery == 0
+		kind = isBoss and "boss" or kind
+	end
+	Push:FireClient(player, "tower", { floor = floor, best = run.nm and (p.nmWeekBest or 0) or p.towerBest, boss = isBoss, theme = okT and themeName or nil, kind = kind, nightmare = run.nm, curse = run.curse and (run.curse.icon .. " " .. run.curse.name) or nil, curseDesc = run.curse and run.curse.desc or nil })
 	task.delay(floor == 1 and 4 or 2.5, function()
 		local f = Combat.fighterOfPlayer(player)
 		if activeTower[player] ~= run or run.token ~= token or not f or f.dead then
@@ -4294,7 +4324,8 @@ function Tower.next(player: Player, run: any)
 		end
 		local list = {}
 		if isBoss then
-			local id = T.bosses[(math.floor(floor / T.bossEvery) - 1) % #T.bosses + 1]
+			local every = run.nm and NM.bossEvery or T.bossEvery
+			local id = T.bosses[(math.floor(floor / every) - 1) % #T.bosses + 1]
 			table.insert(list, { id, true })
 		else
 			local pool = T.bands[1][2]
@@ -4318,8 +4349,25 @@ function Tower.next(player: Player, run: any)
 				end
 			end
 		end
+		-- 악몽의 탑: 적 하나 더, 떼의 저주면 두 배
+		if run.nm then
+			local cu = run.curse or {}
+			local band = list[1] and list[1][1]
+			if not isBoss and band then
+				for _ = 1, NM.extra do
+					table.insert(list, { list[math.random(#list)][1], false, list[1][3], list[1][4], list[1][5] })
+				end
+			end
+			if cu.count and not isBoss then
+				local n0 = #list
+				for i = 1, n0 * (cu.count - 1) do
+					local src = list[(i - 1) % n0 + 1]
+					table.insert(list, { src[1], false, src[3], src[4], src[5] })
+				end
+			end
+		end
 		-- 층의 세기는 정해져 있다 (누가 오르든 같다)
-		local want = T.powerStart * T.powerGrowth ^ (floor - 1)
+		local want = run.nm and (NM.powerStart * NM.powerGrowth ^ (floor - 1)) or (T.powerStart * T.powerGrowth ^ (floor - 1))
 		for i, item in ipairs(list) do
 			local a = i / #list * math.pi * 2
 			local at = run.center + Vector3.new(math.cos(a), 0, math.sin(a)) * (T.radius * (item[2] and 0.2 or 0.45))
@@ -4328,15 +4376,22 @@ function Tower.next(player: Player, run: any)
 				local ef = e.f :: any
 				ef.towerOwner = player
 				ef.trialOwner = player
-				local w = want * (item[2] and T.bossPower or 1) * (item[3] or 1)
+				local cu = run.nm and run.curse or {}
+				local w = want * (item[2] and T.bossPower or 1) * (item[3] or 1) * ((not item[2] and cu.power) or 1)
 				local k = w / math.max(1, ef.power or 100)
-				ef.maxHp = math.max(1, math.floor(ef.maxHp * k * (item[2] and 2.5 or 1) * (item[4] or 1)))
+				ef.maxHp = math.max(1, math.floor(ef.maxHp * k * (item[2] and 2.5 or 1) * (item[4] or 1) * (run.nm and NM.hp or 1) * (cu.hp or 1)))
+				if cu.dmg then
+					ef.dmgMult *= cu.dmg
+				end
+				if cu.walk and ef.walk then
+					ef.walk *= cu.walk
+				end
 				ef.hp = ef.maxHp
 				ef.dmgMult *= k
 				ef.power = math.floor(w)
 				ef.rewardMult = 0.3
 				ef.model:SetAttribute("Power", ef.power)
-				ef.model:SetAttribute("Label", string.format(item[5] and "%d층 · 정예 %s" or "%d층 · %s", floor, ef.name))
+				ef.model:SetAttribute("Label", string.format(item[5] and "%s%d층 · 정예 %s" or "%s%d층 · %s", run.nm and "😈 " or "", floor, ef.name))
 				Combat.sync(ef)
 				e.target = f
 				run.alive[ef] = true
@@ -4360,6 +4415,33 @@ function Tower.killed(player: Player, ef: any)
 	end
 	local T = Config.TOWER
 	local floor = run.floor
+	if run.nm then
+		-- 악몽의 탑: 기록은 따로, 이번 주에 다섯 층마다 처음 넘으면 천정 · 두루마리
+		local NM = Config.NIGHTMARE
+		local coins = math.floor(T.coins * floor * NM.coinMult * T.coinGrowth ^ math.max(0, floor - 30)) * (Premium.owns(player, "coin2x") and 2 or 1)
+		p.coins += coins
+		local gems, scrolls = 0, 0
+		if p.nmWeek ~= run.week then
+			p.nmWeek, p.nmWeekBest = run.week, 0
+		end
+		if floor > (p.nmWeekBest or 0) then
+			p.nmWeekBest = floor
+			if floor % NM.milestone == 0 then
+				gems = floor * NM.gemsPerFloor * (Premium.owns(player, "gems2x") and 2 or 1)
+				scrolls = math.max(1, math.floor(floor / 10))
+				p.skyGems += gems
+				p.scrolls += scrolls
+			end
+		end
+		if floor > (p.nmBest or 0) then
+			p.nmBest = floor
+		end
+		st.dirty = true
+		Push:FireClient(player, "towerClear", { floor = floor, coins = coins, scrolls = scrolls, best = p.nmWeekBest, gems = gems, stats = 0, nightmare = true })
+		pushState(player)
+		Tower.next(player, run)
+		return
+	end
 	-- 2.7.6판: 높은 층은 은자도 가파르게 (50층 3천 · 100층 약 4만 · 120층 약 11만 · 150층 약 45만)
 	local coins = math.floor(math.floor(T.coins * floor * T.coinGrowth ^ math.max(0, floor - 50)) * (Premium.owns(player, "coin2x") and 2 or 1))
 	p.coins += coins
@@ -4413,14 +4495,17 @@ function Tower.ended(player: Player, reason: string)
 	Push:FireClient(player, "tower", nil)
 	Push:FireClient(player, "boss", nil)
 	local p = profiles[player]
-	if p then
+	if p and run.nm then
+		toast(player, string.format("😈 악몽의 탑 %d층까지 올랐어요 (이번 주 최고 %d층 · 모든 때 최고 %d층)", math.max(0, run.floor - 1), p.nmWeekBest or 0, p.nmBest or 0))
+	elseif p then
 		toast(player, string.format("🗼 천층탑 %d층까지 올랐어요 (최고 %d층)", math.max(0, run.floor - 1), p.towerBest))
 	end
 	if reason ~= "dead" then
 		local char = player.Character
 		if char then
 			-- 들어온 문으로 돌아간다 (천궁의 탑 문으로 들어왔으면 천궁으로)
-			local at = run.back or (Config.TOWER.enter + Vector3.new(0, 4, 0) + Vector3.new(-Config.TOWER.enter.X, 0, -Config.TOWER.enter.Z).Unit * 22)
+			local E0 = run.nm and Config.NIGHTMARE.enter or Config.TOWER.enter
+			local at = run.back or (E0 + Vector3.new(0, 4, 0) + Vector3.new(-E0.X, 0, -E0.Z).Unit * 22)
 			char:PivotTo(CFrame.new(at))
 		end
 	end
@@ -5688,6 +5773,11 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			toast(player, "⚔ 배틀그라운드에서는 금창약을 쓸 수 없어요")
 			return
 		end
+		local run = activeTower[player]
+		if run and run.nm and run.curse and run.curse.noPotion then
+			toast(player, "🏜 갈증의 저주: 이번 주 악몽의 탑에서는 금창약을 쓸 수 없어요")
+			return
+		end
 		Actions.potion(player)
 	elseif BATTLE and (action == "battleEnter" or action == "battleLobby" or action == "battleVote") then
 		-- 3.3.1판: 배틀그라운드 대기실. 3.11판: 대기실 창에서 고른 권법으로 들어간다
@@ -6161,6 +6251,11 @@ if W.tower then
 		Tower.start(player)
 	end)
 end
+if W.nightmare then
+	W.nightmare.Triggered:Connect(function(player: Player)
+		Tower.start(player, nil, true)
+	end)
+end
 -- 천궁의 미궁 문: 미궁에 들어가고 끝나면 문 앞으로 돌아온다
 if W.mazeGate then
 	W.mazeGate.Triggered:Connect(function(player: Player)
@@ -6307,6 +6402,10 @@ local BOARD_VALUE = {
 	tower = function(p: Profile): number
 		return p.towerBest
 	end,
+	-- 3.99.29판 악몽의 탑 이번 주 순위 (주마다 새 순위표)
+	nightmare = function(p: Profile): number
+		return (p.nmWeek == Config.nightmareWeek()) and (p.nmWeekBest or 0) or 0
+	end,
 }
 
 function Board.store(key: string): any
@@ -6340,18 +6439,28 @@ function Board.update()
 	if not boards then
 		return
 	end
+	-- 3.99.29판: 악몽의 탑 순위판은 탑 앞에 따로 선다 (이번 주 저주를 함께 적는다)
+	if W.nightmareBoard and not boards.nightmare then
+		boards.nightmare = W.nightmareBoard
+	end
+	local nb = boards.nightmare
+	local sub = nb and nb:FindFirstChild("Sub")
+	if sub and sub:IsA("TextLabel") then
+		local cu = Config.nightmareCurse()
+		sub.Text = "이번 주: " .. cu.icon .. " " .. cu.name .. " · " .. cu.desc
+	end
 	for key, valueOf in pairs(BOARD_VALUE) do
 		local gui = boards[key]
 		if gui then
 			local rows: { { string } } = {}
-			local ds = Board.store(key)
+			local ds = Board.store(key == "nightmare" and ("nightmare_w" .. Config.nightmareWeek()) or key)
 			local okStore = false
 			if ds then
 				for player, p in pairs(profiles) do
 					local st = states[player]
 					local v = valueOf(p)
 					local sentKey = key .. player.UserId
-					if st and st.canSave and not st.tester and boardSent[sentKey] ~= v then
+					if st and st.canSave and not st.tester and boardSent[sentKey] ~= v and not (key == "nightmare" and v <= 0) then
 						local ok = pcall(function()
 							ds:SetAsync(tostring(player.UserId), v)
 						end)
@@ -6373,7 +6482,10 @@ function Board.update()
 			if not okStore then
 				local list = {}
 				for player, p in pairs(profiles) do
-					table.insert(list, { player.DisplayName, valueOf(p) })
+					local v = valueOf(p)
+					if v > 0 or key ~= "nightmare" then
+						table.insert(list, { player.DisplayName, v })
+					end
 				end
 				table.sort(list, function(a, b)
 					return a[2] > b[2]

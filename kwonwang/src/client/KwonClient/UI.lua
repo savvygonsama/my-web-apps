@@ -2382,7 +2382,11 @@ function UI.setTower(data: any?)
 	local f = towerFrame :: Frame
 	f.Visible = data ~= nil
 	if data and towerLabel then
-		towerLabel.Text = string.format("🗼 천층탑 %d층%s  ·  최고 %d층", data.floor or 1, data.boss and " 👹" or "", data.best or 0)
+		if data.nightmare then
+			towerLabel.Text = string.format("😈 악몽 %d층%s  ·  이번 주 %d층%s", data.floor or 1, data.boss and " 👹" or "", data.best or 0, data.curse and ("  ·  " .. data.curse) or "")
+		else
+			towerLabel.Text = string.format("🗼 천층탑 %d층%s  ·  최고 %d층", data.floor or 1, data.boss and " 👹" or "", data.best or 0)
+		end
 	end
 end
 

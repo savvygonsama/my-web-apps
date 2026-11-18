@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.28" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.29" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4693,6 +4693,38 @@ Config.TOWER = {
 	},
 	bosses = { "heukho", "hyeolrang", "bingma", "hyeolma", "cheonma", "yeomje", "sawang", "cheonmun" },
 }
+
+-- 3.99.29판 악몽의 탑: 천층탑 옆에 선 검은 탑. 천층탑 30층을 넘긴 자만 들어간다. 훨씬 세고 가파르며, 매주 (월요일 0시, 한국 시각) 저주가 하나 걸린다
+--   기록은 천층탑과 따로 (최고 기록 · 이번 주 기록), 이번 주 순위는 탑 앞 순위판. 이번 주에 다섯 층마다 처음 넘으면 천정 · 두루마리
+Config.NIGHTMARE = {
+	enter = Vector3.new(-196, 0, -112),
+	minTower = 30,
+	powerStart = 220, -- 1층부터 천층탑 약 20층만큼
+	powerGrowth = 1.09, -- 층마다 ×1.09 (천층탑 ×1.07)
+	hp = 1.6, -- 모든 적 체력 ×1.6
+	extra = 1, -- 층마다 적 하나 더
+	bossEvery = 5, -- 다섯 층마다 보스 (천층탑은 열 층)
+	coinMult = 2,
+	milestone = 5, -- 이번 주에 처음 넘을 때마다
+	gemsPerFloor = 30, -- 천정 = 층 × 30
+	tz = 9 * 3600,
+	curses = {
+		{ id = "swift", name = "질풍의 저주", icon = "🌪", desc = "적이 두 배 빠르다", walk = 2 },
+		{ id = "giant", name = "거인의 저주", icon = "🗿", desc = "적의 체력이 세 배", hp = 3 },
+		{ id = "fury", name = "광기의 저주", icon = "🩸", desc = "적이 주는 피해 1.8배", dmg = 1.8 },
+		{ id = "horde", name = "떼의 저주", icon = "🐜", desc = "적이 두 배로 많다 (하나하나는 조금 약하다)", count = 2, power = 0.7 },
+		{ id = "silence", name = "침묵의 저주", icon = "🤐", desc = "오의 · 초 오의를 쓸 수 없다", noUlt = true },
+		{ id = "thirst", name = "갈증의 저주", icon = "🏜", desc = "금창약을 쓸 수 없다", noPotion = true },
+	},
+}
+-- 이번 주 번호 (월요일 0시, 한국 시각에 바뀐다. 1970-01-01은 목요일)
+function Config.nightmareWeek(): number
+	return math.floor((os.time() + Config.NIGHTMARE.tz - 4 * 86400) / (7 * 86400))
+end
+function Config.nightmareCurse(week: number?): any
+	local C = Config.NIGHTMARE.curses
+	return C[((week or Config.nightmareWeek()) % #C) + 1]
+end
 
 ------------------------------------------------------------------------
 -- 비무 백 승: 비무대에서 백 번 이긴 자에게 무쌍신권
@@ -10702,6 +10734,9 @@ type Profile = {
 	mqv: number?, -- 3.74판: 부탁 기록의 판 (부탁이 길어지기 전에 다 끝낸 사람은 끝난 그대로)
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
 	enh: { [string]: number }?, -- 3.41판 게임패스 권법의 강화 단계 (0 ~ 15)
+	nmBest: number?, -- 3.99.29판 악몽의 탑 최고 층
+	nmWeek: number?, -- 악몽의 탑: 이번 주 기록의 주 번호
+	nmWeekBest: number?, -- 악몽의 탑: 그 주의 최고 층
 	refine: { [string]: number }?, -- 3.99.28판 제작소 권법 정련 단계 (0 ~ 10)
 	attDay: number?, -- 3.99.27판 출석: 마지막으로 받은 날 (한국 시각 날짜 번호)
 	attStreak: number?, -- 3.99.27판 출석: 이어서 들어온 날 수
@@ -10914,6 +10949,9 @@ local function sanitize(data: any): Profile
 	p.shards = math.floor(num(data.shards, 1e6))
 	p.lastSeen = math.floor(num(data.lastSeen, 1e11))
 	p.attDay = math.floor(num(data.attDay, 1e7))
+	p.nmBest = math.floor(num(data.nmBest, 1e5))
+	p.nmWeek = math.floor(num(data.nmWeek, 1e7))
+	p.nmWeekBest = math.floor(num(data.nmWeekBest, 1e5))
 	p.refine = {}
 	if type(data.refine) == "table" then
 		for id, v in pairs(data.refine) do
@@ -13571,6 +13609,13 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 		end
 		f.cds.H = t + Config.HEAVY_CD
 	end
+	if slot == "G" or slot == "X" then
+		local run = Tower.active(player)
+		if run and run.nm and run.curse and run.curse.noUlt then
+			toast(player, "🤐 침묵의 저주: 이번 주 악몽의 탑에서는 오의를 쓸 수 없어요")
+			return
+		end
+	end
 	if slot == "E" or slot == "R" or slot == "G" or slot == "X" then
 		if not Calc.unlocked(p, slot) then
 			toast(player, string.format("🔒 %s: 숙련도 %d에 열려요", move.name, Config.SKILL_UNLOCK[slot]))
@@ -14835,13 +14880,17 @@ Tower = {}
 local towerSlots: { [number]: Player } = {}
 local activeTower: { [Player]: any } = {}
 
-function Tower.start(player: Player, back: Vector3?)
+function Tower.start(player: Player, back: Vector3?, nightmare: boolean?)
 	local p, st = profiles[player], states[player]
 	local f = Combat.fighterOfPlayer(player)
 	if not p or not st or not f or f.dead then
 		return
 	end
 	if activeTower[player] then
+		return
+	end
+	if nightmare and p.towerBest < Config.NIGHTMARE.minTower then
+		toast(player, string.format("😈 악몽의 탑은 천층탑 %d층을 넘긴 자만 들어갈 수 있어요 (지금 최고 %d층)", Config.NIGHTMARE.minTower, p.towerBest))
 		return
 	end
 	if activeTrial[player] or activeGate[player] or Maze.active(player) then
@@ -14871,7 +14920,15 @@ function Tower.start(player: Player, back: Vector3?)
 	towerSlots[slot] = player
 	Train.stop(player)
 	Combat.dismount(f)
-	local run = { slot = slot, center = center, floor = 0, alive = {}, token = 0, back = back }
+	local run: any = { slot = slot, center = center, floor = 0, alive = {}, token = 0, back = back }
+	if nightmare then
+		run.nm = true
+		run.week = Config.nightmareWeek()
+		run.curse = Config.nightmareCurse(run.week)
+		if p.nmWeek ~= run.week then
+			p.nmWeek, p.nmWeekBest = run.week, 0
+		end
+	end
 	activeTower[player] = run
 	local char = player.Character
 	if char then
@@ -14916,7 +14973,12 @@ function Tower.next(player: Player, run: any)
 	local okT, themeName = pcall(World.towerTheme, run.slot, floor)
 	local inTen = ((floor - 1) % 10) + 1
 	local kind = isBoss and "boss" or (T.swarm and table.find(T.swarm.at, inTen) and "swarm") or (T.elite and table.find(T.elite.at, inTen) and "elite") or "normal"
-	Push:FireClient(player, "tower", { floor = floor, best = p.towerBest, boss = isBoss, theme = okT and themeName or nil, kind = kind })
+	local NM = Config.NIGHTMARE
+	if run.nm then
+		isBoss = floor % NM.bossEvery == 0
+		kind = isBoss and "boss" or kind
+	end
+	Push:FireClient(player, "tower", { floor = floor, best = run.nm and (p.nmWeekBest or 0) or p.towerBest, boss = isBoss, theme = okT and themeName or nil, kind = kind, nightmare = run.nm, curse = run.curse and (run.curse.icon .. " " .. run.curse.name) or nil, curseDesc = run.curse and run.curse.desc or nil })
 	task.delay(floor == 1 and 4 or 2.5, function()
 		local f = Combat.fighterOfPlayer(player)
 		if activeTower[player] ~= run or run.token ~= token or not f or f.dead then
@@ -14924,7 +14986,8 @@ function Tower.next(player: Player, run: any)
 		end
 		local list = {}
 		if isBoss then
-			local id = T.bosses[(math.floor(floor / T.bossEvery) - 1) % #T.bosses + 1]
+			local every = run.nm and NM.bossEvery or T.bossEvery
+			local id = T.bosses[(math.floor(floor / every) - 1) % #T.bosses + 1]
 			table.insert(list, { id, true })
 		else
 			local pool = T.bands[1][2]
@@ -14948,8 +15011,25 @@ function Tower.next(player: Player, run: any)
 				end
 			end
 		end
+		-- 악몽의 탑: 적 하나 더, 떼의 저주면 두 배
+		if run.nm then
+			local cu = run.curse or {}
+			local band = list[1] and list[1][1]
+			if not isBoss and band then
+				for _ = 1, NM.extra do
+					table.insert(list, { list[math.random(#list)][1], false, list[1][3], list[1][4], list[1][5] })
+				end
+			end
+			if cu.count and not isBoss then
+				local n0 = #list
+				for i = 1, n0 * (cu.count - 1) do
+					local src = list[(i - 1) % n0 + 1]
+					table.insert(list, { src[1], false, src[3], src[4], src[5] })
+				end
+			end
+		end
 		-- 층의 세기는 정해져 있다 (누가 오르든 같다)
-		local want = T.powerStart * T.powerGrowth ^ (floor - 1)
+		local want = run.nm and (NM.powerStart * NM.powerGrowth ^ (floor - 1)) or (T.powerStart * T.powerGrowth ^ (floor - 1))
 		for i, item in ipairs(list) do
 			local a = i / #list * math.pi * 2
 			local at = run.center + Vector3.new(math.cos(a), 0, math.sin(a)) * (T.radius * (item[2] and 0.2 or 0.45))
@@ -14958,15 +15038,22 @@ function Tower.next(player: Player, run: any)
 				local ef = e.f :: any
 				ef.towerOwner = player
 				ef.trialOwner = player
-				local w = want * (item[2] and T.bossPower or 1) * (item[3] or 1)
+				local cu = run.nm and run.curse or {}
+				local w = want * (item[2] and T.bossPower or 1) * (item[3] or 1) * ((not item[2] and cu.power) or 1)
 				local k = w / math.max(1, ef.power or 100)
-				ef.maxHp = math.max(1, math.floor(ef.maxHp * k * (item[2] and 2.5 or 1) * (item[4] or 1)))
+				ef.maxHp = math.max(1, math.floor(ef.maxHp * k * (item[2] and 2.5 or 1) * (item[4] or 1) * (run.nm and NM.hp or 1) * (cu.hp or 1)))
+				if cu.dmg then
+					ef.dmgMult *= cu.dmg
+				end
+				if cu.walk and ef.walk then
+					ef.walk *= cu.walk
+				end
 				ef.hp = ef.maxHp
 				ef.dmgMult *= k
 				ef.power = math.floor(w)
 				ef.rewardMult = 0.3
 				ef.model:SetAttribute("Power", ef.power)
-				ef.model:SetAttribute("Label", string.format(item[5] and "%d층 · 정예 %s" or "%d층 · %s", floor, ef.name))
+				ef.model:SetAttribute("Label", string.format(item[5] and "%s%d층 · 정예 %s" or "%s%d층 · %s", run.nm and "😈 " or "", floor, ef.name))
 				Combat.sync(ef)
 				e.target = f
 				run.alive[ef] = true
@@ -14990,6 +15077,33 @@ function Tower.killed(player: Player, ef: any)
 	end
 	local T = Config.TOWER
 	local floor = run.floor
+	if run.nm then
+		-- 악몽의 탑: 기록은 따로, 이번 주에 다섯 층마다 처음 넘으면 천정 · 두루마리
+		local NM = Config.NIGHTMARE
+		local coins = math.floor(T.coins * floor * NM.coinMult * T.coinGrowth ^ math.max(0, floor - 30)) * (Premium.owns(player, "coin2x") and 2 or 1)
+		p.coins += coins
+		local gems, scrolls = 0, 0
+		if p.nmWeek ~= run.week then
+			p.nmWeek, p.nmWeekBest = run.week, 0
+		end
+		if floor > (p.nmWeekBest or 0) then
+			p.nmWeekBest = floor
+			if floor % NM.milestone == 0 then
+				gems = floor * NM.gemsPerFloor * (Premium.owns(player, "gems2x") and 2 or 1)
+				scrolls = math.max(1, math.floor(floor / 10))
+				p.skyGems += gems
+				p.scrolls += scrolls
+			end
+		end
+		if floor > (p.nmBest or 0) then
+			p.nmBest = floor
+		end
+		st.dirty = true
+		Push:FireClient(player, "towerClear", { floor = floor, coins = coins, scrolls = scrolls, best = p.nmWeekBest, gems = gems, stats = 0, nightmare = true })
+		pushState(player)
+		Tower.next(player, run)
+		return
+	end
 	-- 2.7.6판: 높은 층은 은자도 가파르게 (50층 3천 · 100층 약 4만 · 120층 약 11만 · 150층 약 45만)
 	local coins = math.floor(math.floor(T.coins * floor * T.coinGrowth ^ math.max(0, floor - 50)) * (Premium.owns(player, "coin2x") and 2 or 1))
 	p.coins += coins
@@ -15043,14 +15157,17 @@ function Tower.ended(player: Player, reason: string)
 	Push:FireClient(player, "tower", nil)
 	Push:FireClient(player, "boss", nil)
 	local p = profiles[player]
-	if p then
+	if p and run.nm then
+		toast(player, string.format("😈 악몽의 탑 %d층까지 올랐어요 (이번 주 최고 %d층 · 모든 때 최고 %d층)", math.max(0, run.floor - 1), p.nmWeekBest or 0, p.nmBest or 0))
+	elseif p then
 		toast(player, string.format("🗼 천층탑 %d층까지 올랐어요 (최고 %d층)", math.max(0, run.floor - 1), p.towerBest))
 	end
 	if reason ~= "dead" then
 		local char = player.Character
 		if char then
 			-- 들어온 문으로 돌아간다 (천궁의 탑 문으로 들어왔으면 천궁으로)
-			local at = run.back or (Config.TOWER.enter + Vector3.new(0, 4, 0) + Vector3.new(-Config.TOWER.enter.X, 0, -Config.TOWER.enter.Z).Unit * 22)
+			local E0 = run.nm and Config.NIGHTMARE.enter or Config.TOWER.enter
+			local at = run.back or (E0 + Vector3.new(0, 4, 0) + Vector3.new(-E0.X, 0, -E0.Z).Unit * 22)
 			char:PivotTo(CFrame.new(at))
 		end
 	end
@@ -16318,6 +16435,11 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			toast(player, "⚔ 배틀그라운드에서는 금창약을 쓸 수 없어요")
 			return
 		end
+		local run = activeTower[player]
+		if run and run.nm and run.curse and run.curse.noPotion then
+			toast(player, "🏜 갈증의 저주: 이번 주 악몽의 탑에서는 금창약을 쓸 수 없어요")
+			return
+		end
 		Actions.potion(player)
 	elseif BATTLE and (action == "battleEnter" or action == "battleLobby" or action == "battleVote") then
 		-- 3.3.1판: 배틀그라운드 대기실. 3.11판: 대기실 창에서 고른 권법으로 들어간다
@@ -16791,6 +16913,11 @@ if W.tower then
 		Tower.start(player)
 	end)
 end
+if W.nightmare then
+	W.nightmare.Triggered:Connect(function(player: Player)
+		Tower.start(player, nil, true)
+	end)
+end
 -- 천궁의 미궁 문: 미궁에 들어가고 끝나면 문 앞으로 돌아온다
 if W.mazeGate then
 	W.mazeGate.Triggered:Connect(function(player: Player)
@@ -16937,6 +17064,10 @@ local BOARD_VALUE = {
 	tower = function(p: Profile): number
 		return p.towerBest
 	end,
+	-- 3.99.29판 악몽의 탑 이번 주 순위 (주마다 새 순위표)
+	nightmare = function(p: Profile): number
+		return (p.nmWeek == Config.nightmareWeek()) and (p.nmWeekBest or 0) or 0
+	end,
 }
 
 function Board.store(key: string): any
@@ -16970,18 +17101,28 @@ function Board.update()
 	if not boards then
 		return
 	end
+	-- 3.99.29판: 악몽의 탑 순위판은 탑 앞에 따로 선다 (이번 주 저주를 함께 적는다)
+	if W.nightmareBoard and not boards.nightmare then
+		boards.nightmare = W.nightmareBoard
+	end
+	local nb = boards.nightmare
+	local sub = nb and nb:FindFirstChild("Sub")
+	if sub and sub:IsA("TextLabel") then
+		local cu = Config.nightmareCurse()
+		sub.Text = "이번 주: " .. cu.icon .. " " .. cu.name .. " · " .. cu.desc
+	end
 	for key, valueOf in pairs(BOARD_VALUE) do
 		local gui = boards[key]
 		if gui then
 			local rows: { { string } } = {}
-			local ds = Board.store(key)
+			local ds = Board.store(key == "nightmare" and ("nightmare_w" .. Config.nightmareWeek()) or key)
 			local okStore = false
 			if ds then
 				for player, p in pairs(profiles) do
 					local st = states[player]
 					local v = valueOf(p)
 					local sentKey = key .. player.UserId
-					if st and st.canSave and not st.tester and boardSent[sentKey] ~= v then
+					if st and st.canSave and not st.tester and boardSent[sentKey] ~= v and not (key == "nightmare" and v <= 0) then
 						local ok = pcall(function()
 							ds:SetAsync(tostring(player.UserId), v)
 						end)
@@ -17003,7 +17144,10 @@ function Board.update()
 			if not okStore then
 				local list = {}
 				for player, p in pairs(profiles) do
-					table.insert(list, { player.DisplayName, valueOf(p) })
+					local v = valueOf(p)
+					if v > 0 or key ~= "nightmare" then
+						table.insert(list, { player.DisplayName, v })
+					end
 				end
 				table.sort(list, function(a, b)
 					return a[2] > b[2]
@@ -32720,6 +32864,86 @@ local function village(out: any)
 	end
 	out.tower = prompt(tDoor, "탑에 오르기", "천층탑", "TowerEnter")
 
+	-- 3.99.29판 악몽의 탑: 천층탑 옆의 검은 탑 (검은 층 · 핏빛 기둥 · 보랏빛 창 · 붉은 수정), 앞에 이번 주 순위판
+	do
+		local nAt = Config.NIGHTMARE.enter
+		local ncf = CFrame.lookAt(nAt, Vector3.new(0, 0, 0))
+		local NIGHT = Color3.fromRGB(26, 20, 30)
+		local BLOOD = Color3.fromRGB(120, 16, 24)
+		local VIOLET = Color3.fromRGB(170, 70, 255)
+		part({ Name = "NmPlinth", Size = Vector3.new(26, 2, 26), CFrame = ncf * CFrame.new(0, 1, 0), Color = Color3.fromRGB(40, 34, 42), Material = Enum.Material.Basalt, Parent = f })
+		local ny, nw = 2, 18
+		for i = 1, 9 do
+			local h = i == 1 and 11 or 7
+			part({ Name = "NmStorey", Size = Vector3.new(nw, h, nw), CFrame = ncf * CFrame.new(0, ny + h / 2, 0) * CFrame.Angles(0, (i % 2) * math.rad(8), 0), Color = NIGHT, Material = Enum.Material.Slate, Parent = f })
+			for _, sx in ipairs({ -1, 1 }) do
+				for _, sz in ipairs({ -1, 1 }) do
+					part({ Name = "NmPost", Size = Vector3.new(1, h, 1), CFrame = ncf * CFrame.new(sx * nw / 2, ny + h / 2, sz * nw / 2), Color = BLOOD, Material = Enum.Material.Wood, Parent = f })
+				end
+			end
+			for k = 0, 3 do
+				part({ Name = "NmWindow", Size = Vector3.new(1.6, h * 0.5, 0.3), CFrame = ncf * CFrame.Angles(0, k * math.pi / 2, 0) * CFrame.new(0, ny + h * 0.55, -nw / 2 - 0.1), Color = VIOLET, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			end
+			-- 위로 휘어 오른 검은 처마 끝
+			part({ Name = "NmEave", Size = Vector3.new(nw + 5, 0.8, nw + 5), CFrame = ncf * CFrame.new(0, ny + h + 0.4, 0), Color = Color3.fromRGB(16, 12, 18), Material = Enum.Material.Slate, Parent = f })
+			for k = 0, 3 do
+				part({ Name = "NmHorn", Size = Vector3.new(0.6, 2.4, 0.6), CFrame = ncf * CFrame.Angles(0, k * math.pi / 2 + math.pi / 4, 0) * CFrame.new(0, ny + h + 1.4, -(nw + 5) * 0.7) * CFrame.Angles(math.rad(-30), 0, 0), Color = BLOOD, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+			end
+			ny += h + 0.8
+			nw -= 1.6
+		end
+		local core = crystal(nAt + Vector3.new(0, ny + 6, 0), 3.4, Color3.fromRGB(255, 40, 60), f)
+		local smoke = Instance.new("Smoke")
+		smoke.Color = Color3.fromRGB(40, 10, 50)
+		smoke.Opacity = 0.15
+		smoke.RiseVelocity = 3
+		smoke.Size = 6
+		smoke.Parent = core
+		local nDoor = part({ Name = "NmDoor", Size = Vector3.new(5, 8, 0.6), CFrame = ncf * CFrame.new(0, 6, -9.2), Color = Color3.fromRGB(20, 8, 14), Material = Enum.Material.Slate, Parent = f })
+		local nVeil = part({ Name = "NmVeil", Size = Vector3.new(4.4, 7.4, 0.2), CFrame = ncf * CFrame.new(0, 6, -9.6), Color = VIOLET, Material = Enum.Material.Neon, Transparency = 0.5, CanCollide = false, Parent = f })
+		light(nVeil, VIOLET, 18, 1.6)
+		local nBoard = part({ Name = "NmSign", Size = Vector3.new(11, 3, 0.4), CFrame = ncf * CFrame.new(0, 11.6, -9.5), Color = Color3.fromRGB(20, 10, 14), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		sign(nBoard, Enum.NormalId.Front, { { "😈 악몽의 탑", Color3.fromRGB(255, 90, 110), 0.65 }, { "천층탑 30층을 넘긴 자만", Color3.fromRGB(210, 190, 230), 0.35 } })
+		out.nightmare = prompt(nDoor, "탑에 오르기", "😈 악몽의 탑", "NightmareEnter")
+		-- 이번 주 순위판 (탑 오른쪽 앞)
+		local side = (ncf * CFrame.new(-16, 0, -6)).Position
+		local bcf = CFrame.lookAt(side + Vector3.new(0, 9, 0), Vector3.new(0, 9, 0))
+		for _, sx in ipairs({ -1, 1 }) do
+			part({ Name = "NmBoardPost", Size = Vector3.new(1, 18, 1), CFrame = bcf * CFrame.new(sx * 6.2, -0.5, 0.4), Color = BLOOD, Material = Enum.Material.Wood, Parent = f })
+		end
+		local lb = part({ Name = "NmLeaderboard", Size = Vector3.new(12, 15, 0.5), CFrame = bcf, Color = Color3.fromRGB(18, 12, 18), Material = Enum.Material.Wood, Parent = f })
+		local gui = Instance.new("SurfaceGui")
+		gui.Name = "Board"
+		gui.Face = Enum.NormalId.Front
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.PixelsPerStud = 30
+		gui.LightInfluence = 0.2
+		gui.Parent = lb
+		local list = Instance.new("UIListLayout")
+		list.SortOrder = Enum.SortOrder.LayoutOrder
+		list.Parent = gui
+		local function row(name: string, text: string, h: number, color: Color3, order: number)
+			local l = Instance.new("TextLabel")
+			l.Name = name
+			l.LayoutOrder = order
+			l.BackgroundTransparency = 1
+			l.Size = UDim2.fromScale(1, h)
+			l.Font = Enum.Font.GothamBold
+			l.TextScaled = true
+			l.TextColor3 = color
+			l.TextStrokeTransparency = 0.5
+			l.Text = text
+			l.Parent = gui
+		end
+		row("Title", "😈 이번 주 악몽의 탑", 0.1, Color3.fromRGB(255, 90, 110), 0)
+		row("Sub", "", 0.06, Color3.fromRGB(210, 190, 230), 1)
+		for r = 1, 10 do
+			row("Row" .. r, "", 0.084, r == 1 and Color3.fromRGB(255, 215, 90) or r <= 3 and Color3.fromRGB(230, 230, 240) or Color3.fromRGB(200, 185, 210), 1 + r)
+		end
+		out.boards = out.boards or {}
+		out.nightmareBoard = gui
+	end
+
 	-- 강호 순위표 (북동쪽 모퉁이): 세 개의 큰 판
 	local bAt = Vector3.new(185, 0, -185)
 	local toC = Vector3.new(-bAt.X, 0, -bAt.Z).Unit
@@ -41622,8 +41846,35 @@ function handlers.dexReward(data: any)
 	end
 end
 
+-- 3.99.29판 악몽의 탑: 들어가 있는 동안 화면이 어둡고 붉다
+local nmCC: ColorCorrectionEffect? = nil
+local function nightmareTint(on: boolean)
+	if on and not nmCC then
+		local e = Instance.new("ColorCorrectionEffect")
+		e.Name = "KwonNightmare"
+		e.TintColor = Color3.fromRGB(235, 200, 220)
+		e.Saturation = -0.35
+		e.Contrast = 0.2
+		e.Brightness = -0.06
+		e.Parent = Lighting
+		nmCC = e
+	elseif not on and nmCC then
+		nmCC:Destroy()
+		nmCC = nil
+	end
+end
 function handlers.tower(data: any?)
 	UI.setTower(data)
+	nightmareTint(data ~= nil and data.nightmare == true)
+	if data and data.nightmare then
+		local boss = data.boss == true
+		local sub = boss and "👹 이 층의 주인이 기다린다" or "모든 적을 쓰러뜨려라"
+		if data.floor == 1 and data.curse then
+			sub = "이번 주 " .. data.curse .. " · " .. (data.curseDesc or "")
+		end
+		UI.banner(string.format("😈 악몽 %d층", data.floor), sub, boss and Color3.fromRGB(255, 50, 70) or Color3.fromRGB(200, 120, 255))
+		return
+	end
 	if data then
 		local boss = data.boss == true
 		-- 3.99.10판: 무대 이름과 층의 갈래
@@ -41642,7 +41893,11 @@ function handlers.towerClear(data: any)
 	if (data.gems or 0) > 0 then
 		extra ..= string.format("  💎 +%d", data.gems)
 	end
-	UI.banner(string.format("🗼 %d층 돌파!", data.floor), string.format("💰 +%s%s  ·  최고 %d층", Config.formatNumber(data.coins), extra, data.best), Color3.fromRGB(255, 210, 120))
+	if data.nightmare then
+		UI.banner(string.format("😈 악몽 %d층 돌파!", data.floor), string.format("💰 +%s%s  ·  이번 주 최고 %d층", Config.formatNumber(data.coins), extra, data.best), Color3.fromRGB(200, 120, 255))
+	else
+		UI.banner(string.format("🗼 %d층 돌파!", data.floor), string.format("💰 +%s%s  ·  최고 %d층", Config.formatNumber(data.coins), extra, data.best), Color3.fromRGB(255, 210, 120))
+	end
 	Fx.sound("ping", 0.8, 1.2)
 end
 
@@ -65497,6 +65752,33 @@ return {
 	["🔨 정련 +%d → +%d · 피해 +%d%%"] = "🔨 Refine +%d → +%d · damage +%d%%",
 	["🔨 정련 +%d"] = "🔨 Refine +%d",
 	["✔ +"] = "✔ +",
+	["질풍의 저주"] = "Curse of the Gale",
+	["적이 두 배 빠르다"] = "Enemies are twice as fast",
+	["거인의 저주"] = "Curse of the Giant",
+	["적의 체력이 세 배"] = "Enemies have triple HP",
+	["광기의 저주"] = "Curse of Frenzy",
+	["적이 주는 피해 1.8배"] = "Enemies deal 1.8× damage",
+	["떼의 저주"] = "Curse of the Horde",
+	["적이 두 배로 많다 (하나하나는 조금 약하다)"] = "Twice as many enemies (each a little weaker)",
+	["침묵의 저주"] = "Curse of Silence",
+	["오의 · 초 오의를 쓸 수 없다"] = "Ultimates and super ultimates are sealed",
+	["갈증의 저주"] = "Curse of Thirst",
+	["금창약을 쓸 수 없다"] = "Healing salves can't be used",
+	["😈 악몽의 탑은 천층탑 %d층을 넘긴 자만 들어갈 수 있어요 (지금 최고 %d층)"] = "😈 Only those past floor %d of the Thousand-Floor Tower may enter the Nightmare Tower (your best: floor %d)",
+	["😈 악몽의 탑 %d층까지 올랐어요 (이번 주 최고 %d층 · 모든 때 최고 %d층)"] = "😈 You reached Nightmare floor %d (this week's best %d · all-time best %d)",
+	["🤐 침묵의 저주: 이번 주 악몽의 탑에서는 오의를 쓸 수 없어요"] = "🤐 Curse of Silence: no ultimates in the Nightmare Tower this week",
+	["🏜 갈증의 저주: 이번 주 악몽의 탑에서는 금창약을 쓸 수 없어요"] = "🏜 Curse of Thirst: no healing salves in the Nightmare Tower this week",
+	["😈 악몽의 탑"] = "😈 Nightmare Tower",
+	["천층탑 30층을 넘긴 자만"] = "Only those past floor 30 of the Tower",
+	["😈 이번 주 악몽의 탑"] = "😈 Nightmare Tower This Week",
+	["이번 주: %s %s · %s"] = "This week: %s %s · %s",
+	["😈 악몽 %d층"] = "😈 Nightmare Floor %d",
+	["이번 주 %s · %s"] = "This week %s · %s",
+	["😈 악몽 %d층 돌파!"] = "😈 Nightmare Floor %d Cleared!",
+	["💰 +%s%s  ·  이번 주 최고 %d층"] = "💰 +%s%s  ·  this week's best: floor %d",
+	["😈 악몽 %d층%s  ·  이번 주 %d층%s"] = "😈 Nightmare %d%s  ·  this week %d%s",
+	["%s%d층 · 정예 %s"] = "%sFloor %d · Elite %s",
+	["%s%d층 · %s"] = "%sFloor %d · %s",
 }
 ]]></string>
           </Properties>
@@ -86061,7 +86343,11 @@ function UI.setTower(data: any?)
 	local f = towerFrame :: Frame
 	f.Visible = data ~= nil
 	if data and towerLabel then
-		towerLabel.Text = string.format("🗼 천층탑 %d층%s  ·  최고 %d층", data.floor or 1, data.boss and " 👹" or "", data.best or 0)
+		if data.nightmare then
+			towerLabel.Text = string.format("😈 악몽 %d층%s  ·  이번 주 %d층%s", data.floor or 1, data.boss and " 👹" or "", data.best or 0, data.curse and ("  ·  " .. data.curse) or "")
+		else
+			towerLabel.Text = string.format("🗼 천층탑 %d층%s  ·  최고 %d층", data.floor or 1, data.boss and " 👹" or "", data.best or 0)
+		end
 	end
 end
 
