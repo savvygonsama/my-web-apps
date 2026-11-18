@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.30" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.31" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7520,6 +7520,161 @@ do
 	})
 end
 
+------------------------------------------------------------------------
+-- 3.99.31판 무공 비급 해독: 보스가 떨어뜨린 찢어진 비급을 다 모아 맞추면 숨은 권법 하나 (셋: 전설 · 태초 · 윤회)
+------------------------------------------------------------------------
+do
+	local function seq(steps: { any }): any
+		return { kind = "forgeSeq", steps = steps }
+	end
+	local function add(st: any)
+		st.keepGrade = true
+		st.hidden = true
+		st.rank = OLD_RANK[st.grade] or 1
+		table.insert(Config.Styles, st)
+		st.index = #Config.Styles
+		Config.STYLE_BY_ID[st.id] = st
+	end
+
+	-- 🌙 잔월검장 [전설]: 손바닥에 서린 초승달이 칼날이 된다
+	add({
+		id = "janwol", name = "잔월검장", hanja = "殘月劍掌", icon = "🌙", grade = "전설", fx = "shadow",
+		color = Color3.fromRGB(190, 210, 255), color2 = Color3.fromRGB(70, 90, 170),
+		palette = { Color3.fromRGB(215, 230, 255), Color3.fromRGB(90, 110, 200), Color3.fromRGB(255, 255, 255) },
+		desc = "새벽녘 기우는 달처럼 서늘한 장법. 손바닥에 서린 초승달이 칼날이 되어 베고, 걸음마다 달빛이 고리로 번진다.",
+		gimmick = "잔월: 손이 지나간 자리에 초승달 칼날이 남는다. 몸이 가볍고 빠르다",
+		unlockHint = "찢어진 비급 「잔월비급」 네 장을 모아 해독한다 (흑호 · 혈랑 · 빙마가 떨어뜨린다)",
+		deflect = 0.22, speed = 1.12, stance = "stance_sunmoon",
+		combo = {
+			{ id = "jw1", name = "월광장", pose = "moon_palm_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4.5, 8, 8, 0.3, 8) } },
+			{ id = "jw2", name = "잔영장", pose = "palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 8, 8, 0.3, 8) } },
+			{ id = "jw3", name = "월륜각", pose = "crescent_kick", dur = 0.42, lunge = 2, hits = { hit(0.15, 6, 5, 7, 7, 0.3, 8, 8, true), hit(0.28, 6, 5, 8, 8, 0.35, 10, 10, true) } },
+			{ id = "jw4", name = "월인", pose = "moon_seal", dur = 0.5, lunge = 3, hits = { hit(0.24, 7, 7, 13, 16, 0.5, 30, nil, true) } },
+		},
+		heavy = { id = "jwH", name = "만월투", pose = "moon_throw", dur = 0.6, lunge = 2, hits = { hit(0.28, 12, 5, 22, 26, 0.6, 34) } },
+		finisher = { id = "jwF", name = "잔월승천", pose = "crescent_kick", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		skills = {
+			E = { id = "jwE", name = "잔월섬", desc = "손바닥을 두 번 휘둘러 초승달 칼날 둘을 엇갈리게 날린다. 앞으로 22칸을 가르며 지나는 적을 벤다", pose = "moon_throw", dur = 0.6, cd = 7, chi = 18,
+				mech = seq({
+					{ t = 0.15, shape = "line", at = "self", length = 22, width = 5, vfx = "crescent", col = 1, hit = hit(0, 0, 0, 18, 14, 0.4, 10) },
+					{ t = 0.35, shape = "line", at = "self", length = 22, width = 5, vfx = "crescent", col = 2, hit = hit(0, 0, 0, 18, 14, 0.4, 10) },
+				}) },
+			R = { id = "jwR", name = "월하보", desc = "달빛을 밟고 12칸을 미끄러져 지나는 적을 베고, 내려선 자리에서 달빛 고리가 퍼져 적을 띄운다", pose = "moon_palm_l", dur = 0.7, cd = 10, chi = 22,
+				mech = seq({
+					{ t = 0.1, dash = 12, shape = "circle", at = "self", radius = 6, vfx = "crescent", col = 3, hit = hit(0, 0, 0, 20, 16, 0.4, 10) },
+					{ t = 0.4, shape = "ring", at = "self", inner = 4, radius = 13, vfx = "moonRing", col = 1, hit = hit(0, 0, 0, 22, 20, 0.5, 14, 12) },
+				}) },
+			G = { id = "jwG", name = "잔월만천", desc = "하늘에 초승달이 가득 뜬다. 가까운 적 여섯에게 달이 세 번 떨어지고, 마지막에 내 둘레로 만월이 차오르며 터진다", pose = "point_sky", dur = 2.0, cd = 30, chi = 100, armor = true,
+				mech = seq({
+					{ t = 0.4, at = "each", n = 6, range = 30, radius = 6, vfx = "moonFall", col = 1, hit = hit(0, 0, 0, 16, 16, 0.4, 6, 8) },
+					{ t = 0.8, at = "each", n = 6, range = 30, radius = 6, vfx = "moonFall", col = 2, hit = hit(0, 0, 0, 16, 16, 0.4, 6, 8) },
+					{ t = 1.2, at = "each", n = 6, range = 30, radius = 6, vfx = "moonFall", col = 1, hit = hit(0, 0, 0, 16, 16, 0.4, 6, 8) },
+					{ t = 1.7, shape = "circle", at = "self", radius = 17, vfx = "moonRing", col = 3, big = true, hit = hit(0, 0, 0, 60, 70, 1.0, 40, 16) },
+				}) },
+		},
+	})
+
+	-- ⚡ 뇌운비보 [태초]: 구름을 밟고 벼락처럼 찬다
+	add({
+		id = "noeun", name = "뇌운비보", hanja = "雷雲飛步", icon = "⛈", grade = "태초", fx = "lightning",
+		color = Color3.fromRGB(150, 190, 255), color2 = Color3.fromRGB(240, 245, 255),
+		palette = { Color3.fromRGB(160, 200, 255), Color3.fromRGB(245, 248, 255), Color3.fromRGB(190, 140, 255) },
+		desc = "구름을 밟고 하늘을 걷는 발의 무공. 발끝마다 벼락이 맺히고, 차고 지나간 자리에 먹구름이 남아 다시 벼락을 내린다.",
+		gimmick = "뇌운: 발차기 무공. 기술마다 몸이 앞으로 크게 나아간다. 대시가 빠르다",
+		unlockHint = "찢어진 비급 「뇌운비급」 네 장을 모아 해독한다 (혈마 · 천마 · 뇌제가 떨어뜨린다)",
+		deflect = 0.24, speed = 1.12, dashCd = 0.6, stance = "stance_byeokryeok",
+		combo = {
+			{ id = "nu1", name = "뇌각", pose = "front_kick", dur = 0.32, lunge = 4, hits = { hit(0.13, 6, 5, 18, 15, 0.35, 10) } },
+			{ id = "nu2", name = "운각", pose = "roundhouse", dur = 0.34, lunge = 3, hits = { hit(0.15, 6, 5, 18, 15, 0.35, 12) } },
+			{ id = "nu3", name = "선풍뇌퇴", pose = "back_spin_kick", dur = 0.46, lunge = 2, hits = { hit(0.24, 0, 8, 20, 24, 0.5, 14, 10, true) } },
+			{ id = "nu4", name = "비뢰각", pose = "flying_kick", dur = 0.48, lunge = 6, hits = { hit(0.22, 9, 6, 30, 34, 0.6, 38) } },
+		},
+		heavy = { id = "nuH", name = "낙뢰각", pose = "dive_kick", dur = 0.72, lunge = 4, hits = { hit(0.36, 6, 9, 50, 76, 1.0, 40, 12, true) } },
+		finisher = { id = "nuF", name = "뇌운승천각", pose = "flying_kick", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		skills = {
+			E = { id = "nuE", name = "뇌운삼보", desc = "세 걸음 하늘을 밟아 나아간다. 내려설 때마다 발밑에 벼락이 떨어진다", pose = "flying_kick", dur = 0.75, cd = 8, chi = 20,
+				mech = seq({
+					{ t = 0.1, dash = 7, shape = "circle", at = "self", radius = 6, vfx = "thunder", col = 1, hit = hit(0, 0, 0, 22, 26, 0.5, 10) },
+					{ t = 0.32, dash = 7, shape = "circle", at = "self", radius = 6, vfx = "thunder", col = 3, hit = hit(0, 0, 0, 22, 26, 0.5, 10) },
+					{ t = 0.54, dash = 7, shape = "circle", at = "self", radius = 7, vfx = "thunder", col = 1, hit = hit(0, 0, 0, 26, 30, 0.6, 20, 12) },
+				}) },
+			R = { id = "nuR", name = "운중뇌", desc = "발밑에서 먹구름이 터져 둘레의 적을 띄우고, 가까운 적 넷의 머리 위 구름에서 벼락이 내리친다", pose = "roundhouse", dur = 1.0, cd = 11, chi = 26,
+				mech = seq({
+					{ t = 0.2, shape = "circle", at = "self", radius = 10, vfx = "cloudPuff", col = 2, hit = hit(0, 0, 0, 20, 24, 0.5, 10, 18) },
+					{ t = 0.6, at = "each", n = 4, range = 24, radius = 6, vfx = "thunder", col = 3, hit = hit(0, 0, 0, 30, 34, 0.6, 8) },
+				}) },
+			G = { id = "nuG", name = "만뢰운해", desc = "둘레가 먹구름 바다가 된다. 구름에서 벼락 열 줄기가 차례로 적에게 내리꽂히고, 마지막에 하늘이 통째로 번쩍이며 벼락 지붕이 내려앉는다", pose = "point_sky", dur = 2.3, cd = 32, chi = 100, armor = true,
+				mech = { kind = "forgeSeq", steps = (function()
+					local t = { { t = 0.3, shape = "circle", at = "self", radius = 24, vfx = "cloudSea", col = 2, hit = hit(0, 0, 0, 10, 12, 0.3, 0) } }
+					for k = 0, 9 do
+						table.insert(t, { t = 0.6 + k * 0.1, at = "target", range = 30, shape = "circle", radius = 6, vfx = "thunder", col = (k % 2 == 0) and 1 or 3, hit = hit(0, 0, 0, 14, 16, 0.3, 4) })
+					end
+					table.insert(t, { t = 1.95, shape = "circle", at = "self", radius = 22, vfx = "thunderDome", col = 1, big = true, hit = hit(0, 0, 0, 100, 140, 1.4, 60, 18) })
+					return t
+				end)() } },
+		},
+	})
+
+	-- 👻 귀화백골장 [윤회]: 저승의 귀화와 백골의 손
+	add({
+		id = "gwihwa", name = "귀화백골장", hanja = "鬼火白骨掌", icon = "👻", grade = "윤회", fx = "void",
+		color = Color3.fromRGB(110, 255, 170), color2 = Color3.fromRGB(235, 230, 210),
+		palette = { Color3.fromRGB(100, 255, 160), Color3.fromRGB(235, 230, 210), Color3.fromRGB(20, 40, 30) },
+		desc = "저승 문턱에서 건져 올린 장법. 손끝에 푸른 귀화가 타오르고, 땅 밑에서 백골의 손이 솟아 적을 붙잡는다. 끝에는 저승 문이 열린다.",
+		gimmick = "귀화: 기술마다 푸른 귀화와 백골의 손이 나타난다. 초 오의(X)가 있다",
+		unlockHint = "찢어진 비급 「귀화비급」 다섯 장을 모아 해독한다 (염제 · 사왕 · 천문장 · 천존이 떨어뜨린다)",
+		deflect = 0.28, speed = 1.05, stance = "stance_mugeuk",
+		combo = {
+			{ id = "gh1", name = "귀조", pose = "blood_claw_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 10, 8, 0.3, 6) } },
+			{ id = "gh2", name = "음풍장", pose = "void_palm_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 10, 8, 0.3, 6) } },
+			{ id = "gh3", name = "귀화선", pose = "circle_palm", dur = 0.42, lunge = 2, hits = { hit(0.14, 5, 8, 7, 7, 0.3, 8, nil, true), hit(0.3, 5, 8, 7, 7, 0.3, 8, nil, true) } },
+			{ id = "gh4", name = "백골장", pose = "push_palm", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 6, 20, 22, 0.6, 28) } },
+		},
+		heavy = { id = "ghH", name = "귀문추", pose = "grav_hammer", dur = 0.6, lunge = 2, hits = { hit(0.28, 8, 8, 26, 28, 0.6, 22, 8, true) } },
+		finisher = { id = "ghF", name = "귀화승천", pose = "void_push", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		skills = {
+			E = { id = "ghE", name = "귀화탄", desc = "푸른 귀화 셋을 날려 가까운 적 셋을 태운다. 귀화는 한 번 더 타오른다", pose = "push_palm", dur = 0.7, cd = 8, chi = 20,
+				mech = seq({
+					{ t = 0.2, at = "each", n = 3, range = 26, radius = 5, vfx = "ghostFire", col = 1, hit = hit(0, 0, 0, 16, 14, 0.3, 4) },
+					{ t = 0.55, at = "each", n = 3, range = 26, radius = 5, vfx = "ghostFire", col = 1, hit = hit(0, 0, 0, 12, 10, 0.25, 4) },
+				}) },
+			R = { id = "ghR", name = "백골수", desc = "땅을 내리치면 앞으로 20칸 백골의 손이 줄지어 솟아 적을 붙잡아 띄우고, 끝에서 귀화가 크게 터진다", pose = "grav_hammer", dur = 1.0, cd = 10, chi = 25,
+				mech = seq({
+					{ t = 0.3, shape = "line", at = "self", length = 20, width = 6, vfx = "boneHands", col = 2, hit = hit(0, 0, 0, 26, 24, 0.6, 6, 16) },
+					{ t = 0.7, shape = "circle", at = "front", dist = 20, radius = 9, vfx = "ghostFire", col = 1, big = true, hit = hit(0, 0, 0, 40, 40, 0.7, 24, 12) },
+				}) },
+			G = { id = "ghG", name = "백귀야행", desc = "발밑에 저승의 원이 그려져 둘레의 적을 끌어당긴다. 귀화가 세 번 적 여섯을 태우고, 마지막에 해골 귀화가 터진다", pose = "point_sky", dur = 2.5, cd = 30, chi = 100, armor = true,
+				mech = seq({
+					{ t = 0.4, shape = "circle", at = "self", radius = 22, pull = 30, vfx = "ghostCircle", col = 1, hit = hit(0, 0, 0, 20, 20, 0.4, 0) },
+					{ t = 0.8, at = "each", n = 6, range = 26, radius = 6, vfx = "ghostFire", col = 1, hit = hit(0, 0, 0, 26, 24, 0.5, 6, 8) },
+					{ t = 1.2, at = "each", n = 6, range = 26, radius = 6, vfx = "boneHands", col = 2, hit = hit(0, 0, 0, 26, 24, 0.5, 6, 10) },
+					{ t = 1.6, at = "each", n = 6, range = 26, radius = 6, vfx = "ghostFire", col = 1, hit = hit(0, 0, 0, 26, 24, 0.5, 6, 8) },
+					{ t = 2.2, shape = "circle", at = "self", radius = 24, vfx = "skullBurst", col = 1, big = true, hit = hit(0, 0, 0, 140, 160, 1.5, 60, 26) },
+				}) },
+			X = { id = "ghX", name = "귀문개방", desc = "초 오의 (그동안 무적). 저승 문이 열려 둘레의 적을 빨아들이고, 귀화와 백골의 손이 네 번 거듭 적 여덟을 덮친다. 마지막에 문이 닫히며 둘레 36칸이 푸른 불로 터진다", pose = "ult_star", dur = 3.6, cd = 60, chi = 150, armor = true,
+				mech = { kind = "forgeSeq", iframes = true, steps = {
+					{ t = 0.5, shape = "circle", at = "self", radius = 30, pull = 40, vfx = "ghostCircle", col = 1, hit = hit(0, 0, 0, 30, 30, 0.5, 0) },
+					{ t = 0.9, at = "each", n = 8, range = 34, radius = 7, vfx = "ghostFire", col = 1, hit = hit(0, 0, 0, 30, 30, 0.5, 6, 8) },
+					{ t = 1.4, at = "each", n = 8, range = 34, radius = 7, vfx = "boneHands", col = 2, hit = hit(0, 0, 0, 30, 30, 0.5, 6, 10) },
+					{ t = 1.9, at = "each", n = 8, range = 34, radius = 7, vfx = "ghostFire", col = 1, hit = hit(0, 0, 0, 30, 30, 0.5, 6, 8) },
+					{ t = 2.4, at = "each", n = 8, range = 34, radius = 7, vfx = "boneHands", col = 2, hit = hit(0, 0, 0, 30, 30, 0.5, 6, 10) },
+					{ t = 3.1, shape = "circle", at = "self", radius = 36, vfx = "skullBurst", col = 1, big = true, hit = hit(0, 0, 0, 240, 270, 1.8, 80, 30) },
+				} } },
+		},
+	})
+end
+
+-- 비급: pages = 장 수 (해독 퍼즐의 조각 = 권법 한자 이름의 글자), bosses = 떨어뜨리는 보스, chance = 보스 한 마리에 한 장 확률
+Config.MANUSCRIPTS = {
+	{ id = "janwol", name = "잔월비급", style = "janwol", pages = 4, chance = 0.18, bosses = { "heukho", "hyeolrang", "bingma" } },
+	{ id = "noeun", name = "뇌운비급", style = "noeun", pages = 4, chance = 0.15, bosses = { "hyeolma", "cheonma", "noeje" } },
+	{ id = "gwihwa", name = "귀화비급", style = "gwihwa", pages = 5, chance = 0.12, bosses = { "yeomje", "sawang", "cheonmun", "cheonjon" } },
+}
+Config.MANUSCRIPT_BY_ID = {}
+for _, m in ipairs(Config.MANUSCRIPTS) do
+	Config.MANUSCRIPT_BY_ID[m.id] = m
+end
+
 -- 제작소 조리법: 환생 횟수 · 비급 조각 · 천상 재료 · 천정 · 은자 (은자는 지금 경지의 '은자 몫'으로 센다: Config.productCoins)
 Config.FORGE = {
 	{ style = "samwon", rebirth = 1, shards = 40, gems = 1500, coinShares = 20, mats = { bloodmoon = 12, thunderstone = 10, tidepearl = 12 } },
@@ -10768,6 +10923,7 @@ type Profile = {
 	mqv: number?, -- 3.74판: 부탁 기록의 판 (부탁이 길어지기 전에 다 끝낸 사람은 끝난 그대로)
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
 	enh: { [string]: number }?, -- 3.41판 게임패스 권법의 강화 단계 (0 ~ 15)
+	pages: { [string]: number }?, -- 3.99.31판 찢어진 비급: 가진 장 (비트)
 	disciple: any?, -- 3.99.30판 문하생 { name, robe, style, lv, xp, job, since }
 	nmBest: number?, -- 3.99.29판 악몽의 탑 최고 층
 	nmWeek: number?, -- 악몽의 탑: 이번 주 기록의 주 번호
@@ -10985,6 +11141,14 @@ local function sanitize(data: any): Profile
 	p.lastSeen = math.floor(num(data.lastSeen, 1e11))
 	p.attDay = math.floor(num(data.attDay, 1e7))
 	p.nmBest = math.floor(num(data.nmBest, 1e5))
+	p.pages = {}
+	if type(data.pages) == "table" then
+		for id, v in pairs(data.pages) do
+			if type(id) == "string" and Config.MANUSCRIPT_BY_ID[id] and type(v) == "number" then
+				(p.pages :: any)[id] = math.clamp(math.floor(v), 0, 255)
+			end
+		end
+	end
 	if type(data.disciple) == "table" then
 		local d = data.disciple
 		local D = Config.DISCIPLE
@@ -11998,6 +12162,7 @@ local function pushState(player: Player)
 		enh = p.enh,
 		shards = p.shards or 0,
 		refine = p.refine or {},
+		pages = p.pages or {},
 		disciple = p.disciple and {
 			name = p.disciple.name,
 			lv = p.disciple.lv,
@@ -13372,6 +13537,34 @@ Combat.init(Push, {
 					if math.random() < (lucky and PS.luckScroll or PS.scrollBase) then
 						p.scrolls += 1
 						toast(killer, "📜 심법 두루마리를 얻었어요!")
+					end
+					-- 3.99.31판 찢어진 비급 한 장 (아직 없는 장만, 해독한 비급은 더 안 떨어진다)
+					do
+						local tid = (f :: any).typeId
+						for _, M in ipairs(Config.MANUSCRIPTS) do
+							if table.find(M.bosses, tid) and not p.styles[M.style] and math.random() < M.chance then
+								p.pages = p.pages or {}
+								local have = (p.pages :: any)[M.id] or 0
+								local missing = {}
+								for i = 1, M.pages do
+									if bit32.band(have, bit32.lshift(1, i - 1)) == 0 then
+										table.insert(missing, i)
+									end
+								end
+								if #missing > 0 then
+									local pick = missing[math.random(#missing)]
+									have = bit32.bor(have, bit32.lshift(1, pick - 1));
+									(p.pages :: any)[M.id] = have
+									local n = 0
+									for i = 1, M.pages do
+										if bit32.band(have, bit32.lshift(1, i - 1)) ~= 0 then
+											n += 1
+										end
+									end
+									toast(killer, string.format("📜 찢어진 비급 「%s」 한 장 (%d/%d)%s", M.name, n, M.pages, n >= M.pages and " · 다 모았다! 권법 창의 📜 비급에서 해독" or ""))
+								end
+							end
+						end
 					end
 					-- 3.41판 비급 조각 (게임패스 권법 강화 재료): 지옥 > 후반 > 보통 보스
 					do
@@ -16826,6 +17019,19 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		if f and f.model:GetAttribute("Mount") then
 			Combat.mount(f, m.id)
 		end
+		pushState(player)
+	elseif action == "decode" then
+		-- 3.99.31판 비급 해독: 장을 다 모았으면 (퍼즐은 화면에서) 그 권법을 얻는다
+		local M = type(a1) == "string" and Config.MANUSCRIPT_BY_ID[a1]
+		if not M or p.styles[M.style] then
+			return
+		end
+		local have = (p.pages or {} :: any)[M.id] or 0
+		if have ~= bit32.lshift(1, M.pages) - 1 then
+			toast(player, "📜 아직 비급의 장이 모자라요")
+			return
+		end
+		grantStyle(player, M.style, true)
 		pushState(player)
 	elseif action == "disciple" then
 		Actions.disciple(player, a1, a2)
@@ -54781,6 +54987,196 @@ VFX.taiji = function(d)
 end
 
 ------------------------------------------------------------------------
+-- 3.99.31판 비급 권법: 잔월검장 (초승달) · 뇌운비보 (먹구름 · 벼락 지붕) · 귀화백골장 (귀화 · 백골의 손 · 저승 원)
+------------------------------------------------------------------------
+-- 초승달 칼날: 반쯤 겹친 두 원판 대신 휘어진 빛 조각 일곱으로 활을 그린다
+local function crescentAt(cf: CFrame, r: number, c: Color3, life: number)
+	for k = -3, 3 do
+		local a = k * 0.32
+		local seg = piece(V(0.45, 0.25, r * 0.38), cf * CFrame.Angles(0, a, 0) * CF(0, 0, -r) * CFrame.Angles(0, math.pi / 2, 0), c, math.abs(k) * 0.08)
+		fadeOut(seg, life, V(0.1, 0.1, r * 0.38))
+	end
+end
+VFX.crescent = function(d, c)
+	local from, dir = d.from :: Vector3, d.dir :: Vector3
+	local len = d.length or 8
+	local n = d.length and 6 or 1
+	for i = 1, n do
+		task.delay(i * 0.03, function()
+			local at = from + dir * (d.length and (len * i / n) or 2) + V(0, 2.4, 0)
+			crescentAt(CFrame.lookAt(at, at + dir) * CF(0, 0, 2.5), 2.6, c, 0.35)
+		end)
+	end
+	Fx.burst("glitter", from + dir * len * 0.5 + V(0, 2, 0), c, 8, 1)
+end
+VFX.moonRing = function(d, c, c2)
+	local g = ground(d.at)
+	local r = d.radius or 13
+	local ring = piece(V(0.4, 2, 2), CF(g + V(0, 0.4, 0)) * CFrame.Angles(0, 0, math.rad(90)), c, 0.1, Enum.PartType.Cylinder)
+	tween(ring, 0.4, { Size = V(0.2, r * 2, r * 2), Transparency = 1 })
+	Debris:AddItem(ring, 0.45)
+	if d.big then
+		local moon = piece(V(1, 1, 1), CF(g + V(0, 8, 0)), WHITE, 0.1, Enum.PartType.Ball)
+		tween(moon, 0.35, { Size = V(r, r, r) })
+		task.delay(0.35, function()
+			fadeOut(moon, 0.35, V(r * 1.6, r * 1.6, r * 1.6))
+			Fx.flash(g + V(0, 8, 0), c, r * 2, 4, 0.3)
+			shake(0.8)
+		end)
+	end
+	Fx.ring(g + V(0, 0.5, 0), c2, 2, r * 2, 0.4)
+end
+VFX.moonFall = function(d, c)
+	local g = ground(d.at)
+	local sky = g + V(0, 30, 0)
+	local cf0 = CFrame.lookAt(sky, g) * CFrame.Angles(0, 0, math.random() * 6)
+	local holder = piece(V(0.1, 0.1, 0.1), cf0, c, 1)
+	crescentAt(cf0, 3, c, 0.5)
+	tween(holder, 0.2, { CFrame = CF(g) })
+	Debris:AddItem(holder, 0.25)
+	task.delay(0.2, function()
+		crescentAt(CF(g + V(0, 2, 0)) * CFrame.Angles(math.rad(90), 0, math.random() * 6), 3.4, c, 0.4)
+		disc(g + V(0, 0.3, 0), 1, c, 0.2, 0.35, d.radius or 6)
+	end)
+end
+VFX.cloudPuff = function(d, c)
+	local g = ground(d.at)
+	local r = d.radius or 10
+	for k = 0, 9 do
+		local a = k / 10 * math.pi * 2
+		local puff = piece(V(3, 2.2, 3), CF(g + V(math.cos(a) * 2, 1.5, math.sin(a) * 2)), Color3.fromRGB(70, 74, 90), 0.2, Enum.PartType.Ball)
+		puff.Material = Enum.Material.SmoothPlastic
+		tween(puff, 0.5, { Position = g + V(math.cos(a) * r, 2.5, math.sin(a) * r), Size = V(6, 4, 6), Transparency = 1 })
+		Debris:AddItem(puff, 0.55)
+	end
+	Fx.flash(g + V(0, 3, 0), c, r * 2, 2.5, 0.25)
+end
+VFX.cloudSea = function(d, c)
+	local g = ground(d.at)
+	local r = d.radius or 24
+	local sea = piece(V(3, r * 2, r * 2), CF(g + V(0, 20, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(50, 52, 66), 0.25, Enum.PartType.Cylinder)
+	sea.Material = Enum.Material.SmoothPlastic
+	tween(sea, 0.4, { Size = V(6, r * 2.2, r * 2.2) })
+	task.delay(1.8, function()
+		fadeOut(sea, 0.5)
+	end)
+	for _ = 1, 6 do
+		task.delay(math.random() * 1.4, function()
+			Fx.flash(g + V((math.random() - 0.5) * r, 20, (math.random() - 0.5) * r), c, 30, 2, 0.15)
+		end)
+	end
+end
+VFX.thunderDome = function(d, c, c2)
+	local g = ground(d.at)
+	local r = d.radius or 22
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		Fx.lightning(g + V(0, 28, 0), g + V(math.cos(a) * r, 0.5, math.sin(a) * r), k % 2 == 0 and c or c2, 0.5)
+	end
+	local dome = piece(V(r, r, r), CF(g), c, 0.4, Enum.PartType.Ball)
+	fadeOut(dome, 0.5, V(r * 2.2, r * 2.2, r * 2.2))
+	Fx.flash(g + V(0, 6, 0), WHITE, r * 2.5, 5, 0.4)
+	shake(1.2)
+end
+local function ghostFlame(at: Vector3, c: Color3, size: number, life: number)
+	local core = piece(V(size, size * 1.5, size), CF(at), c, 0.1, Enum.PartType.Ball)
+	local fire = Instance.new("Fire")
+	fire.Color = c
+	fire.SecondaryColor = Color3.fromRGB(20, 60, 40)
+	fire.Size = size * 2
+	fire.Heat = 8
+	fire.Parent = core
+	tween(core, life, { Position = at + V(0, size * 1.5, 0), Transparency = 1, Size = V(size * 0.4, size, size * 0.4) })
+	Debris:AddItem(core, life + 0.3)
+end
+VFX.ghostFire = function(d, c)
+	local at = ground(d.at) + V(0, 1.5, 0)
+	local from = (d.from :: Vector3) + V(0, 3, 0)
+	local orb = piece(V(1.4, 1.4, 1.4), CF(from), c, 0.1, Enum.PartType.Ball)
+	tween(orb, 0.18, { Position = at })
+	Debris:AddItem(orb, 0.2)
+	task.delay(0.18, function()
+		ghostFlame(at, c, d.big and 4 or 2.4, 0.6)
+		disc(at - V(0, 1.2, 0), 1, c, 0.3, 0.4, d.radius or 5)
+		if d.big then
+			Fx.flash(at, c, 26, 3, 0.3)
+			shake(0.5)
+		end
+	end)
+end
+local function boneHand(at: Vector3, c: Color3)
+	local arm = piece(V(0.8, 0.4, 0.8), CF(at - V(0, 0.5, 0)), c, 0)
+	arm.Material = Enum.Material.SmoothPlastic
+	tween(arm, 0.15, { Size = V(0.8, 4, 0.8), CFrame = CF(at + V(0, 1.6, 0)) })
+	for f = -2, 2 do
+		local finger = piece(V(0.22, 0.2, 0.22), CF(at - V(0, 0.5, 0)), c, 0)
+		finger.Material = Enum.Material.SmoothPlastic
+		tween(finger, 0.18, { Size = V(0.22, 1.4, 0.22), CFrame = CF(at + V(f * 0.3, 4.1, 0)) * CFrame.Angles(0, 0, f * 0.25) })
+		task.delay(0.5, function()
+			fadeOut(finger, 0.3)
+		end)
+	end
+	task.delay(0.5, function()
+		fadeOut(arm, 0.3)
+	end)
+end
+VFX.boneHands = function(d, c, c2)
+	local bone = c2
+	if d.length then
+		local from, dir = d.from :: Vector3, d.dir :: Vector3
+		for i = 1, 7 do
+			task.delay(i * 0.04, function()
+				local g = ground(from + dir * (d.length * i / 7))
+				boneHand(g + V((math.random() - 0.5) * 2, 0, (math.random() - 0.5) * 2), bone)
+			end)
+		end
+	else
+		local g = ground(d.at)
+		for k = 0, 2 do
+			local a = k / 3 * math.pi * 2
+			boneHand(g + V(math.cos(a) * 1.6, 0, math.sin(a) * 1.6), bone)
+		end
+		ghostFlame(g + V(0, 1, 0), c, 1.6, 0.5)
+	end
+end
+VFX.ghostCircle = function(d, c)
+	local g = ground(d.at) + V(0, 0.25, 0)
+	local r = d.radius or 22
+	local ring = piece(V(0.3, r * 2, r * 2), CF(g) * CFrame.Angles(0, 0, math.rad(90)), c, 0.55, Enum.PartType.Cylinder)
+	local inner = piece(V(0.32, r * 1.6, r * 1.6), CF(g + V(0, 0.02, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(10, 20, 15), 0.3, Enum.PartType.Cylinder)
+	inner.Material = Enum.Material.SmoothPlastic
+	task.delay(1.6, function()
+		fadeOut(ring, 0.4)
+		fadeOut(inner, 0.4)
+	end)
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		ghostFlame(g + V(math.cos(a) * r * 0.9, 1, math.sin(a) * r * 0.9), c, 1.8, 1.4)
+	end
+end
+VFX.skullBurst = function(d, c, c2)
+	local g = ground(d.at)
+	local r = d.radius or 24
+	local skull = piece(V(4, 4, 4), CF(g + V(0, 8, 0)), c2, 0.1, Enum.PartType.Ball)
+	skull.Material = Enum.Material.SmoothPlastic
+	for _, sx in ipairs({ -1, 1 }) do
+		local eye = piece(V(0.9, 0.9, 0.9), CF(g + V(sx * 0.9, 8.4, -1.8)), c, 0, Enum.PartType.Ball)
+		Debris:AddItem(eye, 0.6)
+	end
+	tween(skull, 0.4, { Size = V(8, 8, 8) })
+	task.delay(0.45, function()
+		fadeOut(skull, 0.3, V(r, r, r))
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			ghostFlame(g + V(math.cos(a) * r * 0.7, 1, math.sin(a) * r * 0.7), c, 2.4, 0.8)
+		end
+		Fx.ring(g + V(0, 0.5, 0), c, 4, r * 2.2, 0.5)
+		Fx.flash(g + V(0, 6, 0), c, r * 2.2, 5, 0.4)
+		shake(1.2)
+	end)
+end
+
+------------------------------------------------------------------------
 function ForgeFx.init(o: any)
 	opts = o or {}
 end
@@ -66131,6 +66527,70 @@ return {
 	["🧩 약 %d"] = "🧩 about %d",
 	["쌓인 것 (%d시간 %d분%s)"] = "Piled up (%dh %dm%s)",
 	[", 가득"] = ", full",
+	["잔월검장"] = "Waning Moon Blade Palm",
+	["뇌운비보"] = "Thundercloud Flying Step",
+	["귀화백골장"] = "Ghostfire Bone Palm",
+	["새벽녘 기우는 달처럼 서늘한 장법. 손바닥에 서린 초승달이 칼날이 되어 베고, 걸음마다 달빛이 고리로 번진다."] = "A palm art as cold as the waning moon at dawn. The crescent gathered in your palm becomes a blade, and moonlight spreads in rings with every step.",
+	["잔월: 손이 지나간 자리에 초승달 칼날이 남는다. 몸이 가볍고 빠르다"] = "Waning Moon: crescent blades linger where your hands pass. Light and quick",
+	["찢어진 비급 「잔월비급」 네 장을 모아 해독한다 (흑호 · 혈랑 · 빙마가 떨어뜨린다)"] = "Collect and decode the four torn pages of the 「Waning Moon Manual」 (dropped by Heukho · Hyeolrang · Bingma)",
+	["월광장"] = "Moonlight Palm",
+	["잔영장"] = "Afterimage Palm",
+	["월인"] = "Moon Seal",
+	["만월투"] = "Full Moon Throw",
+	["잔월승천"] = "Waning Moon Ascent",
+	["잔월섬"] = "Waning Moon Flash",
+	["손바닥을 두 번 휘둘러 초승달 칼날 둘을 엇갈리게 날린다. 앞으로 22칸을 가르며 지나는 적을 벤다"] = "Swings the palm twice, sending two crossing crescent blades. They cleave 22 studs ahead, cutting every enemy they pass",
+	["월하보"] = "Moonlit Step",
+	["달빛을 밟고 12칸을 미끄러져 지나는 적을 베고, 내려선 자리에서 달빛 고리가 퍼져 적을 띄운다"] = "Glides 12 studs on moonlight cutting enemies along the way; a ring of moonlight spreads where you land and lifts enemies",
+	["잔월만천"] = "Waning Moons Fill the Sky",
+	["하늘에 초승달이 가득 뜬다. 가까운 적 여섯에게 달이 세 번 떨어지고, 마지막에 내 둘레로 만월이 차오르며 터진다"] = "The sky fills with crescent moons. Moons fall three times on the six nearest enemies, and finally a full moon swells around you and bursts",
+	["구름을 밟고 하늘을 걷는 발의 무공. 발끝마다 벼락이 맺히고, 차고 지나간 자리에 먹구름이 남아 다시 벼락을 내린다."] = "A footwork art that walks the sky on clouds. Lightning gathers at every toe, and storm clouds left behind by each kick strike again.",
+	["뇌운: 발차기 무공. 기술마다 몸이 앞으로 크게 나아간다. 대시가 빠르다"] = "Thundercloud: a kicking art. Every skill carries you far forward. Fast dashes",
+	["찢어진 비급 「뇌운비급」 네 장을 모아 해독한다 (혈마 · 천마 · 뇌제가 떨어뜨린다)"] = "Collect and decode the four torn pages of the 「Thundercloud Manual」 (dropped by Hyeolma · Cheonma · Noeje)",
+	["뇌각"] = "Thunder Kick",
+	["운각"] = "Cloud Kick",
+	["선풍뇌퇴"] = "Whirlwind Thunder Kick",
+	["비뢰각"] = "Flying Bolt Kick",
+	["낙뢰각"] = "Falling Bolt Kick",
+	["뇌운승천각"] = "Thundercloud Rising Kick",
+	["뇌운삼보"] = "Three Thundercloud Steps",
+	["세 걸음 하늘을 밟아 나아간다. 내려설 때마다 발밑에 벼락이 떨어진다"] = "Steps across the sky three times. Lightning strikes underfoot each time you land",
+	["운중뇌"] = "Thunder in the Clouds",
+	["발밑에서 먹구름이 터져 둘레의 적을 띄우고, 가까운 적 넷의 머리 위 구름에서 벼락이 내리친다"] = "Storm clouds burst underfoot and lift nearby enemies, then lightning strikes from the clouds above the four nearest enemies",
+	["만뢰운해"] = "Sea of Ten Thousand Thunders",
+	["둘레가 먹구름 바다가 된다. 구름에서 벼락 열 줄기가 차례로 적에게 내리꽂히고, 마지막에 하늘이 통째로 번쩍이며 벼락 지붕이 내려앉는다"] = "The area becomes a sea of storm clouds. Ten bolts strike enemies one after another, and finally the whole sky flashes and a dome of lightning comes down",
+	["저승 문턱에서 건져 올린 장법. 손끝에 푸른 귀화가 타오르고, 땅 밑에서 백골의 손이 솟아 적을 붙잡는다. 끝에는 저승 문이 열린다."] = "A palm art drawn up from the threshold of the underworld. Blue ghostfire burns at the fingertips and skeletal hands rise from the ground to seize enemies. At the end, the gate of the underworld opens.",
+	["귀화: 기술마다 푸른 귀화와 백골의 손이 나타난다. 초 오의(X)가 있다"] = "Ghostfire: blue ghostfire and skeletal hands appear with every skill. Has a super ultimate (X)",
+	["찢어진 비급 「귀화비급」 다섯 장을 모아 해독한다 (염제 · 사왕 · 천문장 · 천존이 떨어뜨린다)"] = "Collect and decode the five torn pages of the 「Ghostfire Manual」 (dropped by Yeomje · Sawang · Cheonmunjang · Cheonjon)",
+	["귀조"] = "Ghost Claw",
+	["음풍장"] = "Cold Wind Palm",
+	["귀화선"] = "Ghostfire Whirl",
+	["백골장"] = "Bone Palm",
+	["귀문추"] = "Ghost Gate Hammer",
+	["귀화승천"] = "Ghostfire Ascent",
+	["귀화탄"] = "Ghostfire Shot",
+	["푸른 귀화 셋을 날려 가까운 적 셋을 태운다. 귀화는 한 번 더 타오른다"] = "Sends three blue ghostfires to burn the three nearest enemies. The fire flares up once more",
+	["백골수"] = "Bone Hands",
+	["땅을 내리치면 앞으로 20칸 백골의 손이 줄지어 솟아 적을 붙잡아 띄우고, 끝에서 귀화가 크게 터진다"] = "Strike the ground and skeletal hands rise in a line 20 studs ahead, seizing and lifting enemies, then ghostfire bursts at the end",
+	["발밑에 저승의 원이 그려져 둘레의 적을 끌어당긴다. 귀화가 세 번 적 여섯을 태우고, 마지막에 해골 귀화가 터진다"] = "A circle of the underworld is drawn underfoot, pulling in nearby enemies. Ghostfire burns six enemies three times, and finally a skull of ghostfire bursts",
+	["귀문개방"] = "Gate of Ghosts Opens",
+	["초 오의 (그동안 무적). 저승 문이 열려 둘레의 적을 빨아들이고, 귀화와 백골의 손이 네 번 거듭 적 여덟을 덮친다. 마지막에 문이 닫히며 둘레 36칸이 푸른 불로 터진다"] = "Super ultimate (invincible meanwhile). The gate of the underworld opens and draws in nearby enemies; ghostfire and skeletal hands fall on eight enemies four times over. Finally the gate shuts and 36 studs around you erupt in blue fire",
+	["잔월비급"] = "Waning Moon Manual",
+	["뇌운비급"] = "Thundercloud Manual",
+	["귀화비급"] = "Ghostfire Manual",
+	["📜 찢어진 비급 「%s」 한 장 (%d/%d)%s"] = "📜 A torn page of 「%s」 (%d/%d)%s",
+	[" · 다 모았다! 권법 창의 📜 비급에서 해독"] = "· all collected! Decode it from 📜 Manuals in the style window",
+	["📜 아직 비급의 장이 모자라요"] = "📜 You don't have all the pages yet",
+	["보스가 떨어뜨린 찢어진 비급을 모두 모으면 해독할 수 있다. 조각 둘을 차례로 누르면 자리가 바뀌고, 고른 조각을 한 번 더 누르면 돈다"] = "Collect every torn page bosses drop to decode a manual. Tap two pieces to swap them; tap a selected piece again to rotate it",
+	["📜 해독 완료"] = "📜 Decode",
+	["📜 비급"] = "📜 Manuals",
+	["📜 무공 비급"] = "📜 Martial Manuals",
+	["📜 %s  %s"] = "📜 %s  %s",
+	["해독함 · %s %s을(를) 익혔다"] = "Decoded · learned %s %s",
+	["다 모았다! 조각을 바르게 맞추면 숨은 권법이 열린다"] = "All collected! Put the pieces right to unlock a hidden style",
+	["떨어뜨리는 보스: "] = "Dropped by:",
+	["✔ 해독"] = "✔ Decoded",
+	["%d / %d장"] = "%d / %d pages",
 }
 ]]></string>
           </Properties>
@@ -85116,7 +85576,7 @@ local pages: { [string]: Frame } = {}
 local refreshers: { [string]: (boolean?) -> () } = {}
 local current = ""
 local state: any = nil
-local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", forge = "⚒ 권법 제작소", disciple = "🧑‍🎓 문하생", ach = "🏆 업적과 칭호", dex = "📖 도감" }
+local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", forge = "⚒ 권법 제작소", disciple = "🧑‍🎓 문하생", manuscripts = "📜 무공 비급", ach = "🏆 업적과 칭호", dex = "📖 도감" }
 
 local function makePage(name: string): Frame
 	local f = new("Frame", { Position = UDim2.new(0, 16, 0, 56), Size = UDim2.new(1, -32, 1, -68), BackgroundTransparency = 1, Visible = false, Parent = window })
@@ -85190,6 +85650,10 @@ function UIB.buildStyles()
 	local dHanja = text({ Position = UDim2.new(0, 14, 0, 44), Size = UDim2.new(1, -28, 0, 22), TextSize = 17, TextColor3 = C.dim, Parent = detail })
 	local dMaster = text({ Position = UDim2.new(0, 14, 0, 68), Size = UDim2.new(1, -28, 0, 24), TextSize = 17, TextColor3 = C.gold, RichText = true, Parent = detail })
 	local bodyScroll = scroller(detail, UDim2.new(1, -20, 1, -170), UDim2.new(0, 14, 0, 96))
+	-- 3.99.31판: 무공 비급 창 (찢어진 비급을 모아 해독한다)
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.new(0, 104, 0, 32), Text = "📜 비급", TextSize = 16, BackgroundColor3 = Color3.fromRGB(120, 90, 50), Parent = detail }, function()
+		UI.openPage("manuscripts")
+	end)
 	local dBody = text({ Size = UDim2.new(1, -12, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, TextSize = 17, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = bodyScroll })
 	local selected = Config.Styles[1].id
 	local action = "learn"
@@ -86514,6 +86978,125 @@ function UI.manualReveal(results: { any })
 	Gacha.play(results, function()
 		UI.openPage("shop", { tab = "manuals" })
 	end)
+end
+
+------------------------------------------------------------------------
+-- 3.99.31판 무공 비급: 모은 장 · 해독 퍼즐 (조각 = 권법 한자 이름의 글자. 두 조각을 차례로 누르면 자리를 바꾸고, 고른 조각을 한 번 더 누르면 돌린다)
+------------------------------------------------------------------------
+function UIB.buildManuscripts()
+	local page = makePage("manuscripts")
+	text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 15, TextColor3 = C.dim, Text = "보스가 떨어뜨린 찢어진 비급을 모두 모으면 해독할 수 있다. 조각 둘을 차례로 누르면 자리가 바뀌고, 고른 조각을 한 번 더 누르면 돈다", Parent = page })
+	local list = scroller(page, UDim2.new(1, 0, 1, -36), UDim2.new(0, 0, 0, 34))
+	new("UIListLayout", { Padding = UDim.new(0, 10), Parent = list })
+	local rows: { any } = {}
+	local function chars(str: string): { string }
+		local t = {}
+		for _, cp in utf8.codes(str) do
+			table.insert(t, utf8.char(cp))
+		end
+		return t
+	end
+	for _, M in ipairs(Config.MANUSCRIPTS) do
+		local st = Config.STYLE_BY_ID[M.style]
+		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 200), BackgroundColor3 = Color3.fromRGB(38, 32, 26), Parent = list }, { corner(10), stroke(Color3.fromRGB(200, 170, 120), 1.2) })
+		local title = text({ Position = UDim2.new(0, 14, 0, 8), Size = UDim2.new(1, -28, 0, 28), TextSize = 21, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(240, 220, 170), Parent = row })
+		local sub = text({ Position = UDim2.new(0, 14, 0, 38), Size = UDim2.new(1, -28, 0, 36), TextSize = 14, TextColor3 = C.dim, TextYAlignment = Enum.TextYAlignment.Top, Parent = row })
+		local board = new("Frame", { Position = UDim2.new(0, 14, 0, 80), Size = UDim2.new(1, -200, 0, 104), BackgroundTransparency = 1, Parent = row })
+		local glyphs = chars(st.hanja or st.name)
+		local n = math.min(M.pages, #glyphs)
+		local order, rot = {}, {}
+		local selected: number? = nil
+		local tiles: { TextButton } = {}
+		local solveBtn
+		local function solved(): boolean
+			for i = 1, n do
+				if order[i] ~= i or rot[i] % 4 ~= 0 then
+					return false
+				end
+			end
+			return true
+		end
+		local function draw()
+			for i, b in ipairs(tiles) do
+				b.Text = glyphs[order[i]] or "?"
+				b.Rotation = (rot[i] % 4) * 90
+				b.BackgroundColor3 = selected == i and Color3.fromRGB(200, 150, 60) or Color3.fromRGB(230, 215, 180)
+			end
+			if solveBtn then
+				solveBtn.Visible = solved()
+			end
+		end
+		for i = 1, n do
+			order[i], rot[i] = i, 0
+			local b = button({ Position = UDim2.new(0, (i - 1) * 96, 0, 4), Size = UDim2.new(0, 88, 0, 88), TextSize = 48, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(40, 25, 15), BackgroundColor3 = Color3.fromRGB(230, 215, 180), Parent = board }, function()
+				if selected == nil then
+					selected = i
+				elseif selected == i then
+					rot[i] += 1
+					selected = nil
+				else
+					order[i], order[selected] = order[selected], order[i]
+					rot[i], rot[selected] = rot[selected], rot[i]
+					selected = nil
+				end
+				draw()
+			end)
+			tiles[i] = b
+		end
+		-- 섞기: 자리를 뒤섞고 몇 개는 돌려 놓는다
+		local function shuffle()
+			for i = n, 2, -1 do
+				local j = math.random(i)
+				order[i], order[j] = order[j], order[i]
+			end
+			for i = 1, n do
+				rot[i] = math.random(0, 3)
+			end
+			if solved() then
+				rot[1] = 1
+			end
+			selected = nil
+			draw()
+		end
+		shuffle()
+		solveBtn = button({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -12, 1, -12), Size = UDim2.new(0, 170, 0, 50), Text = "📜 해독 완료", TextSize = 18, BackgroundColor3 = Color3.fromRGB(70, 150, 90), Visible = false, Parent = row }, function()
+			if solved() then
+				Request:FireServer("decode", M.id)
+			end
+		end)
+		local status = text({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 84), Size = UDim2.new(0, 170, 0, 60), TextSize = 15, TextXAlignment = Enum.TextXAlignment.Center, RichText = true, Parent = row })
+		table.insert(rows, { M = M, st = st, title = title, sub = sub, board = board, status = status, solveBtn = solveBtn, shuffle = shuffle, n = n })
+	end
+	refreshers.manuscripts = function(fresh: boolean?)
+		local s = state or {}
+		for _, it in ipairs(rows) do
+			local M, st = it.M, it.st
+			local have = (s.pages and s.pages[M.id]) or 0
+			local got = 0
+			local marks = {}
+			for i = 1, M.pages do
+				local on = bit32.band(have, bit32.lshift(1, i - 1)) ~= 0
+				got += on and 1 or 0
+				table.insert(marks, on and "■" or "□")
+			end
+			local owned = s.styles and table.find(s.styles, M.style) ~= nil
+			local full = got >= M.pages
+			local names = {}
+			for _, b in ipairs(M.bosses) do
+				local bd = Config.Bosses[b]
+				table.insert(names, bd and (string.split(bd.name, " · ")[1]) or b)
+			end
+			it.title.Text = string.format("📜 %s  %s", M.name, table.concat(marks, ""))
+			it.sub.Text = owned and string.format("해독함 · %s %s을(를) 익혔다", st.icon, st.name) or ((full and "다 모았다! 조각을 바르게 맞추면 숨은 권법이 열린다" or "떨어뜨리는 보스: " .. table.concat(names, " · ")))
+			it.board.Visible = full and not owned
+			it.status.Text = owned and '<font color="#8CE68C">✔ 해독</font>' or string.format("%d / %d장", got, M.pages)
+			if not (full and not owned) then
+				it.solveBtn.Visible = false
+			elseif fresh then
+				it.shuffle()
+			end
+		end
+	end
 end
 
 ------------------------------------------------------------------------
@@ -89505,6 +90088,7 @@ function UI.init(req: RemoteEvent)
 	UIB.buildSkyShop()
 	UIB.buildForge()
 	UIB.buildDisciple()
+	UIB.buildManuscripts()
 	UIB.buildHelp()
 	UIB.buildTest()
 	UIB.buildMap()

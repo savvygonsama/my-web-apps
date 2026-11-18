@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.30" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.31" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7498,6 +7498,161 @@ do
 				} } },
 		},
 	})
+end
+
+------------------------------------------------------------------------
+-- 3.99.31판 무공 비급 해독: 보스가 떨어뜨린 찢어진 비급을 다 모아 맞추면 숨은 권법 하나 (셋: 전설 · 태초 · 윤회)
+------------------------------------------------------------------------
+do
+	local function seq(steps: { any }): any
+		return { kind = "forgeSeq", steps = steps }
+	end
+	local function add(st: any)
+		st.keepGrade = true
+		st.hidden = true
+		st.rank = OLD_RANK[st.grade] or 1
+		table.insert(Config.Styles, st)
+		st.index = #Config.Styles
+		Config.STYLE_BY_ID[st.id] = st
+	end
+
+	-- 🌙 잔월검장 [전설]: 손바닥에 서린 초승달이 칼날이 된다
+	add({
+		id = "janwol", name = "잔월검장", hanja = "殘月劍掌", icon = "🌙", grade = "전설", fx = "shadow",
+		color = Color3.fromRGB(190, 210, 255), color2 = Color3.fromRGB(70, 90, 170),
+		palette = { Color3.fromRGB(215, 230, 255), Color3.fromRGB(90, 110, 200), Color3.fromRGB(255, 255, 255) },
+		desc = "새벽녘 기우는 달처럼 서늘한 장법. 손바닥에 서린 초승달이 칼날이 되어 베고, 걸음마다 달빛이 고리로 번진다.",
+		gimmick = "잔월: 손이 지나간 자리에 초승달 칼날이 남는다. 몸이 가볍고 빠르다",
+		unlockHint = "찢어진 비급 「잔월비급」 네 장을 모아 해독한다 (흑호 · 혈랑 · 빙마가 떨어뜨린다)",
+		deflect = 0.22, speed = 1.12, stance = "stance_sunmoon",
+		combo = {
+			{ id = "jw1", name = "월광장", pose = "moon_palm_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4.5, 8, 8, 0.3, 8) } },
+			{ id = "jw2", name = "잔영장", pose = "palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 8, 8, 0.3, 8) } },
+			{ id = "jw3", name = "월륜각", pose = "crescent_kick", dur = 0.42, lunge = 2, hits = { hit(0.15, 6, 5, 7, 7, 0.3, 8, 8, true), hit(0.28, 6, 5, 8, 8, 0.35, 10, 10, true) } },
+			{ id = "jw4", name = "월인", pose = "moon_seal", dur = 0.5, lunge = 3, hits = { hit(0.24, 7, 7, 13, 16, 0.5, 30, nil, true) } },
+		},
+		heavy = { id = "jwH", name = "만월투", pose = "moon_throw", dur = 0.6, lunge = 2, hits = { hit(0.28, 12, 5, 22, 26, 0.6, 34) } },
+		finisher = { id = "jwF", name = "잔월승천", pose = "crescent_kick", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		skills = {
+			E = { id = "jwE", name = "잔월섬", desc = "손바닥을 두 번 휘둘러 초승달 칼날 둘을 엇갈리게 날린다. 앞으로 22칸을 가르며 지나는 적을 벤다", pose = "moon_throw", dur = 0.6, cd = 7, chi = 18,
+				mech = seq({
+					{ t = 0.15, shape = "line", at = "self", length = 22, width = 5, vfx = "crescent", col = 1, hit = hit(0, 0, 0, 18, 14, 0.4, 10) },
+					{ t = 0.35, shape = "line", at = "self", length = 22, width = 5, vfx = "crescent", col = 2, hit = hit(0, 0, 0, 18, 14, 0.4, 10) },
+				}) },
+			R = { id = "jwR", name = "월하보", desc = "달빛을 밟고 12칸을 미끄러져 지나는 적을 베고, 내려선 자리에서 달빛 고리가 퍼져 적을 띄운다", pose = "moon_palm_l", dur = 0.7, cd = 10, chi = 22,
+				mech = seq({
+					{ t = 0.1, dash = 12, shape = "circle", at = "self", radius = 6, vfx = "crescent", col = 3, hit = hit(0, 0, 0, 20, 16, 0.4, 10) },
+					{ t = 0.4, shape = "ring", at = "self", inner = 4, radius = 13, vfx = "moonRing", col = 1, hit = hit(0, 0, 0, 22, 20, 0.5, 14, 12) },
+				}) },
+			G = { id = "jwG", name = "잔월만천", desc = "하늘에 초승달이 가득 뜬다. 가까운 적 여섯에게 달이 세 번 떨어지고, 마지막에 내 둘레로 만월이 차오르며 터진다", pose = "point_sky", dur = 2.0, cd = 30, chi = 100, armor = true,
+				mech = seq({
+					{ t = 0.4, at = "each", n = 6, range = 30, radius = 6, vfx = "moonFall", col = 1, hit = hit(0, 0, 0, 16, 16, 0.4, 6, 8) },
+					{ t = 0.8, at = "each", n = 6, range = 30, radius = 6, vfx = "moonFall", col = 2, hit = hit(0, 0, 0, 16, 16, 0.4, 6, 8) },
+					{ t = 1.2, at = "each", n = 6, range = 30, radius = 6, vfx = "moonFall", col = 1, hit = hit(0, 0, 0, 16, 16, 0.4, 6, 8) },
+					{ t = 1.7, shape = "circle", at = "self", radius = 17, vfx = "moonRing", col = 3, big = true, hit = hit(0, 0, 0, 60, 70, 1.0, 40, 16) },
+				}) },
+		},
+	})
+
+	-- ⚡ 뇌운비보 [태초]: 구름을 밟고 벼락처럼 찬다
+	add({
+		id = "noeun", name = "뇌운비보", hanja = "雷雲飛步", icon = "⛈", grade = "태초", fx = "lightning",
+		color = Color3.fromRGB(150, 190, 255), color2 = Color3.fromRGB(240, 245, 255),
+		palette = { Color3.fromRGB(160, 200, 255), Color3.fromRGB(245, 248, 255), Color3.fromRGB(190, 140, 255) },
+		desc = "구름을 밟고 하늘을 걷는 발의 무공. 발끝마다 벼락이 맺히고, 차고 지나간 자리에 먹구름이 남아 다시 벼락을 내린다.",
+		gimmick = "뇌운: 발차기 무공. 기술마다 몸이 앞으로 크게 나아간다. 대시가 빠르다",
+		unlockHint = "찢어진 비급 「뇌운비급」 네 장을 모아 해독한다 (혈마 · 천마 · 뇌제가 떨어뜨린다)",
+		deflect = 0.24, speed = 1.12, dashCd = 0.6, stance = "stance_byeokryeok",
+		combo = {
+			{ id = "nu1", name = "뇌각", pose = "front_kick", dur = 0.32, lunge = 4, hits = { hit(0.13, 6, 5, 18, 15, 0.35, 10) } },
+			{ id = "nu2", name = "운각", pose = "roundhouse", dur = 0.34, lunge = 3, hits = { hit(0.15, 6, 5, 18, 15, 0.35, 12) } },
+			{ id = "nu3", name = "선풍뇌퇴", pose = "back_spin_kick", dur = 0.46, lunge = 2, hits = { hit(0.24, 0, 8, 20, 24, 0.5, 14, 10, true) } },
+			{ id = "nu4", name = "비뢰각", pose = "flying_kick", dur = 0.48, lunge = 6, hits = { hit(0.22, 9, 6, 30, 34, 0.6, 38) } },
+		},
+		heavy = { id = "nuH", name = "낙뢰각", pose = "dive_kick", dur = 0.72, lunge = 4, hits = { hit(0.36, 6, 9, 50, 76, 1.0, 40, 12, true) } },
+		finisher = { id = "nuF", name = "뇌운승천각", pose = "flying_kick", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		skills = {
+			E = { id = "nuE", name = "뇌운삼보", desc = "세 걸음 하늘을 밟아 나아간다. 내려설 때마다 발밑에 벼락이 떨어진다", pose = "flying_kick", dur = 0.75, cd = 8, chi = 20,
+				mech = seq({
+					{ t = 0.1, dash = 7, shape = "circle", at = "self", radius = 6, vfx = "thunder", col = 1, hit = hit(0, 0, 0, 22, 26, 0.5, 10) },
+					{ t = 0.32, dash = 7, shape = "circle", at = "self", radius = 6, vfx = "thunder", col = 3, hit = hit(0, 0, 0, 22, 26, 0.5, 10) },
+					{ t = 0.54, dash = 7, shape = "circle", at = "self", radius = 7, vfx = "thunder", col = 1, hit = hit(0, 0, 0, 26, 30, 0.6, 20, 12) },
+				}) },
+			R = { id = "nuR", name = "운중뇌", desc = "발밑에서 먹구름이 터져 둘레의 적을 띄우고, 가까운 적 넷의 머리 위 구름에서 벼락이 내리친다", pose = "roundhouse", dur = 1.0, cd = 11, chi = 26,
+				mech = seq({
+					{ t = 0.2, shape = "circle", at = "self", radius = 10, vfx = "cloudPuff", col = 2, hit = hit(0, 0, 0, 20, 24, 0.5, 10, 18) },
+					{ t = 0.6, at = "each", n = 4, range = 24, radius = 6, vfx = "thunder", col = 3, hit = hit(0, 0, 0, 30, 34, 0.6, 8) },
+				}) },
+			G = { id = "nuG", name = "만뢰운해", desc = "둘레가 먹구름 바다가 된다. 구름에서 벼락 열 줄기가 차례로 적에게 내리꽂히고, 마지막에 하늘이 통째로 번쩍이며 벼락 지붕이 내려앉는다", pose = "point_sky", dur = 2.3, cd = 32, chi = 100, armor = true,
+				mech = { kind = "forgeSeq", steps = (function()
+					local t = { { t = 0.3, shape = "circle", at = "self", radius = 24, vfx = "cloudSea", col = 2, hit = hit(0, 0, 0, 10, 12, 0.3, 0) } }
+					for k = 0, 9 do
+						table.insert(t, { t = 0.6 + k * 0.1, at = "target", range = 30, shape = "circle", radius = 6, vfx = "thunder", col = (k % 2 == 0) and 1 or 3, hit = hit(0, 0, 0, 14, 16, 0.3, 4) })
+					end
+					table.insert(t, { t = 1.95, shape = "circle", at = "self", radius = 22, vfx = "thunderDome", col = 1, big = true, hit = hit(0, 0, 0, 100, 140, 1.4, 60, 18) })
+					return t
+				end)() } },
+		},
+	})
+
+	-- 👻 귀화백골장 [윤회]: 저승의 귀화와 백골의 손
+	add({
+		id = "gwihwa", name = "귀화백골장", hanja = "鬼火白骨掌", icon = "👻", grade = "윤회", fx = "void",
+		color = Color3.fromRGB(110, 255, 170), color2 = Color3.fromRGB(235, 230, 210),
+		palette = { Color3.fromRGB(100, 255, 160), Color3.fromRGB(235, 230, 210), Color3.fromRGB(20, 40, 30) },
+		desc = "저승 문턱에서 건져 올린 장법. 손끝에 푸른 귀화가 타오르고, 땅 밑에서 백골의 손이 솟아 적을 붙잡는다. 끝에는 저승 문이 열린다.",
+		gimmick = "귀화: 기술마다 푸른 귀화와 백골의 손이 나타난다. 초 오의(X)가 있다",
+		unlockHint = "찢어진 비급 「귀화비급」 다섯 장을 모아 해독한다 (염제 · 사왕 · 천문장 · 천존이 떨어뜨린다)",
+		deflect = 0.28, speed = 1.05, stance = "stance_mugeuk",
+		combo = {
+			{ id = "gh1", name = "귀조", pose = "blood_claw_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 10, 8, 0.3, 6) } },
+			{ id = "gh2", name = "음풍장", pose = "void_palm_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 10, 8, 0.3, 6) } },
+			{ id = "gh3", name = "귀화선", pose = "circle_palm", dur = 0.42, lunge = 2, hits = { hit(0.14, 5, 8, 7, 7, 0.3, 8, nil, true), hit(0.3, 5, 8, 7, 7, 0.3, 8, nil, true) } },
+			{ id = "gh4", name = "백골장", pose = "push_palm", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 6, 20, 22, 0.6, 28) } },
+		},
+		heavy = { id = "ghH", name = "귀문추", pose = "grav_hammer", dur = 0.6, lunge = 2, hits = { hit(0.28, 8, 8, 26, 28, 0.6, 22, 8, true) } },
+		finisher = { id = "ghF", name = "귀화승천", pose = "void_push", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		skills = {
+			E = { id = "ghE", name = "귀화탄", desc = "푸른 귀화 셋을 날려 가까운 적 셋을 태운다. 귀화는 한 번 더 타오른다", pose = "push_palm", dur = 0.7, cd = 8, chi = 20,
+				mech = seq({
+					{ t = 0.2, at = "each", n = 3, range = 26, radius = 5, vfx = "ghostFire", col = 1, hit = hit(0, 0, 0, 16, 14, 0.3, 4) },
+					{ t = 0.55, at = "each", n = 3, range = 26, radius = 5, vfx = "ghostFire", col = 1, hit = hit(0, 0, 0, 12, 10, 0.25, 4) },
+				}) },
+			R = { id = "ghR", name = "백골수", desc = "땅을 내리치면 앞으로 20칸 백골의 손이 줄지어 솟아 적을 붙잡아 띄우고, 끝에서 귀화가 크게 터진다", pose = "grav_hammer", dur = 1.0, cd = 10, chi = 25,
+				mech = seq({
+					{ t = 0.3, shape = "line", at = "self", length = 20, width = 6, vfx = "boneHands", col = 2, hit = hit(0, 0, 0, 26, 24, 0.6, 6, 16) },
+					{ t = 0.7, shape = "circle", at = "front", dist = 20, radius = 9, vfx = "ghostFire", col = 1, big = true, hit = hit(0, 0, 0, 40, 40, 0.7, 24, 12) },
+				}) },
+			G = { id = "ghG", name = "백귀야행", desc = "발밑에 저승의 원이 그려져 둘레의 적을 끌어당긴다. 귀화가 세 번 적 여섯을 태우고, 마지막에 해골 귀화가 터진다", pose = "point_sky", dur = 2.5, cd = 30, chi = 100, armor = true,
+				mech = seq({
+					{ t = 0.4, shape = "circle", at = "self", radius = 22, pull = 30, vfx = "ghostCircle", col = 1, hit = hit(0, 0, 0, 20, 20, 0.4, 0) },
+					{ t = 0.8, at = "each", n = 6, range = 26, radius = 6, vfx = "ghostFire", col = 1, hit = hit(0, 0, 0, 26, 24, 0.5, 6, 8) },
+					{ t = 1.2, at = "each", n = 6, range = 26, radius = 6, vfx = "boneHands", col = 2, hit = hit(0, 0, 0, 26, 24, 0.5, 6, 10) },
+					{ t = 1.6, at = "each", n = 6, range = 26, radius = 6, vfx = "ghostFire", col = 1, hit = hit(0, 0, 0, 26, 24, 0.5, 6, 8) },
+					{ t = 2.2, shape = "circle", at = "self", radius = 24, vfx = "skullBurst", col = 1, big = true, hit = hit(0, 0, 0, 140, 160, 1.5, 60, 26) },
+				}) },
+			X = { id = "ghX", name = "귀문개방", desc = "초 오의 (그동안 무적). 저승 문이 열려 둘레의 적을 빨아들이고, 귀화와 백골의 손이 네 번 거듭 적 여덟을 덮친다. 마지막에 문이 닫히며 둘레 36칸이 푸른 불로 터진다", pose = "ult_star", dur = 3.6, cd = 60, chi = 150, armor = true,
+				mech = { kind = "forgeSeq", iframes = true, steps = {
+					{ t = 0.5, shape = "circle", at = "self", radius = 30, pull = 40, vfx = "ghostCircle", col = 1, hit = hit(0, 0, 0, 30, 30, 0.5, 0) },
+					{ t = 0.9, at = "each", n = 8, range = 34, radius = 7, vfx = "ghostFire", col = 1, hit = hit(0, 0, 0, 30, 30, 0.5, 6, 8) },
+					{ t = 1.4, at = "each", n = 8, range = 34, radius = 7, vfx = "boneHands", col = 2, hit = hit(0, 0, 0, 30, 30, 0.5, 6, 10) },
+					{ t = 1.9, at = "each", n = 8, range = 34, radius = 7, vfx = "ghostFire", col = 1, hit = hit(0, 0, 0, 30, 30, 0.5, 6, 8) },
+					{ t = 2.4, at = "each", n = 8, range = 34, radius = 7, vfx = "boneHands", col = 2, hit = hit(0, 0, 0, 30, 30, 0.5, 6, 10) },
+					{ t = 3.1, shape = "circle", at = "self", radius = 36, vfx = "skullBurst", col = 1, big = true, hit = hit(0, 0, 0, 240, 270, 1.8, 80, 30) },
+				} } },
+		},
+	})
+end
+
+-- 비급: pages = 장 수 (해독 퍼즐의 조각 = 권법 한자 이름의 글자), bosses = 떨어뜨리는 보스, chance = 보스 한 마리에 한 장 확률
+Config.MANUSCRIPTS = {
+	{ id = "janwol", name = "잔월비급", style = "janwol", pages = 4, chance = 0.18, bosses = { "heukho", "hyeolrang", "bingma" } },
+	{ id = "noeun", name = "뇌운비급", style = "noeun", pages = 4, chance = 0.15, bosses = { "hyeolma", "cheonma", "noeje" } },
+	{ id = "gwihwa", name = "귀화비급", style = "gwihwa", pages = 5, chance = 0.12, bosses = { "yeomje", "sawang", "cheonmun", "cheonjon" } },
+}
+Config.MANUSCRIPT_BY_ID = {}
+for _, m in ipairs(Config.MANUSCRIPTS) do
+	Config.MANUSCRIPT_BY_ID[m.id] = m
 end
 
 -- 제작소 조리법: 환생 횟수 · 비급 조각 · 천상 재료 · 천정 · 은자 (은자는 지금 경지의 '은자 몫'으로 센다: Config.productCoins)

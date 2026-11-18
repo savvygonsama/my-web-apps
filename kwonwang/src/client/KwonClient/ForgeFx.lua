@@ -616,6 +616,196 @@ VFX.taiji = function(d)
 end
 
 ------------------------------------------------------------------------
+-- 3.99.31판 비급 권법: 잔월검장 (초승달) · 뇌운비보 (먹구름 · 벼락 지붕) · 귀화백골장 (귀화 · 백골의 손 · 저승 원)
+------------------------------------------------------------------------
+-- 초승달 칼날: 반쯤 겹친 두 원판 대신 휘어진 빛 조각 일곱으로 활을 그린다
+local function crescentAt(cf: CFrame, r: number, c: Color3, life: number)
+	for k = -3, 3 do
+		local a = k * 0.32
+		local seg = piece(V(0.45, 0.25, r * 0.38), cf * CFrame.Angles(0, a, 0) * CF(0, 0, -r) * CFrame.Angles(0, math.pi / 2, 0), c, math.abs(k) * 0.08)
+		fadeOut(seg, life, V(0.1, 0.1, r * 0.38))
+	end
+end
+VFX.crescent = function(d, c)
+	local from, dir = d.from :: Vector3, d.dir :: Vector3
+	local len = d.length or 8
+	local n = d.length and 6 or 1
+	for i = 1, n do
+		task.delay(i * 0.03, function()
+			local at = from + dir * (d.length and (len * i / n) or 2) + V(0, 2.4, 0)
+			crescentAt(CFrame.lookAt(at, at + dir) * CF(0, 0, 2.5), 2.6, c, 0.35)
+		end)
+	end
+	Fx.burst("glitter", from + dir * len * 0.5 + V(0, 2, 0), c, 8, 1)
+end
+VFX.moonRing = function(d, c, c2)
+	local g = ground(d.at)
+	local r = d.radius or 13
+	local ring = piece(V(0.4, 2, 2), CF(g + V(0, 0.4, 0)) * CFrame.Angles(0, 0, math.rad(90)), c, 0.1, Enum.PartType.Cylinder)
+	tween(ring, 0.4, { Size = V(0.2, r * 2, r * 2), Transparency = 1 })
+	Debris:AddItem(ring, 0.45)
+	if d.big then
+		local moon = piece(V(1, 1, 1), CF(g + V(0, 8, 0)), WHITE, 0.1, Enum.PartType.Ball)
+		tween(moon, 0.35, { Size = V(r, r, r) })
+		task.delay(0.35, function()
+			fadeOut(moon, 0.35, V(r * 1.6, r * 1.6, r * 1.6))
+			Fx.flash(g + V(0, 8, 0), c, r * 2, 4, 0.3)
+			shake(0.8)
+		end)
+	end
+	Fx.ring(g + V(0, 0.5, 0), c2, 2, r * 2, 0.4)
+end
+VFX.moonFall = function(d, c)
+	local g = ground(d.at)
+	local sky = g + V(0, 30, 0)
+	local cf0 = CFrame.lookAt(sky, g) * CFrame.Angles(0, 0, math.random() * 6)
+	local holder = piece(V(0.1, 0.1, 0.1), cf0, c, 1)
+	crescentAt(cf0, 3, c, 0.5)
+	tween(holder, 0.2, { CFrame = CF(g) })
+	Debris:AddItem(holder, 0.25)
+	task.delay(0.2, function()
+		crescentAt(CF(g + V(0, 2, 0)) * CFrame.Angles(math.rad(90), 0, math.random() * 6), 3.4, c, 0.4)
+		disc(g + V(0, 0.3, 0), 1, c, 0.2, 0.35, d.radius or 6)
+	end)
+end
+VFX.cloudPuff = function(d, c)
+	local g = ground(d.at)
+	local r = d.radius or 10
+	for k = 0, 9 do
+		local a = k / 10 * math.pi * 2
+		local puff = piece(V(3, 2.2, 3), CF(g + V(math.cos(a) * 2, 1.5, math.sin(a) * 2)), Color3.fromRGB(70, 74, 90), 0.2, Enum.PartType.Ball)
+		puff.Material = Enum.Material.SmoothPlastic
+		tween(puff, 0.5, { Position = g + V(math.cos(a) * r, 2.5, math.sin(a) * r), Size = V(6, 4, 6), Transparency = 1 })
+		Debris:AddItem(puff, 0.55)
+	end
+	Fx.flash(g + V(0, 3, 0), c, r * 2, 2.5, 0.25)
+end
+VFX.cloudSea = function(d, c)
+	local g = ground(d.at)
+	local r = d.radius or 24
+	local sea = piece(V(3, r * 2, r * 2), CF(g + V(0, 20, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(50, 52, 66), 0.25, Enum.PartType.Cylinder)
+	sea.Material = Enum.Material.SmoothPlastic
+	tween(sea, 0.4, { Size = V(6, r * 2.2, r * 2.2) })
+	task.delay(1.8, function()
+		fadeOut(sea, 0.5)
+	end)
+	for _ = 1, 6 do
+		task.delay(math.random() * 1.4, function()
+			Fx.flash(g + V((math.random() - 0.5) * r, 20, (math.random() - 0.5) * r), c, 30, 2, 0.15)
+		end)
+	end
+end
+VFX.thunderDome = function(d, c, c2)
+	local g = ground(d.at)
+	local r = d.radius or 22
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		Fx.lightning(g + V(0, 28, 0), g + V(math.cos(a) * r, 0.5, math.sin(a) * r), k % 2 == 0 and c or c2, 0.5)
+	end
+	local dome = piece(V(r, r, r), CF(g), c, 0.4, Enum.PartType.Ball)
+	fadeOut(dome, 0.5, V(r * 2.2, r * 2.2, r * 2.2))
+	Fx.flash(g + V(0, 6, 0), WHITE, r * 2.5, 5, 0.4)
+	shake(1.2)
+end
+local function ghostFlame(at: Vector3, c: Color3, size: number, life: number)
+	local core = piece(V(size, size * 1.5, size), CF(at), c, 0.1, Enum.PartType.Ball)
+	local fire = Instance.new("Fire")
+	fire.Color = c
+	fire.SecondaryColor = Color3.fromRGB(20, 60, 40)
+	fire.Size = size * 2
+	fire.Heat = 8
+	fire.Parent = core
+	tween(core, life, { Position = at + V(0, size * 1.5, 0), Transparency = 1, Size = V(size * 0.4, size, size * 0.4) })
+	Debris:AddItem(core, life + 0.3)
+end
+VFX.ghostFire = function(d, c)
+	local at = ground(d.at) + V(0, 1.5, 0)
+	local from = (d.from :: Vector3) + V(0, 3, 0)
+	local orb = piece(V(1.4, 1.4, 1.4), CF(from), c, 0.1, Enum.PartType.Ball)
+	tween(orb, 0.18, { Position = at })
+	Debris:AddItem(orb, 0.2)
+	task.delay(0.18, function()
+		ghostFlame(at, c, d.big and 4 or 2.4, 0.6)
+		disc(at - V(0, 1.2, 0), 1, c, 0.3, 0.4, d.radius or 5)
+		if d.big then
+			Fx.flash(at, c, 26, 3, 0.3)
+			shake(0.5)
+		end
+	end)
+end
+local function boneHand(at: Vector3, c: Color3)
+	local arm = piece(V(0.8, 0.4, 0.8), CF(at - V(0, 0.5, 0)), c, 0)
+	arm.Material = Enum.Material.SmoothPlastic
+	tween(arm, 0.15, { Size = V(0.8, 4, 0.8), CFrame = CF(at + V(0, 1.6, 0)) })
+	for f = -2, 2 do
+		local finger = piece(V(0.22, 0.2, 0.22), CF(at - V(0, 0.5, 0)), c, 0)
+		finger.Material = Enum.Material.SmoothPlastic
+		tween(finger, 0.18, { Size = V(0.22, 1.4, 0.22), CFrame = CF(at + V(f * 0.3, 4.1, 0)) * CFrame.Angles(0, 0, f * 0.25) })
+		task.delay(0.5, function()
+			fadeOut(finger, 0.3)
+		end)
+	end
+	task.delay(0.5, function()
+		fadeOut(arm, 0.3)
+	end)
+end
+VFX.boneHands = function(d, c, c2)
+	local bone = c2
+	if d.length then
+		local from, dir = d.from :: Vector3, d.dir :: Vector3
+		for i = 1, 7 do
+			task.delay(i * 0.04, function()
+				local g = ground(from + dir * (d.length * i / 7))
+				boneHand(g + V((math.random() - 0.5) * 2, 0, (math.random() - 0.5) * 2), bone)
+			end)
+		end
+	else
+		local g = ground(d.at)
+		for k = 0, 2 do
+			local a = k / 3 * math.pi * 2
+			boneHand(g + V(math.cos(a) * 1.6, 0, math.sin(a) * 1.6), bone)
+		end
+		ghostFlame(g + V(0, 1, 0), c, 1.6, 0.5)
+	end
+end
+VFX.ghostCircle = function(d, c)
+	local g = ground(d.at) + V(0, 0.25, 0)
+	local r = d.radius or 22
+	local ring = piece(V(0.3, r * 2, r * 2), CF(g) * CFrame.Angles(0, 0, math.rad(90)), c, 0.55, Enum.PartType.Cylinder)
+	local inner = piece(V(0.32, r * 1.6, r * 1.6), CF(g + V(0, 0.02, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(10, 20, 15), 0.3, Enum.PartType.Cylinder)
+	inner.Material = Enum.Material.SmoothPlastic
+	task.delay(1.6, function()
+		fadeOut(ring, 0.4)
+		fadeOut(inner, 0.4)
+	end)
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		ghostFlame(g + V(math.cos(a) * r * 0.9, 1, math.sin(a) * r * 0.9), c, 1.8, 1.4)
+	end
+end
+VFX.skullBurst = function(d, c, c2)
+	local g = ground(d.at)
+	local r = d.radius or 24
+	local skull = piece(V(4, 4, 4), CF(g + V(0, 8, 0)), c2, 0.1, Enum.PartType.Ball)
+	skull.Material = Enum.Material.SmoothPlastic
+	for _, sx in ipairs({ -1, 1 }) do
+		local eye = piece(V(0.9, 0.9, 0.9), CF(g + V(sx * 0.9, 8.4, -1.8)), c, 0, Enum.PartType.Ball)
+		Debris:AddItem(eye, 0.6)
+	end
+	tween(skull, 0.4, { Size = V(8, 8, 8) })
+	task.delay(0.45, function()
+		fadeOut(skull, 0.3, V(r, r, r))
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			ghostFlame(g + V(math.cos(a) * r * 0.7, 1, math.sin(a) * r * 0.7), c, 2.4, 0.8)
+		end
+		Fx.ring(g + V(0, 0.5, 0), c, 4, r * 2.2, 0.5)
+		Fx.flash(g + V(0, 6, 0), c, r * 2.2, 5, 0.4)
+		shake(1.2)
+	end)
+end
+
+------------------------------------------------------------------------
 function ForgeFx.init(o: any)
 	opts = o or {}
 end

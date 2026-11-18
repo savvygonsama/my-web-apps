@@ -72,6 +72,7 @@ type Profile = {
 	mqv: number?, -- 3.74판: 부탁 기록의 판 (부탁이 길어지기 전에 다 끝낸 사람은 끝난 그대로)
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
 	enh: { [string]: number }?, -- 3.41판 게임패스 권법의 강화 단계 (0 ~ 15)
+	pages: { [string]: number }?, -- 3.99.31판 찢어진 비급: 가진 장 (비트)
 	disciple: any?, -- 3.99.30판 문하생 { name, robe, style, lv, xp, job, since }
 	nmBest: number?, -- 3.99.29판 악몽의 탑 최고 층
 	nmWeek: number?, -- 악몽의 탑: 이번 주 기록의 주 번호
@@ -289,6 +290,14 @@ local function sanitize(data: any): Profile
 	p.lastSeen = math.floor(num(data.lastSeen, 1e11))
 	p.attDay = math.floor(num(data.attDay, 1e7))
 	p.nmBest = math.floor(num(data.nmBest, 1e5))
+	p.pages = {}
+	if type(data.pages) == "table" then
+		for id, v in pairs(data.pages) do
+			if type(id) == "string" and Config.MANUSCRIPT_BY_ID[id] and type(v) == "number" then
+				(p.pages :: any)[id] = math.clamp(math.floor(v), 0, 255)
+			end
+		end
+	end
 	if type(data.disciple) == "table" then
 		local d = data.disciple
 		local D = Config.DISCIPLE
@@ -1302,6 +1311,7 @@ local function pushState(player: Player)
 		enh = p.enh,
 		shards = p.shards or 0,
 		refine = p.refine or {},
+		pages = p.pages or {},
 		disciple = p.disciple and {
 			name = p.disciple.name,
 			lv = p.disciple.lv,
@@ -2676,6 +2686,34 @@ Combat.init(Push, {
 					if math.random() < (lucky and PS.luckScroll or PS.scrollBase) then
 						p.scrolls += 1
 						toast(killer, "📜 심법 두루마리를 얻었어요!")
+					end
+					-- 3.99.31판 찢어진 비급 한 장 (아직 없는 장만, 해독한 비급은 더 안 떨어진다)
+					do
+						local tid = (f :: any).typeId
+						for _, M in ipairs(Config.MANUSCRIPTS) do
+							if table.find(M.bosses, tid) and not p.styles[M.style] and math.random() < M.chance then
+								p.pages = p.pages or {}
+								local have = (p.pages :: any)[M.id] or 0
+								local missing = {}
+								for i = 1, M.pages do
+									if bit32.band(have, bit32.lshift(1, i - 1)) == 0 then
+										table.insert(missing, i)
+									end
+								end
+								if #missing > 0 then
+									local pick = missing[math.random(#missing)]
+									have = bit32.bor(have, bit32.lshift(1, pick - 1));
+									(p.pages :: any)[M.id] = have
+									local n = 0
+									for i = 1, M.pages do
+										if bit32.band(have, bit32.lshift(1, i - 1)) ~= 0 then
+											n += 1
+										end
+									end
+									toast(killer, string.format("📜 찢어진 비급 「%s」 한 장 (%d/%d)%s", M.name, n, M.pages, n >= M.pages and " · 다 모았다! 권법 창의 📜 비급에서 해독" or ""))
+								end
+							end
+						end
 					end
 					-- 3.41판 비급 조각 (게임패스 권법 강화 재료): 지옥 > 후반 > 보통 보스
 					do
@@ -6130,6 +6168,19 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		if f and f.model:GetAttribute("Mount") then
 			Combat.mount(f, m.id)
 		end
+		pushState(player)
+	elseif action == "decode" then
+		-- 3.99.31판 비급 해독: 장을 다 모았으면 (퍼즐은 화면에서) 그 권법을 얻는다
+		local M = type(a1) == "string" and Config.MANUSCRIPT_BY_ID[a1]
+		if not M or p.styles[M.style] then
+			return
+		end
+		local have = (p.pages or {} :: any)[M.id] or 0
+		if have ~= bit32.lshift(1, M.pages) - 1 then
+			toast(player, "📜 아직 비급의 장이 모자라요")
+			return
+		end
+		grantStyle(player, M.style, true)
 		pushState(player)
 	elseif action == "disciple" then
 		Actions.disciple(player, a1, a2)

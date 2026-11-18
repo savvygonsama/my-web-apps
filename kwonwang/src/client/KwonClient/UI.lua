@@ -803,7 +803,7 @@ local pages: { [string]: Frame } = {}
 local refreshers: { [string]: (boolean?) -> () } = {}
 local current = ""
 local state: any = nil
-local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", forge = "⚒ 권법 제작소", disciple = "🧑‍🎓 문하생", ach = "🏆 업적과 칭호", dex = "📖 도감" }
+local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", forge = "⚒ 권법 제작소", disciple = "🧑‍🎓 문하생", manuscripts = "📜 무공 비급", ach = "🏆 업적과 칭호", dex = "📖 도감" }
 
 local function makePage(name: string): Frame
 	local f = new("Frame", { Position = UDim2.new(0, 16, 0, 56), Size = UDim2.new(1, -32, 1, -68), BackgroundTransparency = 1, Visible = false, Parent = window })
@@ -877,6 +877,10 @@ function UIB.buildStyles()
 	local dHanja = text({ Position = UDim2.new(0, 14, 0, 44), Size = UDim2.new(1, -28, 0, 22), TextSize = 17, TextColor3 = C.dim, Parent = detail })
 	local dMaster = text({ Position = UDim2.new(0, 14, 0, 68), Size = UDim2.new(1, -28, 0, 24), TextSize = 17, TextColor3 = C.gold, RichText = true, Parent = detail })
 	local bodyScroll = scroller(detail, UDim2.new(1, -20, 1, -170), UDim2.new(0, 14, 0, 96))
+	-- 3.99.31판: 무공 비급 창 (찢어진 비급을 모아 해독한다)
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.new(0, 104, 0, 32), Text = "📜 비급", TextSize = 16, BackgroundColor3 = Color3.fromRGB(120, 90, 50), Parent = detail }, function()
+		UI.openPage("manuscripts")
+	end)
 	local dBody = text({ Size = UDim2.new(1, -12, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, TextSize = 17, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = bodyScroll })
 	local selected = Config.Styles[1].id
 	local action = "learn"
@@ -2201,6 +2205,125 @@ function UI.manualReveal(results: { any })
 	Gacha.play(results, function()
 		UI.openPage("shop", { tab = "manuals" })
 	end)
+end
+
+------------------------------------------------------------------------
+-- 3.99.31판 무공 비급: 모은 장 · 해독 퍼즐 (조각 = 권법 한자 이름의 글자. 두 조각을 차례로 누르면 자리를 바꾸고, 고른 조각을 한 번 더 누르면 돌린다)
+------------------------------------------------------------------------
+function UIB.buildManuscripts()
+	local page = makePage("manuscripts")
+	text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 15, TextColor3 = C.dim, Text = "보스가 떨어뜨린 찢어진 비급을 모두 모으면 해독할 수 있다. 조각 둘을 차례로 누르면 자리가 바뀌고, 고른 조각을 한 번 더 누르면 돈다", Parent = page })
+	local list = scroller(page, UDim2.new(1, 0, 1, -36), UDim2.new(0, 0, 0, 34))
+	new("UIListLayout", { Padding = UDim.new(0, 10), Parent = list })
+	local rows: { any } = {}
+	local function chars(str: string): { string }
+		local t = {}
+		for _, cp in utf8.codes(str) do
+			table.insert(t, utf8.char(cp))
+		end
+		return t
+	end
+	for _, M in ipairs(Config.MANUSCRIPTS) do
+		local st = Config.STYLE_BY_ID[M.style]
+		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 200), BackgroundColor3 = Color3.fromRGB(38, 32, 26), Parent = list }, { corner(10), stroke(Color3.fromRGB(200, 170, 120), 1.2) })
+		local title = text({ Position = UDim2.new(0, 14, 0, 8), Size = UDim2.new(1, -28, 0, 28), TextSize = 21, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(240, 220, 170), Parent = row })
+		local sub = text({ Position = UDim2.new(0, 14, 0, 38), Size = UDim2.new(1, -28, 0, 36), TextSize = 14, TextColor3 = C.dim, TextYAlignment = Enum.TextYAlignment.Top, Parent = row })
+		local board = new("Frame", { Position = UDim2.new(0, 14, 0, 80), Size = UDim2.new(1, -200, 0, 104), BackgroundTransparency = 1, Parent = row })
+		local glyphs = chars(st.hanja or st.name)
+		local n = math.min(M.pages, #glyphs)
+		local order, rot = {}, {}
+		local selected: number? = nil
+		local tiles: { TextButton } = {}
+		local solveBtn
+		local function solved(): boolean
+			for i = 1, n do
+				if order[i] ~= i or rot[i] % 4 ~= 0 then
+					return false
+				end
+			end
+			return true
+		end
+		local function draw()
+			for i, b in ipairs(tiles) do
+				b.Text = glyphs[order[i]] or "?"
+				b.Rotation = (rot[i] % 4) * 90
+				b.BackgroundColor3 = selected == i and Color3.fromRGB(200, 150, 60) or Color3.fromRGB(230, 215, 180)
+			end
+			if solveBtn then
+				solveBtn.Visible = solved()
+			end
+		end
+		for i = 1, n do
+			order[i], rot[i] = i, 0
+			local b = button({ Position = UDim2.new(0, (i - 1) * 96, 0, 4), Size = UDim2.new(0, 88, 0, 88), TextSize = 48, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(40, 25, 15), BackgroundColor3 = Color3.fromRGB(230, 215, 180), Parent = board }, function()
+				if selected == nil then
+					selected = i
+				elseif selected == i then
+					rot[i] += 1
+					selected = nil
+				else
+					order[i], order[selected] = order[selected], order[i]
+					rot[i], rot[selected] = rot[selected], rot[i]
+					selected = nil
+				end
+				draw()
+			end)
+			tiles[i] = b
+		end
+		-- 섞기: 자리를 뒤섞고 몇 개는 돌려 놓는다
+		local function shuffle()
+			for i = n, 2, -1 do
+				local j = math.random(i)
+				order[i], order[j] = order[j], order[i]
+			end
+			for i = 1, n do
+				rot[i] = math.random(0, 3)
+			end
+			if solved() then
+				rot[1] = 1
+			end
+			selected = nil
+			draw()
+		end
+		shuffle()
+		solveBtn = button({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -12, 1, -12), Size = UDim2.new(0, 170, 0, 50), Text = "📜 해독 완료", TextSize = 18, BackgroundColor3 = Color3.fromRGB(70, 150, 90), Visible = false, Parent = row }, function()
+			if solved() then
+				Request:FireServer("decode", M.id)
+			end
+		end)
+		local status = text({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 84), Size = UDim2.new(0, 170, 0, 60), TextSize = 15, TextXAlignment = Enum.TextXAlignment.Center, RichText = true, Parent = row })
+		table.insert(rows, { M = M, st = st, title = title, sub = sub, board = board, status = status, solveBtn = solveBtn, shuffle = shuffle, n = n })
+	end
+	refreshers.manuscripts = function(fresh: boolean?)
+		local s = state or {}
+		for _, it in ipairs(rows) do
+			local M, st = it.M, it.st
+			local have = (s.pages and s.pages[M.id]) or 0
+			local got = 0
+			local marks = {}
+			for i = 1, M.pages do
+				local on = bit32.band(have, bit32.lshift(1, i - 1)) ~= 0
+				got += on and 1 or 0
+				table.insert(marks, on and "■" or "□")
+			end
+			local owned = s.styles and table.find(s.styles, M.style) ~= nil
+			local full = got >= M.pages
+			local names = {}
+			for _, b in ipairs(M.bosses) do
+				local bd = Config.Bosses[b]
+				table.insert(names, bd and (string.split(bd.name, " · ")[1]) or b)
+			end
+			it.title.Text = string.format("📜 %s  %s", M.name, table.concat(marks, ""))
+			it.sub.Text = owned and string.format("해독함 · %s %s을(를) 익혔다", st.icon, st.name) or ((full and "다 모았다! 조각을 바르게 맞추면 숨은 권법이 열린다" or "떨어뜨리는 보스: " .. table.concat(names, " · ")))
+			it.board.Visible = full and not owned
+			it.status.Text = owned and '<font color="#8CE68C">✔ 해독</font>' or string.format("%d / %d장", got, M.pages)
+			if not (full and not owned) then
+				it.solveBtn.Visible = false
+			elseif fresh then
+				it.shuffle()
+			end
+		end
+	end
 end
 
 ------------------------------------------------------------------------
@@ -5192,6 +5315,7 @@ function UI.init(req: RemoteEvent)
 	UIB.buildSkyShop()
 	UIB.buildForge()
 	UIB.buildDisciple()
+	UIB.buildManuscripts()
 	UIB.buildHelp()
 	UIB.buildTest()
 	UIB.buildMap()
