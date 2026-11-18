@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.27" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.28" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -1669,6 +1669,8 @@ end
 -- 3.5판 권법 등급: 다섯 단계 (상급 · 전설 · 신화 · 태초 · 윤회). 지존은 나중에 새 권법이 나오면 쓰려고 비워 둔다.
 -- 진 (각성) · 초 · 극은 등급이 아니라 권법이 변한 모습이라 예전 그대로 둔다 (진 = 신화, 초 = 초월, 극 = 극).
 -- 모습의 한계: 상급·전설 권법은 초 신권까지, 신화 이상 권법은 초와 극까지 변할 수 있다 (FORM_LIMIT)
+-- 3.99.28판 제작소 권법 정련 (+1 ~ +10): 단계마다 피해 +3%. 값은 조리법의 part 에서 시작해 단계마다 growth 배 (Config.refineCost)
+Config.REFINE = { max = 10, dmg = 0.03, part = 0.2, growth = 1.4 }
 Config.GRADE_ORDER = { "상급", "전설", "신화", "태초", "지존", "윤회", "초월", "권왕", "극", "신" }
 Config.GRADES = { ["상급"] = 1.0, ["전설"] = 1.5, ["신화"] = 1.8, ["태초"] = 2.5, ["지존"] = 2.75, ["윤회"] = 3.0, ["초월"] = 3.1, ["권왕"] = 3.4, ["극"] = 3.8, ["신"] = 4.3 }
 Config.GRADE_COLOR = {
@@ -1716,6 +1718,9 @@ function Config.gradeMult(style: any, up: number?): number
 	-- 3.41판 게임패스 권법: up 은 강화 단계 (깨달음 대신)
 	if style.enh then
 		return Config.enhMult(style, up)
+	end
+	if style.forge then
+		return (Config.GRADES[style.grade] or 1) * (1 + Config.REFINE.dmg * math.clamp(math.floor(up or 0), 0, Config.REFINE.max))
 	end
 	local base = Config.GRADES[style.grade] or 1
 	local b = BREAK_BONUS[style.grade]
@@ -7441,6 +7446,15 @@ for _, r in ipairs(Config.FORGE) do
 end
 function Config.forgeCoins(r: any, realmIdx: number): number
 	return r.coinShares * Config.productCoins(realmIdx)
+end
+-- 3.99.28판 정련: 벼린 권법을 +1 ~ +10. 단계마다 피해 +3%, 값은 조리법의 일부에서 시작해 단계마다 1.4배
+function Config.refineCost(r: any, lv: number): any
+	local k = Config.REFINE.part * Config.REFINE.growth ^ lv
+	local mats = {}
+	for id, n in pairs(r.mats) do
+		mats[id] = math.max(1, math.ceil(n * k))
+	end
+	return { shards = math.max(1, math.ceil(r.shards * k)), gems = math.ceil(r.gems * k / 10) * 10, coinShares = math.max(1, math.ceil(r.coinShares * k)), mats = mats }
 end
 
 return Config

@@ -4845,4 +4845,11 @@ return {
 	["📅 출석 %d일째"] = "📅 Day %d check-in",
 	["일곱째 날 · 가장 큰 보상"] = "Day seven · the biggest reward",
 	["이어서 %d일 · 일곱째 날이 가장 크다"] = "%d days in a row · day seven is the biggest",
+	["⚒ 제작소 권법은 깨달음 대신 제작소의 정련으로 세진다"] = "⚒ Forged styles grow stronger through refining at the forge instead of breakthroughs",
+	["⚒ %s은(는) 더 정련할 수 없어요 (+%s)"] = "⚒ %s can't be refined any further (+%s)",
+	["🔨 %s %s +%d · 피해 +%d%%"] = "🔨 %s %s +%d · damage +%d%%",
+	["🔨 정련 +%d · 피해 +%d%% (끝)"] = "🔨 Refined +%d · damage +%d%% (max)",
+	["🔨 정련 +%d → +%d · 피해 +%d%%"] = "🔨 Refine +%d → +%d · damage +%d%%",
+	["🔨 정련 +%d"] = "🔨 Refine +%d",
+	["✔ +"] = "✔ +",
 }

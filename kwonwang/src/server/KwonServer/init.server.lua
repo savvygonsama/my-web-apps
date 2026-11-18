@@ -72,6 +72,7 @@ type Profile = {
 	mqv: number?, -- 3.74판: 부탁 기록의 판 (부탁이 길어지기 전에 다 끝낸 사람은 끝난 그대로)
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
 	enh: { [string]: number }?, -- 3.41판 게임패스 권법의 강화 단계 (0 ~ 15)
+	refine: { [string]: number }?, -- 3.99.28판 제작소 권법 정련 단계 (0 ~ 10)
 	attDay: number?, -- 3.99.27판 출석: 마지막으로 받은 날 (한국 시각 날짜 번호)
 	attStreak: number?, -- 3.99.27판 출석: 이어서 들어온 날 수
 	lastSeen: number?, -- 3.99.26판: 마지막으로 저장한 때 (os.time, 자리를 비운 동안의 수련)
@@ -283,6 +284,15 @@ local function sanitize(data: any): Profile
 	p.shards = math.floor(num(data.shards, 1e6))
 	p.lastSeen = math.floor(num(data.lastSeen, 1e11))
 	p.attDay = math.floor(num(data.attDay, 1e7))
+	p.refine = {}
+	if type(data.refine) == "table" then
+		for id, v in pairs(data.refine) do
+			local sd = type(id) == "string" and Config.STYLE_BY_ID[id]
+			if sd and sd.forge and type(v) == "number" then
+				(p.refine :: any)[id] = math.clamp(math.floor(v), 0, Config.REFINE.max)
+			end
+		end
+	end
 	p.attStreak = math.floor(num(data.attStreak, 1e6))
 	-- 3.40판 개발자 상품 영수증
 	p.receipts = {}
@@ -1270,6 +1280,7 @@ local function pushState(player: Player)
 		equip = p.equip,
 		enh = p.enh,
 		shards = p.shards or 0,
+		refine = p.refine or {},
 		scrolls = p.scrolls,
 		pity = p.pity,
 		towerBest = p.towerBest,
@@ -1436,7 +1447,7 @@ local function refreshFighter(player: Player)
 	-- 경지 배율: 경지가 오를 때마다 피해·체력이 크게 오른다
 	local styleDef = Config.STYLE_BY_ID[p.style]
 	-- 3.41판: 게임패스 권법은 깨달음 대신 강화 단계로 센다
-	local upArg = (styleDef and styleDef.enh) and ((p.enh :: any)[p.style] or 0) or p.gradeUp[p.style]
+	local upArg = (styleDef and styleDef.enh) and ((p.enh :: any)[p.style] or 0) or ((styleDef and styleDef.forge) and ((p.refine or {})[p.style] or 0)) or p.gradeUp[p.style]
 	local grade = styleDef and Config.gradeDmg(styleDef, upArg) or 1
 	local gradeHp = styleDef and Config.gradeHp(styleDef, upArg) or 1
 	f.model:SetAttribute("Enh", (styleDef and styleDef.enh) and upArg or nil)
@@ -3265,6 +3276,66 @@ function Actions.forge(player: Player, id: any)
 	p.coins -= coins
 	grantStyle(player, style.id, true)
 	Push:FireClient(player, "forged", { style = style.id })
+	pushState(player)
+end
+
+-- 3.99.28판 제작소 정련: 벼린 권법에 재료를 더 녹여 한 단계씩 (피해 +3%, 열 단계까지)
+function Actions.refine(player: Player, id: any)
+	local p = profiles[player]
+	local r = type(id) == "string" and Config.FORGE_BY_STYLE[id]
+	local style = r and Config.STYLE_BY_ID[r.style]
+	if not p or not r or not style or not p.styles[style.id] then
+		return
+	end
+	local f0 = Combat.fighterOfPlayer(player)
+	local pos = f0 and f0.root.Position
+	if not pos or Vector3.new(pos.X - Config.FORGE_AT.X, 0, pos.Z - Config.FORGE_AT.Z).Magnitude > 40 then
+		toast(player, "⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요")
+		return
+	end
+	p.refine = p.refine or {}
+	local lv = (p.refine :: any)[style.id] or 0
+	if lv >= Config.REFINE.max then
+		toast(player, "⚒ " .. style.name .. "은(는) 더 정련할 수 없어요 (+" .. Config.REFINE.max .. ")")
+		return
+	end
+	local cost = Config.refineCost(r, lv)
+	local idx = Calc.realm(p)
+	local coins = cost.coinShares * Config.productCoins(idx)
+	local miss = {}
+	if (p.shards or 0) < cost.shards then
+		table.insert(miss, string.format("🧩 비급 조각 %d/%d", p.shards or 0, cost.shards))
+	end
+	if (p.skyGems or 0) < cost.gems then
+		table.insert(miss, string.format("💠 천정 %s/%s", Config.formatNumber(p.skyGems or 0), Config.formatNumber(cost.gems)))
+	end
+	for _, M in ipairs(Config.SKY_MATS) do
+		local need = cost.mats[M.id]
+		if need and (p.mats[M.id] or 0) < need then
+			table.insert(miss, string.format("%s %s %d/%d", M.icon, M.name, p.mats[M.id] or 0, need))
+		end
+	end
+	if p.coins < coins then
+		table.insert(miss, string.format("💰 은자 %s/%s", Config.formatNumber(p.coins), Config.formatNumber(coins)))
+	end
+	if #miss > 0 then
+		toast(player, "⚒ 재료가 모자라요: " .. table.concat(miss, " · "))
+		return
+	end
+	p.shards = (p.shards or 0) - cost.shards
+	p.skyGems -= cost.gems
+	for mid, n in pairs(cost.mats) do
+		p.mats[mid] = (p.mats[mid] or 0) - n
+	end
+	p.coins -= coins
+	;(p.refine :: any)[style.id] = lv + 1
+	local st = states[player]
+	if st then
+		st.dirty = true
+	end
+	refreshFighter(player)
+	Push:FireClient(player, "forged", { style = style.id })
+	toast(player, string.format("🔨 %s %s +%d · 피해 +%d%%", style.icon, style.name, lv + 1, math.floor((lv + 1) * Config.REFINE.dmg * 100 + 0.5)))
 	pushState(player)
 end
 
@@ -5822,6 +5893,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		pushState(player)
 	elseif action == "forge" then
 		Actions.forge(player, a1)
+	elseif action == "refine" then
+		Actions.refine(player, a1)
 	elseif action == "skyBuy" then
 		-- 천상 상점 (천정으로)
 		local it = type(a1) == "string" and Config.SKY_SHOP_BY_ID[a1]
@@ -6030,6 +6103,10 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		end
 		if sd.enh then
 			toast(player, "💎 이 권법은 깨달음 대신 강화로 세진다 (권법 창의 강화)")
+			return
+		end
+		if sd.forge then
+			toast(player, "⚒ 제작소 권법은 깨달음 대신 제작소의 정련으로 세진다")
 			return
 		end
 		local ups = p.gradeUp[sd.id] or 0

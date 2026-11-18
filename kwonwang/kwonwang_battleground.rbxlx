@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.27" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.28" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -1689,6 +1689,8 @@ end
 -- 3.5판 권법 등급: 다섯 단계 (상급 · 전설 · 신화 · 태초 · 윤회). 지존은 나중에 새 권법이 나오면 쓰려고 비워 둔다.
 -- 진 (각성) · 초 · 극은 등급이 아니라 권법이 변한 모습이라 예전 그대로 둔다 (진 = 신화, 초 = 초월, 극 = 극).
 -- 모습의 한계: 상급·전설 권법은 초 신권까지, 신화 이상 권법은 초와 극까지 변할 수 있다 (FORM_LIMIT)
+-- 3.99.28판 제작소 권법 정련 (+1 ~ +10): 단계마다 피해 +3%. 값은 조리법의 part 에서 시작해 단계마다 growth 배 (Config.refineCost)
+Config.REFINE = { max = 10, dmg = 0.03, part = 0.2, growth = 1.4 }
 Config.GRADE_ORDER = { "상급", "전설", "신화", "태초", "지존", "윤회", "초월", "권왕", "극", "신" }
 Config.GRADES = { ["상급"] = 1.0, ["전설"] = 1.5, ["신화"] = 1.8, ["태초"] = 2.5, ["지존"] = 2.75, ["윤회"] = 3.0, ["초월"] = 3.1, ["권왕"] = 3.4, ["극"] = 3.8, ["신"] = 4.3 }
 Config.GRADE_COLOR = {
@@ -1736,6 +1738,9 @@ function Config.gradeMult(style: any, up: number?): number
 	-- 3.41판 게임패스 권법: up 은 강화 단계 (깨달음 대신)
 	if style.enh then
 		return Config.enhMult(style, up)
+	end
+	if style.forge then
+		return (Config.GRADES[style.grade] or 1) * (1 + Config.REFINE.dmg * math.clamp(math.floor(up or 0), 0, Config.REFINE.max))
 	end
 	local base = Config.GRADES[style.grade] or 1
 	local b = BREAK_BONUS[style.grade]
@@ -7462,6 +7467,15 @@ end
 function Config.forgeCoins(r: any, realmIdx: number): number
 	return r.coinShares * Config.productCoins(realmIdx)
 end
+-- 3.99.28판 정련: 벼린 권법을 +1 ~ +10. 단계마다 피해 +3%, 값은 조리법의 일부에서 시작해 단계마다 1.4배
+function Config.refineCost(r: any, lv: number): any
+	local k = Config.REFINE.part * Config.REFINE.growth ^ lv
+	local mats = {}
+	for id, n in pairs(r.mats) do
+		mats[id] = math.max(1, math.ceil(n * k))
+	end
+	return { shards = math.max(1, math.ceil(r.shards * k)), gems = math.ceil(r.gems * k / 10) * 10, coinShares = math.max(1, math.ceil(r.coinShares * k)), mats = mats }
+end
 
 return Config
 ]]></string>
@@ -10696,6 +10710,7 @@ type Profile = {
 	mqv: number?, -- 3.74판: 부탁 기록의 판 (부탁이 길어지기 전에 다 끝낸 사람은 끝난 그대로)
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
 	enh: { [string]: number }?, -- 3.41판 게임패스 권법의 강화 단계 (0 ~ 15)
+	refine: { [string]: number }?, -- 3.99.28판 제작소 권법 정련 단계 (0 ~ 10)
 	attDay: number?, -- 3.99.27판 출석: 마지막으로 받은 날 (한국 시각 날짜 번호)
 	attStreak: number?, -- 3.99.27판 출석: 이어서 들어온 날 수
 	lastSeen: number?, -- 3.99.26판: 마지막으로 저장한 때 (os.time, 자리를 비운 동안의 수련)
@@ -10907,6 +10922,15 @@ local function sanitize(data: any): Profile
 	p.shards = math.floor(num(data.shards, 1e6))
 	p.lastSeen = math.floor(num(data.lastSeen, 1e11))
 	p.attDay = math.floor(num(data.attDay, 1e7))
+	p.refine = {}
+	if type(data.refine) == "table" then
+		for id, v in pairs(data.refine) do
+			local sd = type(id) == "string" and Config.STYLE_BY_ID[id]
+			if sd and sd.forge and type(v) == "number" then
+				(p.refine :: any)[id] = math.clamp(math.floor(v), 0, Config.REFINE.max)
+			end
+		end
+	end
 	p.attStreak = math.floor(num(data.attStreak, 1e6))
 	-- 3.40판 개발자 상품 영수증
 	p.receipts = {}
@@ -11894,6 +11918,7 @@ local function pushState(player: Player)
 		equip = p.equip,
 		enh = p.enh,
 		shards = p.shards or 0,
+		refine = p.refine or {},
 		scrolls = p.scrolls,
 		pity = p.pity,
 		towerBest = p.towerBest,
@@ -12060,7 +12085,7 @@ local function refreshFighter(player: Player)
 	-- 경지 배율: 경지가 오를 때마다 피해·체력이 크게 오른다
 	local styleDef = Config.STYLE_BY_ID[p.style]
 	-- 3.41판: 게임패스 권법은 깨달음 대신 강화 단계로 센다
-	local upArg = (styleDef and styleDef.enh) and ((p.enh :: any)[p.style] or 0) or p.gradeUp[p.style]
+	local upArg = (styleDef and styleDef.enh) and ((p.enh :: any)[p.style] or 0) or ((styleDef and styleDef.forge) and ((p.refine or {})[p.style] or 0)) or p.gradeUp[p.style]
 	local grade = styleDef and Config.gradeDmg(styleDef, upArg) or 1
 	local gradeHp = styleDef and Config.gradeHp(styleDef, upArg) or 1
 	f.model:SetAttribute("Enh", (styleDef and styleDef.enh) and upArg or nil)
@@ -13889,6 +13914,66 @@ function Actions.forge(player: Player, id: any)
 	p.coins -= coins
 	grantStyle(player, style.id, true)
 	Push:FireClient(player, "forged", { style = style.id })
+	pushState(player)
+end
+
+-- 3.99.28판 제작소 정련: 벼린 권법에 재료를 더 녹여 한 단계씩 (피해 +3%, 열 단계까지)
+function Actions.refine(player: Player, id: any)
+	local p = profiles[player]
+	local r = type(id) == "string" and Config.FORGE_BY_STYLE[id]
+	local style = r and Config.STYLE_BY_ID[r.style]
+	if not p or not r or not style or not p.styles[style.id] then
+		return
+	end
+	local f0 = Combat.fighterOfPlayer(player)
+	local pos = f0 and f0.root.Position
+	if not pos or Vector3.new(pos.X - Config.FORGE_AT.X, 0, pos.Z - Config.FORGE_AT.Z).Magnitude > 40 then
+		toast(player, "⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요")
+		return
+	end
+	p.refine = p.refine or {}
+	local lv = (p.refine :: any)[style.id] or 0
+	if lv >= Config.REFINE.max then
+		toast(player, "⚒ " .. style.name .. "은(는) 더 정련할 수 없어요 (+" .. Config.REFINE.max .. ")")
+		return
+	end
+	local cost = Config.refineCost(r, lv)
+	local idx = Calc.realm(p)
+	local coins = cost.coinShares * Config.productCoins(idx)
+	local miss = {}
+	if (p.shards or 0) < cost.shards then
+		table.insert(miss, string.format("🧩 비급 조각 %d/%d", p.shards or 0, cost.shards))
+	end
+	if (p.skyGems or 0) < cost.gems then
+		table.insert(miss, string.format("💠 천정 %s/%s", Config.formatNumber(p.skyGems or 0), Config.formatNumber(cost.gems)))
+	end
+	for _, M in ipairs(Config.SKY_MATS) do
+		local need = cost.mats[M.id]
+		if need and (p.mats[M.id] or 0) < need then
+			table.insert(miss, string.format("%s %s %d/%d", M.icon, M.name, p.mats[M.id] or 0, need))
+		end
+	end
+	if p.coins < coins then
+		table.insert(miss, string.format("💰 은자 %s/%s", Config.formatNumber(p.coins), Config.formatNumber(coins)))
+	end
+	if #miss > 0 then
+		toast(player, "⚒ 재료가 모자라요: " .. table.concat(miss, " · "))
+		return
+	end
+	p.shards = (p.shards or 0) - cost.shards
+	p.skyGems -= cost.gems
+	for mid, n in pairs(cost.mats) do
+		p.mats[mid] = (p.mats[mid] or 0) - n
+	end
+	p.coins -= coins
+	;(p.refine :: any)[style.id] = lv + 1
+	local st = states[player]
+	if st then
+		st.dirty = true
+	end
+	refreshFighter(player)
+	Push:FireClient(player, "forged", { style = style.id })
+	toast(player, string.format("🔨 %s %s +%d · 피해 +%d%%", style.icon, style.name, lv + 1, math.floor((lv + 1) * Config.REFINE.dmg * 100 + 0.5)))
 	pushState(player)
 end
 
@@ -16446,6 +16531,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		pushState(player)
 	elseif action == "forge" then
 		Actions.forge(player, a1)
+	elseif action == "refine" then
+		Actions.refine(player, a1)
 	elseif action == "skyBuy" then
 		-- 천상 상점 (천정으로)
 		local it = type(a1) == "string" and Config.SKY_SHOP_BY_ID[a1]
@@ -16654,6 +16741,10 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		end
 		if sd.enh then
 			toast(player, "💎 이 권법은 깨달음 대신 강화로 세진다 (권법 창의 강화)")
+			return
+		end
+		if sd.forge then
+			toast(player, "⚒ 제작소 권법은 깨달음 대신 제작소의 정련으로 세진다")
 			return
 		end
 		local ups = p.gradeUp[sd.id] or 0
@@ -65407,6 +65498,13 @@ return {
 	["📅 출석 %d일째"] = "📅 Day %d check-in",
 	["일곱째 날 · 가장 큰 보상"] = "Day seven · the biggest reward",
 	["이어서 %d일 · 일곱째 날이 가장 크다"] = "%d days in a row · day seven is the biggest",
+	["⚒ 제작소 권법은 깨달음 대신 제작소의 정련으로 세진다"] = "⚒ Forged styles grow stronger through refining at the forge instead of breakthroughs",
+	["⚒ %s은(는) 더 정련할 수 없어요 (+%s)"] = "⚒ %s can't be refined any further (+%s)",
+	["🔨 %s %s +%d · 피해 +%d%%"] = "🔨 %s %s +%d · damage +%d%%",
+	["🔨 정련 +%d · 피해 +%d%% (끝)"] = "🔨 Refined +%d · damage +%d%% (max)",
+	["🔨 정련 +%d → +%d · 피해 +%d%%"] = "🔨 Refine +%d → +%d · damage +%d%%",
+	["🔨 정련 +%d"] = "🔨 Refine +%d",
+	["✔ +"] = "✔ +",
 }
 ]]></string>
           </Properties>
@@ -85823,7 +85921,9 @@ function UIB.buildForge()
 		text({ Position = UDim2.new(0, 14, 0, 62), Size = UDim2.new(1, -200, 0, 44), TextSize = 14, TextColor3 = C.dim, TextYAlignment = Enum.TextYAlignment.Top, Text = st.desc, Parent = row })
 		local need = text({ Position = UDim2.new(0, 14, 0, 110), Size = UDim2.new(1, -200, 0, 58), TextSize = 14, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = row })
 		local btn = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 168, 0, 54), Text = "⚒ 벼리기", TextSize = 19, BackgroundColor3 = C.panel, Parent = row }, function()
-			Request:FireServer("forge", r.style)
+			local s0 = state or {}
+			local have = s0.styles and table.find(s0.styles, r.style) ~= nil
+			Request:FireServer(have and "refine" or "forge", r.style)
 		end)
 		table.insert(rows, { r = r, st = st, need = need, btn = btn })
 	end
@@ -85834,14 +85934,37 @@ function UIB.buildForge()
 		for _, it in ipairs(rows) do
 			local r, st = it.r, it.st
 			local owned = s.styles and table.find(s.styles, st.id) ~= nil
+			local lv = (s.refine and s.refine[st.id]) or 0
 			local parts = {}
 			local ok = true
+			-- 3.99.28판: 익힌 뒤에는 정련 값을 보인다
+			local cost = owned and Config.refineCost(r, lv) or nil
 			local function req(label: string, have: number, want: number, fmt: boolean?)
 				local good = have >= want
 				ok = ok and good
 				local h = fmt and Config.formatNumber(have) or tostring(have)
 				local w = fmt and Config.formatNumber(want) or tostring(want)
 				table.insert(parts, string.format('<font color="%s">%s %s/%s</font>', good and "#8CE68C" or "#FF8C78", label, h, w))
+			end
+			if cost then
+				if lv >= Config.REFINE.max then
+					table.insert(parts, string.format('<font color="#FFD27A">🔨 정련 +%d · 피해 +%d%% (끝)</font>', lv, math.floor(lv * Config.REFINE.dmg * 100 + 0.5)))
+				else
+					table.insert(parts, string.format('<font color="#FFD27A">🔨 정련 +%d → +%d · 피해 +%d%%</font>', lv, lv + 1, math.floor((lv + 1) * Config.REFINE.dmg * 100 + 0.5)))
+					req("🧩 비급 조각", s.shards or 0, cost.shards)
+					req("💠 천정", s.skyGems or 0, cost.gems, true)
+					for _, M in ipairs(Config.SKY_MATS) do
+						local n = cost.mats[M.id]
+						if n then
+							req(M.icon .. " " .. M.name, (s.mats and s.mats[M.id]) or 0, n)
+						end
+					end
+					req("💰 은자", s.coins or 0, cost.coinShares * Config.productCoins(realm), true)
+				end
+				it.need.Text = table.concat(parts, "   ")
+				it.btn.Text = lv >= Config.REFINE.max and "✔ +" .. lv or string.format("🔨 정련 +%d", lv + 1)
+				it.btn.BackgroundColor3 = lv >= Config.REFINE.max and Color3.fromRGB(50, 110, 70) or (ok and Color3.fromRGB(200, 110, 40) or C.panel)
+				continue
 			end
 			req("♻ 환생", s.rebirth or 0, r.rebirth)
 			for _, sid in ipairs(r.needStyles or {}) do

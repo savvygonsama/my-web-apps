@@ -2234,7 +2234,9 @@ function UIB.buildForge()
 		text({ Position = UDim2.new(0, 14, 0, 62), Size = UDim2.new(1, -200, 0, 44), TextSize = 14, TextColor3 = C.dim, TextYAlignment = Enum.TextYAlignment.Top, Text = st.desc, Parent = row })
 		local need = text({ Position = UDim2.new(0, 14, 0, 110), Size = UDim2.new(1, -200, 0, 58), TextSize = 14, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = row })
 		local btn = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 168, 0, 54), Text = "⚒ 벼리기", TextSize = 19, BackgroundColor3 = C.panel, Parent = row }, function()
-			Request:FireServer("forge", r.style)
+			local s0 = state or {}
+			local have = s0.styles and table.find(s0.styles, r.style) ~= nil
+			Request:FireServer(have and "refine" or "forge", r.style)
 		end)
 		table.insert(rows, { r = r, st = st, need = need, btn = btn })
 	end
@@ -2245,14 +2247,37 @@ function UIB.buildForge()
 		for _, it in ipairs(rows) do
 			local r, st = it.r, it.st
 			local owned = s.styles and table.find(s.styles, st.id) ~= nil
+			local lv = (s.refine and s.refine[st.id]) or 0
 			local parts = {}
 			local ok = true
+			-- 3.99.28판: 익힌 뒤에는 정련 값을 보인다
+			local cost = owned and Config.refineCost(r, lv) or nil
 			local function req(label: string, have: number, want: number, fmt: boolean?)
 				local good = have >= want
 				ok = ok and good
 				local h = fmt and Config.formatNumber(have) or tostring(have)
 				local w = fmt and Config.formatNumber(want) or tostring(want)
 				table.insert(parts, string.format('<font color="%s">%s %s/%s</font>', good and "#8CE68C" or "#FF8C78", label, h, w))
+			end
+			if cost then
+				if lv >= Config.REFINE.max then
+					table.insert(parts, string.format('<font color="#FFD27A">🔨 정련 +%d · 피해 +%d%% (끝)</font>', lv, math.floor(lv * Config.REFINE.dmg * 100 + 0.5)))
+				else
+					table.insert(parts, string.format('<font color="#FFD27A">🔨 정련 +%d → +%d · 피해 +%d%%</font>', lv, lv + 1, math.floor((lv + 1) * Config.REFINE.dmg * 100 + 0.5)))
+					req("🧩 비급 조각", s.shards or 0, cost.shards)
+					req("💠 천정", s.skyGems or 0, cost.gems, true)
+					for _, M in ipairs(Config.SKY_MATS) do
+						local n = cost.mats[M.id]
+						if n then
+							req(M.icon .. " " .. M.name, (s.mats and s.mats[M.id]) or 0, n)
+						end
+					end
+					req("💰 은자", s.coins or 0, cost.coinShares * Config.productCoins(realm), true)
+				end
+				it.need.Text = table.concat(parts, "   ")
+				it.btn.Text = lv >= Config.REFINE.max and "✔ +" .. lv or string.format("🔨 정련 +%d", lv + 1)
+				it.btn.BackgroundColor3 = lv >= Config.REFINE.max and Color3.fromRGB(50, 110, 70) or (ok and Color3.fromRGB(200, 110, 40) or C.panel)
+				continue
 			end
 			req("♻ 환생", s.rebirth or 0, r.rebirth)
 			for _, sid in ipairs(r.needStyles or {}) do
