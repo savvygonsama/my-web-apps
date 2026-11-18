@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.42" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.43" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -228,15 +228,17 @@ end
 -- 환생할 때마다: 체력 영구 +25% · 주는 피해 +10% (2.4.1판), 적을 쓰러뜨려 얻는 능력치·수련 배수 +1 (2.1판), 천외천 너머의 경지가 하나 열린다
 ------------------------------------------------------------------------
 Config.REBIRTH = {
-	max = 6, -- 3.21판: 4 → 6 (오환 · 육환)
+	max = 8, -- 3.21판: 4 → 6 (오환 · 육환). 3.99.43판: 6 → 8 (칠환 · 팔환: 천겁의 길을 넘어야 한다)
 	base = 16, -- 환생 전 끝 경지 (천외천)
 	power = 0.25,
 	gain = 1, -- 2.1판: 환생 한 번마다 얻는 능력치 배수 +1 (×2 · ×3 · ×4 · ×5)
 	coins = 1000000, -- 환생할 때 받는 은자 (횟수만큼)
 	-- 3.99.18판: 환생하면 삼류부터가 아니라 이 경지에서 다시 시작한다 (n번째 환생 → startRealm[n]). 낮은 경지를 다시 오르는 건 지루했다
-	startRealm = { 5, 7, 9, 10, 11, 12 }, -- 절정 · 화경 · 사경 · 생사경 · 신화경 · 천인합일
-	names = { "일환", "이환", "삼환", "사환", "오환", "육환" },
-	colors = { Color3.fromRGB(255, 120, 200), Color3.fromRGB(130, 255, 170), Color3.fromRGB(150, 170, 255), Color3.fromRGB(255, 70, 70), Color3.fromRGB(190, 110, 255), Color3.fromRGB(235, 40, 60) },
+	startRealm = { 5, 7, 9, 10, 11, 12, 12, 12 }, -- 절정 · 화경 · 사경 · 생사경 · 신화경 · 천인합일 (칠환 · 팔환도 천인합일)
+	names = { "일환", "이환", "삼환", "사환", "오환", "육환", "칠환", "팔환" },
+	colors = { Color3.fromRGB(255, 120, 200), Color3.fromRGB(130, 255, 170), Color3.fromRGB(150, 170, 255), Color3.fromRGB(255, 70, 70), Color3.fromRGB(190, 110, 255), Color3.fromRGB(235, 40, 60), Color3.fromRGB(255, 215, 90), Color3.fromRGB(240, 240, 255) },
+	-- 3.99.43판: 칠환 · 팔환은 천겁의 길을 이만큼 넘어야 한다 (n번째 환생 → 겁 수)
+	geopReq = { [7] = 20, [8] = 40 },
 }
 function Config.realmCap(rebirth: number): number
 	return math.min(#Config.Realms, Config.REBIRTH.base + math.clamp(rebirth, 0, Config.REBIRTH.max))
@@ -284,23 +286,25 @@ end
 -- 윤회의 시련: n번째 환생 뒤 생사경에 다시 오르면 n번째 시련이 열린다. 전생의 그림자는 지금 내 힘보다 조금 세다
 -- 3.99.9판: 허무경 너머 ★ (환생을 모두 마치고 허무경에 오른 뒤에도 끝없이). 능력치 합이 허무경의 growth 배가 될 때마다 별 하나,
 -- 별마다 피해 · 체력 +3% (더한다)
-Config.STAR = { growth = 1.2, dmg = 0.03, hp = 0.03 }
+Config.STAR = { growth = 1.2, dmg = 0.03, hp = 0.03, fromRebirth = 6 } -- 3.99.43판: 별은 육환부터 (환생이 여덟으로 늘어도)
 Config.SAMSARA = {
 	realm = 10, -- 생사경
-	power = { 1.15, 1.25, 1.35, 1.5, 1.65, 1.8 },
-	hp = { 4, 5, 6, 8, 10, 12 },
+	power = { 1.15, 1.25, 1.35, 1.5, 1.65, 1.8, 2.0, 2.2 },
+	hp = { 4, 5, 6, 8, 10, 12, 15, 18 },
 	time = 180,
 	cooldown = 20,
-	gems = { 80, 150, 250, 400, 600, 900 },
-	scrolls = { 5, 8, 12, 20, 28, 40 },
-	coins = { 2000000, 5000000, 12000000, 30000000, 60000000, 120000000 },
+	gems = { 80, 150, 250, 400, 600, 900, 1300, 1800 },
+	scrolls = { 5, 8, 12, 20, 28, 40, 55, 75 },
+	coins = { 2000000, 5000000, 12000000, 30000000, 60000000, 120000000, 250000000, 500000000 },
 	lines = {
 		"다시 삼류부터다. 앞을 막는 건 지난 삶의 네 그림자다. 넘어서라.",
 		"두 번째 그림자. 지난번보다 조금 더 단단하다.",
 		"세 번째 삶의 그림자는 네 버릇을 모두 안다. 버릇을 버려라.",
 		"네 번째 그림자다. 이걸 넘으면 권왕 자리가 코앞이다.",
 		"다섯 번째 그림자. 이쯤 되면 그림자도 끈질기다. 오래 버틸 각오를 해라.",
-		"마지막 그림자. 이것을 넘으면 윤회가 끝난다. 그다음은 지옥으로 가는 길이다.",
+		"여섯 번째 그림자. 이것을 넘으면 첫 윤회가 끝난다. 그다음은 천겁의 길이다.",
+		"일곱 번째 그림자. 천겁을 지나온 몸의 그림자다. 겁의 무게까지 짊어지고 있다.",
+		"마지막 그림자. 팔환의 끝이다. 이것을 넘으면 더 넘을 그림자가 없다.",
 	},
 }
 
@@ -4730,6 +4734,30 @@ function Config.discipleYield(d: any, secs: number): any
 	return out
 end
 
+-- 3.99.43판 천겁의 길 (千劫路): 육환을 마친 자의 끝없는 보스의 길. 층 (겁) 마다 보스뿐이고, 뒤로 갈수록 매우 세지고 오래 걸린다
+--   · 세기: 첫 겁부터 마지막 경지의 적만큼, 겁마다 ×1.05. 보스 체력은 겁마다 4% 더 늘어 (싸움이 점점 길어진다)
+--   · 다섯 겁마다 겁화가 하나씩 쌓인다 (체력 ×1.15 · 피해 ×1.08 · 걸음 +6%), 열 겁마다 호위 둘, 스무 겁마다 보스 하나 더
+--   · 처음 넘는 겁마다 천정 · 비급 조각, 다섯 겁마다 두루마리. 칠환은 20겁, 팔환은 40겁을 넘어야 한다
+Config.GEOP = {
+	enter = Vector3.new(-570, 0, 280), -- 윤회대 동쪽 (높이는 Config.SKY.y + 40 을 더한다)
+	minRebirth = 6,
+	startPower = 0.6, -- 마지막 경지 적 전투력의 배
+	growth = 1.05,
+	hpPerFloor = 0.04,
+	affixEvery = 5,
+	affixHp = 1.15,
+	affixDmg = 1.08,
+	affixWalk = 0.06,
+	guardsEvery = 10,
+	extraBossEvery = 20,
+	gemsPerFloor = 40,
+	shardsPer = 3, -- 겁 ÷ 이것 (올림)
+	scrollEvery = 5,
+}
+function Config.geopEnter(): Vector3
+	return Config.GEOP.enter + Vector3.new(0, (Config.SKY and Config.SKY.y or 4000) + 40, 0)
+end
+
 -- 3.99.29판 악몽의 탑: 천층탑 옆에 선 검은 탑. 천층탑 30층을 넘긴 자만 들어간다. 훨씬 세고 가파르며, 매주 (월요일 0시, 한국 시각) 저주가 하나 걸린다
 --   기록은 천층탑과 따로 (최고 기록 · 이번 주 기록), 이번 주 순위는 탑 앞 순위판. 이번 주에 다섯 층마다 처음 넘으면 천정 · 두루마리
 Config.NIGHTMARE = {
@@ -7491,7 +7519,7 @@ do
 		palette = { Color3.fromRGB(16, 16, 20), Color3.fromRGB(248, 248, 252), Color3.fromRGB(255, 210, 110) },
 		desc = "무극신권이 끝에 닿은 자리. 하늘과 땅이 나뉘기 전, 먹이 쉬지 않고 엉키던 혼돈을 주먹에 담았다. 손이 닿는 곳마다 먹 줄기가 휘몰아쳐 감기고, 엉킨 먹이 천마가 되고 용이 된다.",
 		gimmick = "혼돈체: 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 20% 짧음. 맞힐 때마다 먹이 튄다. R은 엉킨 먹 줄기로 그린 천마를 타고 내달린다 (그동안 무적). 초 오의(X)가 있다",
-		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (무극신권을 익히고 여섯 번 모두 환생한 몸으로)",
+		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (무극신권을 익히고 일곱 번 환생한 몸으로)",
 		deflect = 0.34, postureMult = 1.5, speed = 1.2, cdMult = 0.8, dashCd = 0.55, stance = "stance_mugeuk",
 		combo = {
 			{ id = "hd1", name = "혼원수", pose = "void_palm_r", dur = 0.32, lunge = 4, hits = { hit(0.14, 6, 5, 34, 24, 0.4, 14, nil, true) } },
@@ -7700,7 +7728,7 @@ end
 Config.FORGE = {
 	{ style = "samwon", rebirth = 1, shards = 40, gems = 1500, coinShares = 20, mats = { bloodmoon = 12, thunderstone = 10, tidepearl = 12 } },
 	{ style = "guryong", rebirth = 3, shards = 150, gems = 4000, coinShares = 40, mats = { thunderstone = 25, stardust = 20, petal = 30, bloodmoon = 20 } },
-	{ style = "hondon", rebirth = 6, needStyles = { "mugeuk" }, shards = 400, gems = 10000, coinShares = 60, mats = { petal = 40, wine = 10, bloodmoon = 40, thunderstone = 40, tidepearl = 40, stardust = 40 } },
+	{ style = "hondon", rebirth = 7, needStyles = { "mugeuk" }, shards = 400, gems = 10000, coinShares = 60, mats = { petal = 40, wine = 10, bloodmoon = 40, thunderstone = 40, tidepearl = 40, stardust = 40 } },
 }
 Config.FORGE_BY_STYLE = {}
 for _, r in ipairs(Config.FORGE) do
@@ -11065,6 +11093,7 @@ type Profile = {
 	donated: number?, -- 3.99.32판 후원한 로벅스 합
 	pages: { [string]: number }?, -- 3.99.31판 찢어진 비급: 가진 장 (비트)
 	disciple: any?, -- 3.99.30판 문하생 { name, robe, style, lv, xp, job, since }
+	geopBest: number?, -- 3.99.43판 천겁의 길 최고 겁
 	nmBest: number?, -- 3.99.29판 악몽의 탑 최고 층
 	nmWeek: number?, -- 악몽의 탑: 이번 주 기록의 주 번호
 	nmWeekBest: number?, -- 악몽의 탑: 그 주의 최고 층
@@ -11281,6 +11310,7 @@ local function sanitize(data: any): Profile
 	p.lastSeen = math.floor(num(data.lastSeen, 1e11))
 	p.attDay = math.floor(num(data.attDay, 1e7))
 	p.nmBest = math.floor(num(data.nmBest, 1e5))
+	p.geopBest = math.floor(num(data.geopBest, 1e5))
 	p.donated = math.floor(num(data.donated, 1e9))
 	p.pages = {}
 	if type(data.pages) == "table" then
@@ -11736,7 +11766,7 @@ end
 
 -- 3.99.9판: 허무경 너머 ★ (환생을 모두 마치고 마지막 경지에 오른 뒤의 별)
 function Calc.stars(p: Profile): number
-	if (p.rebirth or 0) < Config.REBIRTH.max then
+	if (p.rebirth or 0) < (Config.STAR.fromRebirth or 6) then
 		return 0
 	end
 	local idx = Calc.realm(p)
@@ -12303,6 +12333,7 @@ local function pushState(player: Player)
 		enh = p.enh,
 		shards = p.shards or 0,
 		refine = p.refine or {},
+		geopBest = p.geopBest or 0,
 		donated = p.donated or 0,
 		pages = p.pages or {},
 		disciple = p.disciple and {
@@ -14780,6 +14811,11 @@ function Rebirth.check(player: Player): boolean
 		toast(player, string.format("♻ 이미 %d번 환생했어요 (더는 환생할 수 없어요)", Config.REBIRTH.max))
 		return false
 	end
+	local gq = RB.geopReq and RB.geopReq[p.rebirth + 1]
+	if gq and (p.geopBest or 0) < gq then
+		toast(player, string.format("♻ %s은(는) 천겁의 길 %d겁을 넘어야 할 수 있어요 (지금 %d겁)", RB.names[p.rebirth + 1] or "환생", gq, p.geopBest or 0))
+		return false
+	end
 	local cap = Config.realmCap(p.rebirth)
 	if (Calc.realm(p)) < cap then
 		toast(player, string.format("♻ %s의 경지에 올라야 환생할 수 있어요", Config.Realms[cap].name))
@@ -14849,6 +14885,11 @@ function Rebirth.go(player: Player)
 	local RB = Config.REBIRTH
 	if p.rebirth >= RB.max then
 		toast(player, string.format("♻ 이미 %d번 환생했어요 (더는 환생할 수 없어요)", Config.REBIRTH.max))
+		return
+	end
+	local gq = RB.geopReq and RB.geopReq[p.rebirth + 1]
+	if gq and (p.geopBest or 0) < gq then
+		toast(player, string.format("♻ %s은(는) 천겁의 길 %d겁을 넘어야 할 수 있어요 (지금 %d겁)", RB.names[p.rebirth + 1] or "환생", gq, p.geopBest or 0))
 		return
 	end
 	local cap = Config.realmCap(p.rebirth)
@@ -15404,13 +15445,19 @@ Tower = {}
 local towerSlots: { [number]: Player } = {}
 local activeTower: { [Player]: any } = {}
 
-function Tower.start(player: Player, back: Vector3?, nightmare: boolean?)
+function Tower.start(player: Player, back: Vector3?, mode: any?)
+	local nightmare = mode == true or mode == "nightmare"
+	local geop = mode == "geop"
 	local p, st = profiles[player], states[player]
 	local f = Combat.fighterOfPlayer(player)
 	if not p or not st or not f or f.dead then
 		return
 	end
 	if activeTower[player] then
+		return
+	end
+	if geop and (p.rebirth or 0) < Config.GEOP.minRebirth then
+		toast(player, string.format("☸ 천겁의 길은 %s을(를) 마친 자만 걸을 수 있어요", Config.REBIRTH.names[Config.GEOP.minRebirth]))
 		return
 	end
 	if nightmare and p.towerBest < Config.NIGHTMARE.minTower then
@@ -15445,6 +15492,11 @@ function Tower.start(player: Player, back: Vector3?, nightmare: boolean?)
 	Train.stop(player)
 	Combat.dismount(f)
 	local run: any = { slot = slot, center = center, floor = 0, alive = {}, token = 0, back = back }
+	if geop then
+		run.geop = true
+		local E = Config.geopEnter()
+		run.back = run.back or (E + Vector3.new(-14, 4, 0))
+	end
 	if nightmare then
 		run.nm = true
 		run.week = Config.nightmareWeek()
@@ -15498,18 +15550,41 @@ function Tower.next(player: Player, run: any)
 	local inTen = ((floor - 1) % 10) + 1
 	local kind = isBoss and "boss" or (T.swarm and table.find(T.swarm.at, inTen) and "swarm") or (T.elite and table.find(T.elite.at, inTen) and "elite") or "normal"
 	local NM = Config.NIGHTMARE
+	local GP = Config.GEOP
 	if run.nm then
 		isBoss = floor % NM.bossEvery == 0
 		kind = isBoss and "boss" or kind
 	end
-	Push:FireClient(player, "tower", { floor = floor, best = run.nm and (p.nmWeekBest or 0) or p.towerBest, boss = isBoss, theme = okT and themeName or nil, kind = kind, nightmare = run.nm, curse = run.curse and (run.curse.icon .. " " .. run.curse.name) or nil, curseDesc = run.curse and run.curse.desc or nil })
+	if run.geop then
+		isBoss = true
+		kind = "boss"
+	end
+	local affixN = run.geop and math.floor(floor / GP.affixEvery) or 0
+	Push:FireClient(player, "tower", { geop = run.geop, affix = affixN, floor = floor, best = run.geop and (p.geopBest or 0) or (run.nm and (p.nmWeekBest or 0) or p.towerBest), boss = isBoss, theme = okT and themeName or nil, kind = kind, nightmare = run.nm, curse = run.curse and (run.curse.icon .. " " .. run.curse.name) or nil, curseDesc = run.curse and run.curse.desc or nil })
 	task.delay(floor == 1 and 4 or 2.5, function()
 		local f = Combat.fighterOfPlayer(player)
 		if activeTower[player] ~= run or run.token ~= token or not f or f.dead then
 			return
 		end
 		local list = {}
-		if isBoss then
+		if run.geop then
+			-- 천겁: 보스뿐 (스무 겁마다 하나 더), 열 겁마다 호위 둘
+			local pool = {}
+			for id, def in pairs(Config.Bosses) do
+				if not def.hiddenBoss and not def.dummy then
+					table.insert(pool, id)
+				end
+			end
+			table.sort(pool)
+			local rng = Random.new(floor * 7919)
+			for _ = 1, 1 + math.floor(floor / GP.extraBossEvery) do
+				table.insert(list, { pool[rng:NextInteger(1, #pool)], true })
+			end
+			local top = T.bands[#T.bands][2]
+			for _ = 1, math.floor(floor / GP.guardsEvery) * 2 do
+				table.insert(list, { top[rng:NextInteger(1, #top)], false, 0.8 })
+			end
+		elseif isBoss then
 			local every = run.nm and NM.bossEvery or T.bossEvery
 			local id = T.bosses[(math.floor(floor / every) - 1) % #T.bosses + 1]
 			table.insert(list, { id, true })
@@ -15553,7 +15628,7 @@ function Tower.next(player: Player, run: any)
 			end
 		end
 		-- 층의 세기는 정해져 있다 (누가 오르든 같다)
-		local want = run.nm and (NM.powerStart * NM.powerGrowth ^ (floor - 1)) or (T.powerStart * T.powerGrowth ^ (floor - 1))
+		local want = run.geop and (Config.realmRefPower(#Config.Realms) * GP.startPower * GP.growth ^ (floor - 1)) or (run.nm and (NM.powerStart * NM.powerGrowth ^ (floor - 1)) or (T.powerStart * T.powerGrowth ^ (floor - 1)))
 		for i, item in ipairs(list) do
 			local a = i / #list * math.pi * 2
 			local at = run.center + Vector3.new(math.cos(a), 0, math.sin(a)) * (T.radius * (item[2] and 0.2 or 0.45))
@@ -15572,12 +15647,25 @@ function Tower.next(player: Player, run: any)
 				if cu.walk and ef.walk then
 					ef.walk *= cu.walk
 				end
+				-- 천겁: 보스는 겁마다 더 질기고, 다섯 겁마다 겁화가 쌓인다
+				if run.geop then
+					local hpK = (item[2] and (1 + GP.hpPerFloor * (floor - 1)) or 1) * GP.affixHp ^ affixN
+					ef.maxHp = math.max(1, math.floor(ef.maxHp * hpK))
+					ef.dmgMult *= GP.affixDmg ^ affixN
+					if ef.walk then
+						ef.walk *= 1 + GP.affixWalk * affixN
+					end
+				end
 				ef.hp = ef.maxHp
 				ef.dmgMult *= k
 				ef.power = math.floor(w)
 				ef.rewardMult = 0.3
 				ef.model:SetAttribute("Power", ef.power)
-				ef.model:SetAttribute("Label", string.format(item[5] and "%s%d층 · 정예 %s" or "%s%d층 · %s", run.nm and "😈 " or "", floor, ef.name))
+				if run.geop then
+					ef.model:SetAttribute("Label", string.format("☸ %d겁 · %s", floor, ef.name))
+				else
+					ef.model:SetAttribute("Label", string.format(item[5] and "%s%d층 · 정예 %s" or "%s%d층 · %s", run.nm and "😈 " or "", floor, ef.name))
+				end
 				Combat.sync(ef)
 				e.target = f
 				run.alive[ef] = true
@@ -15601,6 +15689,33 @@ function Tower.killed(player: Player, ef: any)
 	end
 	local T = Config.TOWER
 	local floor = run.floor
+	if run.geop then
+		-- 천겁의 길: 처음 넘는 겁마다 천정 · 비급 조각, 다섯 겁마다 두루마리
+		local GP = Config.GEOP
+		local coins = math.floor(T.coins * floor * 3 * T.coinGrowth ^ math.max(0, floor - 20)) * (Premium.owns(player, "coin2x") and 2 or 1)
+		p.coins += coins
+		local gems, scrolls, shards = 0, 0, 0
+		if floor > (p.geopBest or 0) then
+			p.geopBest = floor
+			gems = floor * GP.gemsPerFloor * (Premium.owns(player, "gems2x") and 2 or 1)
+			shards = math.ceil(floor / GP.shardsPer)
+			scrolls = floor % GP.scrollEvery == 0 and math.max(1, math.floor(floor / 5)) or 0
+			p.skyGems += gems
+			p.shards = (p.shards or 0) + shards
+			p.scrolls += scrolls
+			local RB = Config.REBIRTH
+			for n, need in pairs(RB.geopReq or {}) do
+				if floor == need then
+					toast(player, string.format("☸ 천겁의 길 %d겁! 이제 %s을(를) 할 수 있다", need, RB.names[n]))
+				end
+			end
+		end
+		st.dirty = true
+		Push:FireClient(player, "towerClear", { floor = floor, coins = coins, scrolls = scrolls, best = p.geopBest, gems = gems, stats = 0, shards = shards, geop = true })
+		pushState(player)
+		Tower.next(player, run)
+		return
+	end
 	if run.nm then
 		-- 악몽의 탑: 기록은 따로, 이번 주에 다섯 층마다 처음 넘으면 천정 · 두루마리
 		local NM = Config.NIGHTMARE
@@ -15681,7 +15796,9 @@ function Tower.ended(player: Player, reason: string)
 	Push:FireClient(player, "tower", nil)
 	Push:FireClient(player, "boss", nil)
 	local p = profiles[player]
-	if p and run.nm then
+	if p and run.geop then
+		toast(player, string.format("☸ 천겁의 길 %d겁까지 걸었어요 (최고 %d겁)", math.max(0, run.floor - 1), p.geopBest or 0))
+	elseif p and run.nm then
 		toast(player, string.format("😈 악몽의 탑 %d층까지 올랐어요 (이번 주 최고 %d층 · 모든 때 최고 %d층)", math.max(0, run.floor - 1), p.nmWeekBest or 0, p.nmBest or 0))
 	elseif p then
 		toast(player, string.format("🗼 천층탑 %d층까지 올랐어요 (최고 %d층)", math.max(0, run.floor - 1), p.towerBest))
@@ -17459,6 +17576,11 @@ end
 if W.tower then
 	W.tower.Triggered:Connect(function(player: Player)
 		Tower.start(player)
+	end)
+end
+if W.geop then
+	W.geop.Triggered:Connect(function(player: Player)
+		Tower.start(player, nil, "geop")
 	end)
 end
 if W.nightmare then
@@ -38674,6 +38796,43 @@ local function skyWorld(out: any)
 	light(orb, Color3.fromRGB(190, 160, 255), 30, 1.5)
 	out.rinneAltar = prompt(altar, "환생하기 (길게 누르기)", "윤회대 · 환생 제단", "RinneAltar")
 	out.rinneAltar.HoldDuration = 2
+	-- 3.99.43판 천겁문 (윤회대 동쪽): 검은 돌 기둥 둘, 금빛 고리 안의 소용돌이치는 보랏빛 문, 바닥의 겁륜
+	do
+		local ga = Config.geopEnter()
+		local gcf = CFrame.lookAt(ga, Vector3.new(rd.X, ga.Y, rd.Z)) -- 문이 제단을 본다
+		local DARKST = Color3.fromRGB(34, 28, 44)
+		disc("GeopFloor", ga + Vector3.new(0, 0.2, 0), 16, 0.4, Color3.fromRGB(60, 50, 80), Enum.Material.Slate, f)
+		local ring0 = disc("GeopFloorRing", ga + Vector3.new(0, 0.45, 0), 14, 0.15, RINGOLD, Enum.Material.Neon, f, false)
+		ring0.Transparency = 0.4
+		for _, sx in ipairs({ -1, 1 }) do
+			part({ Name = "GeopPillar", Size = Vector3.new(3.4, 28, 3.4), CFrame = gcf * CFrame.new(sx * 9, 14, 0), Color = DARKST, Material = Enum.Material.Basalt, Parent = f })
+			part({ Name = "GeopPillarCap", Size = Vector3.new(5, 1.6, 5), CFrame = gcf * CFrame.new(sx * 9, 28.6, 0), Color = RINGOLD, Material = Enum.Material.Metal, Parent = f })
+			local fl = part({ Name = "GeopFlame", Shape = Enum.PartType.Ball, Size = Vector3.new(2.6, 3.4, 2.6), CFrame = gcf * CFrame.new(sx * 9, 31, 0), Color = INDIGO, Material = Enum.Material.Neon, Transparency = 0.2, CanCollide = false, Parent = f })
+			light(fl, INDIGO, 26, 1.6)
+		end
+		part({ Name = "GeopLintel", Size = Vector3.new(24, 2.4, 3), CFrame = gcf * CFrame.new(0, 27, 0), Color = DARKST, Material = Enum.Material.Basalt, Parent = f })
+		-- 문: 금빛 고리 + 보랏빛 막 (세로 원판)
+		local ring = part({ Name = "GeopRing", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 16, 16), CFrame = gcf * CFrame.new(0, 13, 0) * CFrame.Angles(0, math.rad(90), 0), Color = RINGOLD, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		ring.Transparency = 0.1
+		local veil = part({ Name = "GeopVeil", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.4, 14.6, 14.6), CFrame = gcf * CFrame.new(0, 13, 0) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(90, 40, 170), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		veil.Transparency = 0.35
+		light(veil, INDIGO, 30, 2)
+		local sw = Instance.new("ParticleEmitter")
+		sw.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+		sw.Color = ColorSequence.new(RINGOLD, INDIGO)
+		sw.LightEmission = 1
+		sw.Size = NumberSequence.new(0.6, 0)
+		sw.Rate = 24
+		sw.Lifetime = NumberRange.new(1, 1.6)
+		sw.Speed = NumberRange.new(1, 3)
+		sw.SpreadAngle = Vector2.new(180, 180)
+		sw.Parent = veil
+		local gsign = part({ Name = "GeopSign", Size = Vector3.new(14, 3, 0.4), CFrame = gcf * CFrame.new(0, 30.8, -1.8), Color = Color3.fromRGB(24, 18, 30), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		sign(gsign, Enum.NormalId.Front, { { "☸ 천겁의 길", RINGOLD, 0.62 }, { "육환을 마친 자만", Color3.fromRGB(220, 210, 245), 0.38 } })
+		local base = part({ Name = "GeopStone", Size = Vector3.new(6, 3, 3), CFrame = gcf * CFrame.new(0, 1.5, -3), Color = DARKST, Material = Enum.Material.Basalt, Parent = f })
+		out.geop = prompt(base, "걷기", "☸ 천겁의 길", "GeopEnter")
+		out.geop.MaxActivationDistance = 16
+	end
 	-- 여섯 갈래 세상의 기둥
 	local REALM_C = { Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 214, 90), Color3.fromRGB(255, 80, 80), Color3.fromRGB(110, 230, 140), Color3.fromRGB(110, 170, 255), Color3.fromRGB(200, 120, 255) }
 	for k = 1, 6 do
@@ -42613,7 +42772,13 @@ local function nightmareTint(on: boolean)
 end
 function handlers.tower(data: any?)
 	UI.setTower(data)
-	nightmareTint(data ~= nil and data.nightmare == true)
+	nightmareTint(data ~= nil and (data.nightmare == true or data.geop == true))
+	if data and data.geop then
+		-- 3.99.43판 천겁의 길: 겁마다 보스, 다섯 겁마다 겁화가 쌓인다
+		local sub = (data.affix or 0) > 0 and string.format("겁화 %d겹 · 보스가 더 질기고 세고 빠르다", data.affix) or "겁의 주인이 기다린다"
+		UI.banner(string.format("☸ %d겁", data.floor), sub, Color3.fromRGB(255, 214, 110))
+		return
+	end
 	if data and data.nightmare then
 		local boss = data.boss == true
 		local sub = boss and "👹 이 층의 주인이 기다린다" or "모든 적을 쓰러뜨려라"
@@ -42641,7 +42806,12 @@ function handlers.towerClear(data: any)
 	if (data.gems or 0) > 0 then
 		extra ..= string.format("  💎 +%d", data.gems)
 	end
-	if data.nightmare then
+	if data.geop then
+		if (data.shards or 0) > 0 then
+			extra ..= string.format("  🧩 +%d", data.shards)
+		end
+		UI.banner(string.format("☸ %d겁을 넘었다!", data.floor), string.format("💰 +%s%s  ·  최고 %d겁", Config.formatNumber(data.coins), extra, data.best), Color3.fromRGB(255, 214, 110))
+	elseif data.nightmare then
 		UI.banner(string.format("😈 악몽 %d층 돌파!", data.floor), string.format("💰 +%s%s  ·  이번 주 최고 %d층", Config.formatNumber(data.coins), extra, data.best), Color3.fromRGB(200, 120, 255))
 	else
 		UI.banner(string.format("🗼 %d층 돌파!", data.floor), string.format("💰 +%s%s  ·  최고 %d층", Config.formatNumber(data.coins), extra, data.best), Color3.fromRGB(255, 210, 120))
@@ -68170,6 +68340,28 @@ return {
 	["🖌 혼돈화신"] = "🖌 Avatar of Chaos",
 	["혼돈을 채우면 25초 동안 먹 줄기가 몸을 휘감고 기술이 화신의 기술로 바뀐다"] = "Fill Chaos and for 25 seconds strands of ink wrap your body and your skills become avatar skills",
 	["혼돈"] = "Chaos",
+	["칠환"] = "Seventh Rebirth",
+	["팔환"] = "Eighth Rebirth",
+	["여섯 번째 그림자. 이것을 넘으면 첫 윤회가 끝난다. 그다음은 천겁의 길이다."] = "The sixth shadow. Pass it and your first cycle of rebirth ends. Next is the Thousand Kalpa Path.",
+	["일곱 번째 그림자. 천겁을 지나온 몸의 그림자다. 겁의 무게까지 짊어지고 있다."] = "The seventh shadow. The shadow of a body that walked through a thousand kalpas. It carries their weight too.",
+	["마지막 그림자. 팔환의 끝이다. 이것을 넘으면 더 넘을 그림자가 없다."] = "The last shadow. The end of the eighth rebirth. Pass it and there are no shadows left to pass.",
+	["⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (무극신권을 익히고 일곱 번 환생한 몸으로)"] = "⚒ Forged from materials at the Style Forge in southwest Cheongun Village (knowing the Limitless Fist, after seven rebirths)",
+	["♻ %s은(는) 천겁의 길 %d겁을 넘어야 할 수 있어요 (지금 %d겁)"] = "♻ %s requires passing kalpa %d of the Thousand Kalpa Path (you're at %d)",
+	["☸ 천겁의 길은 %s을(를) 마친 자만 걸을 수 있어요"] = "☸ Only those who completed the %s may walk the Thousand Kalpa Path",
+	["☸ %d겁 · %s"] = "☸ Kalpa %d · %s",
+	["☸ 천겁의 길 %d겁! 이제 %s을(를) 할 수 있다"] = "☸ Thousand Kalpa Path kalpa %d! You can now do the %s",
+	["☸ 천겁의 길 %d겁까지 걸었어요 (최고 %d겁)"] = "☸ You walked the Thousand Kalpa Path to kalpa %d (best: %d)",
+	["☸ 천겁의 길"] = "☸ Thousand Kalpa Path",
+	["육환을 마친 자만"] = "Only after the sixth rebirth",
+	["걷기"] = "Walk",
+	["☸ %d겁"] = "☸ Kalpa %d",
+	["겁화 %d겹 · 보스가 더 질기고 세고 빠르다"] = "Kalpa fire ×%d · bosses are tougher, stronger and faster",
+	["겁의 주인이 기다린다"] = "The master of this kalpa awaits",
+	["☸ %d겁을 넘었다!"] = "☸ Kalpa %d passed!",
+	["💰 +%s%s  ·  최고 %d겁"] = "💰 +%s%s  ·  best: kalpa %d",
+	["☸ 천겁 %d겁%s  ·  최고 %d겁"] = "☸ Kalpa %d%s  ·  best %d",
+	["  ·  겁화 %d겹"] = "·  kalpa fire ×%d",
+	["☸ %s은(는) 천겁의 길 %d겁을 넘어야 한다 (지금 %d겁)"] = "☸ The %s requires passing kalpa %d of the Thousand Kalpa Path (you're at %d)",
 }
 ]]></string>
           </Properties>
@@ -87714,7 +87906,8 @@ function UIB.buildStats()
 		end
 		local rb = state.rebirth or 0
 		local cap = state.realmCap or 16
-		local canRebirth = rb < Config.REBIRTH.max and state.realm >= cap
+		local gqNext = Config.REBIRTH.geopReq and Config.REBIRTH.geopReq[rb + 1]
+		local canRebirth = rb < Config.REBIRTH.max and state.realm >= cap and (not gqNext or (state.geopBest or 0) >= gqNext)
 		rebirthBtn.Visible = canRebirth
 		if canRebirth and os.clock() - rebirthArmed > 4 then
 			rebirthBtn.Text = string.format("☸ 윤회대로 가기 (%s · %d번째 환생)", Config.REBIRTH.names[rb + 1] or "환생", rb + 1)
@@ -87739,6 +87932,10 @@ function UIB.buildStats()
 			table.insert(lines, string.format('<font color="#FF9AD8"><b>♻ 환생할 수 있다!</b> 천상 윤회대의 제단에서 T를 길게 누른다. 능력치를 내려놓고 %s에서 다시 시작한다 (권법·숙련·심법·은자·관문은 그대로). 체력 ×%.2f · 주는 피해 ×%.2f, 얻는 능력치 ×%.1f, %s의 경지가 열린다</font>', Config.Realms[(Config.REBIRTH.startRealm and Config.REBIRTH.startRealm[rb + 1]) or 1].name, Config.rebirthPower(rb + 1), Config.rebirthDmg(rb + 1), Config.rebirthGain(rb + 1), (Config.Realms[Config.realmCap(rb + 1)] or realm).name))
 		elseif rb < Config.REBIRTH.max then
 			table.insert(lines, string.format("♻ 환생: %s에 오르면 할 수 있다 (지금 %d / %d번)", Config.Realms[cap].name, rb, Config.REBIRTH.max))
+			local gq = Config.REBIRTH.geopReq and Config.REBIRTH.geopReq[rb + 1]
+			if gq then
+				table.insert(lines, string.format('<font color="#FFD66E">☸ %s은(는) 천겁의 길 %d겁을 넘어야 한다 (지금 %d겁)</font>', Config.REBIRTH.names[rb + 1] or "", gq, state.geopBest or 0))
+			end
 		end
 		if rb > 0 then
 			local sa = state.samsara or 0
@@ -89002,7 +89199,9 @@ function UI.setTower(data: any?)
 	local f = towerFrame :: Frame
 	f.Visible = data ~= nil
 	if data and towerLabel then
-		if data.nightmare then
+		if data.geop then
+			towerLabel.Text = string.format("☸ 천겁 %d겁%s  ·  최고 %d겁", data.floor or 1, (data.affix or 0) > 0 and string.format("  ·  겁화 %d겹", data.affix) or "", data.best or 0)
+		elseif data.nightmare then
 			towerLabel.Text = string.format("😈 악몽 %d층%s  ·  이번 주 %d층%s", data.floor or 1, data.boss and " 👹" or "", data.best or 0, data.curse and ("  ·  " .. data.curse) or "")
 		else
 			towerLabel.Text = string.format("🗼 천층탑 %d층%s  ·  최고 %d층", data.floor or 1, data.boss and " 👹" or "", data.best or 0)

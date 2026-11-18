@@ -1337,7 +1337,8 @@ function UIB.buildStats()
 		end
 		local rb = state.rebirth or 0
 		local cap = state.realmCap or 16
-		local canRebirth = rb < Config.REBIRTH.max and state.realm >= cap
+		local gqNext = Config.REBIRTH.geopReq and Config.REBIRTH.geopReq[rb + 1]
+		local canRebirth = rb < Config.REBIRTH.max and state.realm >= cap and (not gqNext or (state.geopBest or 0) >= gqNext)
 		rebirthBtn.Visible = canRebirth
 		if canRebirth and os.clock() - rebirthArmed > 4 then
 			rebirthBtn.Text = string.format("☸ 윤회대로 가기 (%s · %d번째 환생)", Config.REBIRTH.names[rb + 1] or "환생", rb + 1)
@@ -1362,6 +1363,10 @@ function UIB.buildStats()
 			table.insert(lines, string.format('<font color="#FF9AD8"><b>♻ 환생할 수 있다!</b> 천상 윤회대의 제단에서 T를 길게 누른다. 능력치를 내려놓고 %s에서 다시 시작한다 (권법·숙련·심법·은자·관문은 그대로). 체력 ×%.2f · 주는 피해 ×%.2f, 얻는 능력치 ×%.1f, %s의 경지가 열린다</font>', Config.Realms[(Config.REBIRTH.startRealm and Config.REBIRTH.startRealm[rb + 1]) or 1].name, Config.rebirthPower(rb + 1), Config.rebirthDmg(rb + 1), Config.rebirthGain(rb + 1), (Config.Realms[Config.realmCap(rb + 1)] or realm).name))
 		elseif rb < Config.REBIRTH.max then
 			table.insert(lines, string.format("♻ 환생: %s에 오르면 할 수 있다 (지금 %d / %d번)", Config.Realms[cap].name, rb, Config.REBIRTH.max))
+			local gq = Config.REBIRTH.geopReq and Config.REBIRTH.geopReq[rb + 1]
+			if gq then
+				table.insert(lines, string.format('<font color="#FFD66E">☸ %s은(는) 천겁의 길 %d겁을 넘어야 한다 (지금 %d겁)</font>', Config.REBIRTH.names[rb + 1] or "", gq, state.geopBest or 0))
+			end
 		end
 		if rb > 0 then
 			local sa = state.samsara or 0
@@ -2625,7 +2630,9 @@ function UI.setTower(data: any?)
 	local f = towerFrame :: Frame
 	f.Visible = data ~= nil
 	if data and towerLabel then
-		if data.nightmare then
+		if data.geop then
+			towerLabel.Text = string.format("☸ 천겁 %d겁%s  ·  최고 %d겁", data.floor or 1, (data.affix or 0) > 0 and string.format("  ·  겁화 %d겹", data.affix) or "", data.best or 0)
+		elseif data.nightmare then
 			towerLabel.Text = string.format("😈 악몽 %d층%s  ·  이번 주 %d층%s", data.floor or 1, data.boss and " 👹" or "", data.best or 0, data.curse and ("  ·  " .. data.curse) or "")
 		else
 			towerLabel.Text = string.format("🗼 천층탑 %d층%s  ·  최고 %d층", data.floor or 1, data.boss and " 👹" or "", data.best or 0)

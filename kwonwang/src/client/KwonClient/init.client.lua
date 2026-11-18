@@ -1547,7 +1547,13 @@ local function nightmareTint(on: boolean)
 end
 function handlers.tower(data: any?)
 	UI.setTower(data)
-	nightmareTint(data ~= nil and data.nightmare == true)
+	nightmareTint(data ~= nil and (data.nightmare == true or data.geop == true))
+	if data and data.geop then
+		-- 3.99.43판 천겁의 길: 겁마다 보스, 다섯 겁마다 겁화가 쌓인다
+		local sub = (data.affix or 0) > 0 and string.format("겁화 %d겹 · 보스가 더 질기고 세고 빠르다", data.affix) or "겁의 주인이 기다린다"
+		UI.banner(string.format("☸ %d겁", data.floor), sub, Color3.fromRGB(255, 214, 110))
+		return
+	end
 	if data and data.nightmare then
 		local boss = data.boss == true
 		local sub = boss and "👹 이 층의 주인이 기다린다" or "모든 적을 쓰러뜨려라"
@@ -1575,7 +1581,12 @@ function handlers.towerClear(data: any)
 	if (data.gems or 0) > 0 then
 		extra ..= string.format("  💎 +%d", data.gems)
 	end
-	if data.nightmare then
+	if data.geop then
+		if (data.shards or 0) > 0 then
+			extra ..= string.format("  🧩 +%d", data.shards)
+		end
+		UI.banner(string.format("☸ %d겁을 넘었다!", data.floor), string.format("💰 +%s%s  ·  최고 %d겁", Config.formatNumber(data.coins), extra, data.best), Color3.fromRGB(255, 214, 110))
+	elseif data.nightmare then
 		UI.banner(string.format("😈 악몽 %d층 돌파!", data.floor), string.format("💰 +%s%s  ·  이번 주 최고 %d층", Config.formatNumber(data.coins), extra, data.best), Color3.fromRGB(200, 120, 255))
 	else
 		UI.banner(string.format("🗼 %d층 돌파!", data.floor), string.format("💰 +%s%s  ·  최고 %d층", Config.formatNumber(data.coins), extra, data.best), Color3.fromRGB(255, 210, 120))

@@ -75,6 +75,7 @@ type Profile = {
 	donated: number?, -- 3.99.32판 후원한 로벅스 합
 	pages: { [string]: number }?, -- 3.99.31판 찢어진 비급: 가진 장 (비트)
 	disciple: any?, -- 3.99.30판 문하생 { name, robe, style, lv, xp, job, since }
+	geopBest: number?, -- 3.99.43판 천겁의 길 최고 겁
 	nmBest: number?, -- 3.99.29판 악몽의 탑 최고 층
 	nmWeek: number?, -- 악몽의 탑: 이번 주 기록의 주 번호
 	nmWeekBest: number?, -- 악몽의 탑: 그 주의 최고 층
@@ -291,6 +292,7 @@ local function sanitize(data: any): Profile
 	p.lastSeen = math.floor(num(data.lastSeen, 1e11))
 	p.attDay = math.floor(num(data.attDay, 1e7))
 	p.nmBest = math.floor(num(data.nmBest, 1e5))
+	p.geopBest = math.floor(num(data.geopBest, 1e5))
 	p.donated = math.floor(num(data.donated, 1e9))
 	p.pages = {}
 	if type(data.pages) == "table" then
@@ -746,7 +748,7 @@ end
 
 -- 3.99.9판: 허무경 너머 ★ (환생을 모두 마치고 마지막 경지에 오른 뒤의 별)
 function Calc.stars(p: Profile): number
-	if (p.rebirth or 0) < Config.REBIRTH.max then
+	if (p.rebirth or 0) < (Config.STAR.fromRebirth or 6) then
 		return 0
 	end
 	local idx = Calc.realm(p)
@@ -1313,6 +1315,7 @@ local function pushState(player: Player)
 		enh = p.enh,
 		shards = p.shards or 0,
 		refine = p.refine or {},
+		geopBest = p.geopBest or 0,
 		donated = p.donated or 0,
 		pages = p.pages or {},
 		disciple = p.disciple and {
@@ -3790,6 +3793,11 @@ function Rebirth.check(player: Player): boolean
 		toast(player, string.format("♻ 이미 %d번 환생했어요 (더는 환생할 수 없어요)", Config.REBIRTH.max))
 		return false
 	end
+	local gq = RB.geopReq and RB.geopReq[p.rebirth + 1]
+	if gq and (p.geopBest or 0) < gq then
+		toast(player, string.format("♻ %s은(는) 천겁의 길 %d겁을 넘어야 할 수 있어요 (지금 %d겁)", RB.names[p.rebirth + 1] or "환생", gq, p.geopBest or 0))
+		return false
+	end
 	local cap = Config.realmCap(p.rebirth)
 	if (Calc.realm(p)) < cap then
 		toast(player, string.format("♻ %s의 경지에 올라야 환생할 수 있어요", Config.Realms[cap].name))
@@ -3859,6 +3867,11 @@ function Rebirth.go(player: Player)
 	local RB = Config.REBIRTH
 	if p.rebirth >= RB.max then
 		toast(player, string.format("♻ 이미 %d번 환생했어요 (더는 환생할 수 없어요)", Config.REBIRTH.max))
+		return
+	end
+	local gq = RB.geopReq and RB.geopReq[p.rebirth + 1]
+	if gq and (p.geopBest or 0) < gq then
+		toast(player, string.format("♻ %s은(는) 천겁의 길 %d겁을 넘어야 할 수 있어요 (지금 %d겁)", RB.names[p.rebirth + 1] or "환생", gq, p.geopBest or 0))
 		return
 	end
 	local cap = Config.realmCap(p.rebirth)
@@ -4414,13 +4427,19 @@ Tower = {}
 local towerSlots: { [number]: Player } = {}
 local activeTower: { [Player]: any } = {}
 
-function Tower.start(player: Player, back: Vector3?, nightmare: boolean?)
+function Tower.start(player: Player, back: Vector3?, mode: any?)
+	local nightmare = mode == true or mode == "nightmare"
+	local geop = mode == "geop"
 	local p, st = profiles[player], states[player]
 	local f = Combat.fighterOfPlayer(player)
 	if not p or not st or not f or f.dead then
 		return
 	end
 	if activeTower[player] then
+		return
+	end
+	if geop and (p.rebirth or 0) < Config.GEOP.minRebirth then
+		toast(player, string.format("☸ 천겁의 길은 %s을(를) 마친 자만 걸을 수 있어요", Config.REBIRTH.names[Config.GEOP.minRebirth]))
 		return
 	end
 	if nightmare and p.towerBest < Config.NIGHTMARE.minTower then
@@ -4455,6 +4474,11 @@ function Tower.start(player: Player, back: Vector3?, nightmare: boolean?)
 	Train.stop(player)
 	Combat.dismount(f)
 	local run: any = { slot = slot, center = center, floor = 0, alive = {}, token = 0, back = back }
+	if geop then
+		run.geop = true
+		local E = Config.geopEnter()
+		run.back = run.back or (E + Vector3.new(-14, 4, 0))
+	end
 	if nightmare then
 		run.nm = true
 		run.week = Config.nightmareWeek()
@@ -4508,18 +4532,41 @@ function Tower.next(player: Player, run: any)
 	local inTen = ((floor - 1) % 10) + 1
 	local kind = isBoss and "boss" or (T.swarm and table.find(T.swarm.at, inTen) and "swarm") or (T.elite and table.find(T.elite.at, inTen) and "elite") or "normal"
 	local NM = Config.NIGHTMARE
+	local GP = Config.GEOP
 	if run.nm then
 		isBoss = floor % NM.bossEvery == 0
 		kind = isBoss and "boss" or kind
 	end
-	Push:FireClient(player, "tower", { floor = floor, best = run.nm and (p.nmWeekBest or 0) or p.towerBest, boss = isBoss, theme = okT and themeName or nil, kind = kind, nightmare = run.nm, curse = run.curse and (run.curse.icon .. " " .. run.curse.name) or nil, curseDesc = run.curse and run.curse.desc or nil })
+	if run.geop then
+		isBoss = true
+		kind = "boss"
+	end
+	local affixN = run.geop and math.floor(floor / GP.affixEvery) or 0
+	Push:FireClient(player, "tower", { geop = run.geop, affix = affixN, floor = floor, best = run.geop and (p.geopBest or 0) or (run.nm and (p.nmWeekBest or 0) or p.towerBest), boss = isBoss, theme = okT and themeName or nil, kind = kind, nightmare = run.nm, curse = run.curse and (run.curse.icon .. " " .. run.curse.name) or nil, curseDesc = run.curse and run.curse.desc or nil })
 	task.delay(floor == 1 and 4 or 2.5, function()
 		local f = Combat.fighterOfPlayer(player)
 		if activeTower[player] ~= run or run.token ~= token or not f or f.dead then
 			return
 		end
 		local list = {}
-		if isBoss then
+		if run.geop then
+			-- 천겁: 보스뿐 (스무 겁마다 하나 더), 열 겁마다 호위 둘
+			local pool = {}
+			for id, def in pairs(Config.Bosses) do
+				if not def.hiddenBoss and not def.dummy then
+					table.insert(pool, id)
+				end
+			end
+			table.sort(pool)
+			local rng = Random.new(floor * 7919)
+			for _ = 1, 1 + math.floor(floor / GP.extraBossEvery) do
+				table.insert(list, { pool[rng:NextInteger(1, #pool)], true })
+			end
+			local top = T.bands[#T.bands][2]
+			for _ = 1, math.floor(floor / GP.guardsEvery) * 2 do
+				table.insert(list, { top[rng:NextInteger(1, #top)], false, 0.8 })
+			end
+		elseif isBoss then
 			local every = run.nm and NM.bossEvery or T.bossEvery
 			local id = T.bosses[(math.floor(floor / every) - 1) % #T.bosses + 1]
 			table.insert(list, { id, true })
@@ -4563,7 +4610,7 @@ function Tower.next(player: Player, run: any)
 			end
 		end
 		-- 층의 세기는 정해져 있다 (누가 오르든 같다)
-		local want = run.nm and (NM.powerStart * NM.powerGrowth ^ (floor - 1)) or (T.powerStart * T.powerGrowth ^ (floor - 1))
+		local want = run.geop and (Config.realmRefPower(#Config.Realms) * GP.startPower * GP.growth ^ (floor - 1)) or (run.nm and (NM.powerStart * NM.powerGrowth ^ (floor - 1)) or (T.powerStart * T.powerGrowth ^ (floor - 1)))
 		for i, item in ipairs(list) do
 			local a = i / #list * math.pi * 2
 			local at = run.center + Vector3.new(math.cos(a), 0, math.sin(a)) * (T.radius * (item[2] and 0.2 or 0.45))
@@ -4582,12 +4629,25 @@ function Tower.next(player: Player, run: any)
 				if cu.walk and ef.walk then
 					ef.walk *= cu.walk
 				end
+				-- 천겁: 보스는 겁마다 더 질기고, 다섯 겁마다 겁화가 쌓인다
+				if run.geop then
+					local hpK = (item[2] and (1 + GP.hpPerFloor * (floor - 1)) or 1) * GP.affixHp ^ affixN
+					ef.maxHp = math.max(1, math.floor(ef.maxHp * hpK))
+					ef.dmgMult *= GP.affixDmg ^ affixN
+					if ef.walk then
+						ef.walk *= 1 + GP.affixWalk * affixN
+					end
+				end
 				ef.hp = ef.maxHp
 				ef.dmgMult *= k
 				ef.power = math.floor(w)
 				ef.rewardMult = 0.3
 				ef.model:SetAttribute("Power", ef.power)
-				ef.model:SetAttribute("Label", string.format(item[5] and "%s%d층 · 정예 %s" or "%s%d층 · %s", run.nm and "😈 " or "", floor, ef.name))
+				if run.geop then
+					ef.model:SetAttribute("Label", string.format("☸ %d겁 · %s", floor, ef.name))
+				else
+					ef.model:SetAttribute("Label", string.format(item[5] and "%s%d층 · 정예 %s" or "%s%d층 · %s", run.nm and "😈 " or "", floor, ef.name))
+				end
 				Combat.sync(ef)
 				e.target = f
 				run.alive[ef] = true
@@ -4611,6 +4671,33 @@ function Tower.killed(player: Player, ef: any)
 	end
 	local T = Config.TOWER
 	local floor = run.floor
+	if run.geop then
+		-- 천겁의 길: 처음 넘는 겁마다 천정 · 비급 조각, 다섯 겁마다 두루마리
+		local GP = Config.GEOP
+		local coins = math.floor(T.coins * floor * 3 * T.coinGrowth ^ math.max(0, floor - 20)) * (Premium.owns(player, "coin2x") and 2 or 1)
+		p.coins += coins
+		local gems, scrolls, shards = 0, 0, 0
+		if floor > (p.geopBest or 0) then
+			p.geopBest = floor
+			gems = floor * GP.gemsPerFloor * (Premium.owns(player, "gems2x") and 2 or 1)
+			shards = math.ceil(floor / GP.shardsPer)
+			scrolls = floor % GP.scrollEvery == 0 and math.max(1, math.floor(floor / 5)) or 0
+			p.skyGems += gems
+			p.shards = (p.shards or 0) + shards
+			p.scrolls += scrolls
+			local RB = Config.REBIRTH
+			for n, need in pairs(RB.geopReq or {}) do
+				if floor == need then
+					toast(player, string.format("☸ 천겁의 길 %d겁! 이제 %s을(를) 할 수 있다", need, RB.names[n]))
+				end
+			end
+		end
+		st.dirty = true
+		Push:FireClient(player, "towerClear", { floor = floor, coins = coins, scrolls = scrolls, best = p.geopBest, gems = gems, stats = 0, shards = shards, geop = true })
+		pushState(player)
+		Tower.next(player, run)
+		return
+	end
 	if run.nm then
 		-- 악몽의 탑: 기록은 따로, 이번 주에 다섯 층마다 처음 넘으면 천정 · 두루마리
 		local NM = Config.NIGHTMARE
@@ -4691,7 +4778,9 @@ function Tower.ended(player: Player, reason: string)
 	Push:FireClient(player, "tower", nil)
 	Push:FireClient(player, "boss", nil)
 	local p = profiles[player]
-	if p and run.nm then
+	if p and run.geop then
+		toast(player, string.format("☸ 천겁의 길 %d겁까지 걸었어요 (최고 %d겁)", math.max(0, run.floor - 1), p.geopBest or 0))
+	elseif p and run.nm then
 		toast(player, string.format("😈 악몽의 탑 %d층까지 올랐어요 (이번 주 최고 %d층 · 모든 때 최고 %d층)", math.max(0, run.floor - 1), p.nmWeekBest or 0, p.nmBest or 0))
 	elseif p then
 		toast(player, string.format("🗼 천층탑 %d층까지 올랐어요 (최고 %d층)", math.max(0, run.floor - 1), p.towerBest))
@@ -6469,6 +6558,11 @@ end
 if W.tower then
 	W.tower.Triggered:Connect(function(player: Player)
 		Tower.start(player)
+	end)
+end
+if W.geop then
+	W.geop.Triggered:Connect(function(player: Player)
+		Tower.start(player, nil, "geop")
 	end)
 end
 if W.nightmare then

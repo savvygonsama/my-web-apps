@@ -6069,6 +6069,43 @@ local function skyWorld(out: any)
 	light(orb, Color3.fromRGB(190, 160, 255), 30, 1.5)
 	out.rinneAltar = prompt(altar, "환생하기 (길게 누르기)", "윤회대 · 환생 제단", "RinneAltar")
 	out.rinneAltar.HoldDuration = 2
+	-- 3.99.43판 천겁문 (윤회대 동쪽): 검은 돌 기둥 둘, 금빛 고리 안의 소용돌이치는 보랏빛 문, 바닥의 겁륜
+	do
+		local ga = Config.geopEnter()
+		local gcf = CFrame.lookAt(ga, Vector3.new(rd.X, ga.Y, rd.Z)) -- 문이 제단을 본다
+		local DARKST = Color3.fromRGB(34, 28, 44)
+		disc("GeopFloor", ga + Vector3.new(0, 0.2, 0), 16, 0.4, Color3.fromRGB(60, 50, 80), Enum.Material.Slate, f)
+		local ring0 = disc("GeopFloorRing", ga + Vector3.new(0, 0.45, 0), 14, 0.15, RINGOLD, Enum.Material.Neon, f, false)
+		ring0.Transparency = 0.4
+		for _, sx in ipairs({ -1, 1 }) do
+			part({ Name = "GeopPillar", Size = Vector3.new(3.4, 28, 3.4), CFrame = gcf * CFrame.new(sx * 9, 14, 0), Color = DARKST, Material = Enum.Material.Basalt, Parent = f })
+			part({ Name = "GeopPillarCap", Size = Vector3.new(5, 1.6, 5), CFrame = gcf * CFrame.new(sx * 9, 28.6, 0), Color = RINGOLD, Material = Enum.Material.Metal, Parent = f })
+			local fl = part({ Name = "GeopFlame", Shape = Enum.PartType.Ball, Size = Vector3.new(2.6, 3.4, 2.6), CFrame = gcf * CFrame.new(sx * 9, 31, 0), Color = INDIGO, Material = Enum.Material.Neon, Transparency = 0.2, CanCollide = false, Parent = f })
+			light(fl, INDIGO, 26, 1.6)
+		end
+		part({ Name = "GeopLintel", Size = Vector3.new(24, 2.4, 3), CFrame = gcf * CFrame.new(0, 27, 0), Color = DARKST, Material = Enum.Material.Basalt, Parent = f })
+		-- 문: 금빛 고리 + 보랏빛 막 (세로 원판)
+		local ring = part({ Name = "GeopRing", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 16, 16), CFrame = gcf * CFrame.new(0, 13, 0) * CFrame.Angles(0, math.rad(90), 0), Color = RINGOLD, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		ring.Transparency = 0.1
+		local veil = part({ Name = "GeopVeil", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.4, 14.6, 14.6), CFrame = gcf * CFrame.new(0, 13, 0) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(90, 40, 170), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		veil.Transparency = 0.35
+		light(veil, INDIGO, 30, 2)
+		local sw = Instance.new("ParticleEmitter")
+		sw.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+		sw.Color = ColorSequence.new(RINGOLD, INDIGO)
+		sw.LightEmission = 1
+		sw.Size = NumberSequence.new(0.6, 0)
+		sw.Rate = 24
+		sw.Lifetime = NumberRange.new(1, 1.6)
+		sw.Speed = NumberRange.new(1, 3)
+		sw.SpreadAngle = Vector2.new(180, 180)
+		sw.Parent = veil
+		local gsign = part({ Name = "GeopSign", Size = Vector3.new(14, 3, 0.4), CFrame = gcf * CFrame.new(0, 30.8, -1.8), Color = Color3.fromRGB(24, 18, 30), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		sign(gsign, Enum.NormalId.Front, { { "☸ 천겁의 길", RINGOLD, 0.62 }, { "육환을 마친 자만", Color3.fromRGB(220, 210, 245), 0.38 } })
+		local base = part({ Name = "GeopStone", Size = Vector3.new(6, 3, 3), CFrame = gcf * CFrame.new(0, 1.5, -3), Color = DARKST, Material = Enum.Material.Basalt, Parent = f })
+		out.geop = prompt(base, "걷기", "☸ 천겁의 길", "GeopEnter")
+		out.geop.MaxActivationDistance = 16
+	end
 	-- 여섯 갈래 세상의 기둥
 	local REALM_C = { Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 214, 90), Color3.fromRGB(255, 80, 80), Color3.fromRGB(110, 230, 140), Color3.fromRGB(110, 170, 255), Color3.fromRGB(200, 120, 255) }
 	for k = 1, 6 do

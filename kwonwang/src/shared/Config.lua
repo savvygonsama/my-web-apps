@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.42" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.43" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -208,15 +208,17 @@ end
 -- 환생할 때마다: 체력 영구 +25% · 주는 피해 +10% (2.4.1판), 적을 쓰러뜨려 얻는 능력치·수련 배수 +1 (2.1판), 천외천 너머의 경지가 하나 열린다
 ------------------------------------------------------------------------
 Config.REBIRTH = {
-	max = 6, -- 3.21판: 4 → 6 (오환 · 육환)
+	max = 8, -- 3.21판: 4 → 6 (오환 · 육환). 3.99.43판: 6 → 8 (칠환 · 팔환: 천겁의 길을 넘어야 한다)
 	base = 16, -- 환생 전 끝 경지 (천외천)
 	power = 0.25,
 	gain = 1, -- 2.1판: 환생 한 번마다 얻는 능력치 배수 +1 (×2 · ×3 · ×4 · ×5)
 	coins = 1000000, -- 환생할 때 받는 은자 (횟수만큼)
 	-- 3.99.18판: 환생하면 삼류부터가 아니라 이 경지에서 다시 시작한다 (n번째 환생 → startRealm[n]). 낮은 경지를 다시 오르는 건 지루했다
-	startRealm = { 5, 7, 9, 10, 11, 12 }, -- 절정 · 화경 · 사경 · 생사경 · 신화경 · 천인합일
-	names = { "일환", "이환", "삼환", "사환", "오환", "육환" },
-	colors = { Color3.fromRGB(255, 120, 200), Color3.fromRGB(130, 255, 170), Color3.fromRGB(150, 170, 255), Color3.fromRGB(255, 70, 70), Color3.fromRGB(190, 110, 255), Color3.fromRGB(235, 40, 60) },
+	startRealm = { 5, 7, 9, 10, 11, 12, 12, 12 }, -- 절정 · 화경 · 사경 · 생사경 · 신화경 · 천인합일 (칠환 · 팔환도 천인합일)
+	names = { "일환", "이환", "삼환", "사환", "오환", "육환", "칠환", "팔환" },
+	colors = { Color3.fromRGB(255, 120, 200), Color3.fromRGB(130, 255, 170), Color3.fromRGB(150, 170, 255), Color3.fromRGB(255, 70, 70), Color3.fromRGB(190, 110, 255), Color3.fromRGB(235, 40, 60), Color3.fromRGB(255, 215, 90), Color3.fromRGB(240, 240, 255) },
+	-- 3.99.43판: 칠환 · 팔환은 천겁의 길을 이만큼 넘어야 한다 (n번째 환생 → 겁 수)
+	geopReq = { [7] = 20, [8] = 40 },
 }
 function Config.realmCap(rebirth: number): number
 	return math.min(#Config.Realms, Config.REBIRTH.base + math.clamp(rebirth, 0, Config.REBIRTH.max))
@@ -264,23 +266,25 @@ end
 -- 윤회의 시련: n번째 환생 뒤 생사경에 다시 오르면 n번째 시련이 열린다. 전생의 그림자는 지금 내 힘보다 조금 세다
 -- 3.99.9판: 허무경 너머 ★ (환생을 모두 마치고 허무경에 오른 뒤에도 끝없이). 능력치 합이 허무경의 growth 배가 될 때마다 별 하나,
 -- 별마다 피해 · 체력 +3% (더한다)
-Config.STAR = { growth = 1.2, dmg = 0.03, hp = 0.03 }
+Config.STAR = { growth = 1.2, dmg = 0.03, hp = 0.03, fromRebirth = 6 } -- 3.99.43판: 별은 육환부터 (환생이 여덟으로 늘어도)
 Config.SAMSARA = {
 	realm = 10, -- 생사경
-	power = { 1.15, 1.25, 1.35, 1.5, 1.65, 1.8 },
-	hp = { 4, 5, 6, 8, 10, 12 },
+	power = { 1.15, 1.25, 1.35, 1.5, 1.65, 1.8, 2.0, 2.2 },
+	hp = { 4, 5, 6, 8, 10, 12, 15, 18 },
 	time = 180,
 	cooldown = 20,
-	gems = { 80, 150, 250, 400, 600, 900 },
-	scrolls = { 5, 8, 12, 20, 28, 40 },
-	coins = { 2000000, 5000000, 12000000, 30000000, 60000000, 120000000 },
+	gems = { 80, 150, 250, 400, 600, 900, 1300, 1800 },
+	scrolls = { 5, 8, 12, 20, 28, 40, 55, 75 },
+	coins = { 2000000, 5000000, 12000000, 30000000, 60000000, 120000000, 250000000, 500000000 },
 	lines = {
 		"다시 삼류부터다. 앞을 막는 건 지난 삶의 네 그림자다. 넘어서라.",
 		"두 번째 그림자. 지난번보다 조금 더 단단하다.",
 		"세 번째 삶의 그림자는 네 버릇을 모두 안다. 버릇을 버려라.",
 		"네 번째 그림자다. 이걸 넘으면 권왕 자리가 코앞이다.",
 		"다섯 번째 그림자. 이쯤 되면 그림자도 끈질기다. 오래 버틸 각오를 해라.",
-		"마지막 그림자. 이것을 넘으면 윤회가 끝난다. 그다음은 지옥으로 가는 길이다.",
+		"여섯 번째 그림자. 이것을 넘으면 첫 윤회가 끝난다. 그다음은 천겁의 길이다.",
+		"일곱 번째 그림자. 천겁을 지나온 몸의 그림자다. 겁의 무게까지 짊어지고 있다.",
+		"마지막 그림자. 팔환의 끝이다. 이것을 넘으면 더 넘을 그림자가 없다.",
 	},
 }
 
@@ -4710,6 +4714,30 @@ function Config.discipleYield(d: any, secs: number): any
 	return out
 end
 
+-- 3.99.43판 천겁의 길 (千劫路): 육환을 마친 자의 끝없는 보스의 길. 층 (겁) 마다 보스뿐이고, 뒤로 갈수록 매우 세지고 오래 걸린다
+--   · 세기: 첫 겁부터 마지막 경지의 적만큼, 겁마다 ×1.05. 보스 체력은 겁마다 4% 더 늘어 (싸움이 점점 길어진다)
+--   · 다섯 겁마다 겁화가 하나씩 쌓인다 (체력 ×1.15 · 피해 ×1.08 · 걸음 +6%), 열 겁마다 호위 둘, 스무 겁마다 보스 하나 더
+--   · 처음 넘는 겁마다 천정 · 비급 조각, 다섯 겁마다 두루마리. 칠환은 20겁, 팔환은 40겁을 넘어야 한다
+Config.GEOP = {
+	enter = Vector3.new(-570, 0, 280), -- 윤회대 동쪽 (높이는 Config.SKY.y + 40 을 더한다)
+	minRebirth = 6,
+	startPower = 0.6, -- 마지막 경지 적 전투력의 배
+	growth = 1.05,
+	hpPerFloor = 0.04,
+	affixEvery = 5,
+	affixHp = 1.15,
+	affixDmg = 1.08,
+	affixWalk = 0.06,
+	guardsEvery = 10,
+	extraBossEvery = 20,
+	gemsPerFloor = 40,
+	shardsPer = 3, -- 겁 ÷ 이것 (올림)
+	scrollEvery = 5,
+}
+function Config.geopEnter(): Vector3
+	return Config.GEOP.enter + Vector3.new(0, (Config.SKY and Config.SKY.y or 4000) + 40, 0)
+end
+
 -- 3.99.29판 악몽의 탑: 천층탑 옆에 선 검은 탑. 천층탑 30층을 넘긴 자만 들어간다. 훨씬 세고 가파르며, 매주 (월요일 0시, 한국 시각) 저주가 하나 걸린다
 --   기록은 천층탑과 따로 (최고 기록 · 이번 주 기록), 이번 주 순위는 탑 앞 순위판. 이번 주에 다섯 층마다 처음 넘으면 천정 · 두루마리
 Config.NIGHTMARE = {
@@ -7471,7 +7499,7 @@ do
 		palette = { Color3.fromRGB(16, 16, 20), Color3.fromRGB(248, 248, 252), Color3.fromRGB(255, 210, 110) },
 		desc = "무극신권이 끝에 닿은 자리. 하늘과 땅이 나뉘기 전, 먹이 쉬지 않고 엉키던 혼돈을 주먹에 담았다. 손이 닿는 곳마다 먹 줄기가 휘몰아쳐 감기고, 엉킨 먹이 천마가 되고 용이 된다.",
 		gimmick = "혼돈체: 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 20% 짧음. 맞힐 때마다 먹이 튄다. R은 엉킨 먹 줄기로 그린 천마를 타고 내달린다 (그동안 무적). 초 오의(X)가 있다",
-		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (무극신권을 익히고 여섯 번 모두 환생한 몸으로)",
+		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (무극신권을 익히고 일곱 번 환생한 몸으로)",
 		deflect = 0.34, postureMult = 1.5, speed = 1.2, cdMult = 0.8, dashCd = 0.55, stance = "stance_mugeuk",
 		combo = {
 			{ id = "hd1", name = "혼원수", pose = "void_palm_r", dur = 0.32, lunge = 4, hits = { hit(0.14, 6, 5, 34, 24, 0.4, 14, nil, true) } },
@@ -7680,7 +7708,7 @@ end
 Config.FORGE = {
 	{ style = "samwon", rebirth = 1, shards = 40, gems = 1500, coinShares = 20, mats = { bloodmoon = 12, thunderstone = 10, tidepearl = 12 } },
 	{ style = "guryong", rebirth = 3, shards = 150, gems = 4000, coinShares = 40, mats = { thunderstone = 25, stardust = 20, petal = 30, bloodmoon = 20 } },
-	{ style = "hondon", rebirth = 6, needStyles = { "mugeuk" }, shards = 400, gems = 10000, coinShares = 60, mats = { petal = 40, wine = 10, bloodmoon = 40, thunderstone = 40, tidepearl = 40, stardust = 40 } },
+	{ style = "hondon", rebirth = 7, needStyles = { "mugeuk" }, shards = 400, gems = 10000, coinShares = 60, mats = { petal = 40, wine = 10, bloodmoon = 40, thunderstone = 40, tidepearl = 40, stardust = 40 } },
 }
 Config.FORGE_BY_STYLE = {}
 for _, r in ipairs(Config.FORGE) do
