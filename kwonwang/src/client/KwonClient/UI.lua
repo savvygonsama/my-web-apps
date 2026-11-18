@@ -3637,11 +3637,11 @@ local function mapUV(p: Vector3, sky: boolean?): UDim2
 	return UDim2.fromScale(math.clamp((p.X - c.X + H) / (2 * H), 0, 1), math.clamp((p.Z - c.Z + H) / (2 * H), 0, 1))
 end
 
-local MAP_SMALL = 250
+local MAP_SMALL = 300 -- 3.99.35판: 250 → 300
 local MAP_BIG = 760
 -- 3.99.34판: 큰 지도는 화면을 거의 다 채우는 직사각형 (세상은 네모 그대로, 남는 자리는 바다). placeMap 이 정한다
 local bigW, bigH = MAP_BIG, MAP_BIG
-local SMALL_SPAN = 870 -- 작은 지도 한 변에 보이는 넓이 (칸). 2.2판: 1300 → 870 (1.5배 크게 보인다)
+local SMALL_SPAN = 1800 -- 작은 지도 한 변에 보이는 넓이 (칸). 2.2판: 1300 → 870. 3.99.35판: 870 → 1800 (훨씬 넓은 땅이 한눈에)
 local bigZoom = 1
 local bigCenter = Vector3.zero
 local function viewZoom(): number
