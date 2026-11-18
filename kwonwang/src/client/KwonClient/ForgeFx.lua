@@ -57,6 +57,38 @@ local function ground(at: Vector3): Vector3
 	local r = workspace:Raycast(at + V(0, 8, 0), V(0, -40, 0), rp)
 	return r and r.Position or at - V(0, 2.5, 0)
 end
+-- 그 자리 발밑 땅의 높이 (사람 · 연출은 빼고 아래로 길게 쏜다. 못 찾으면 몸 높이로 어림)
+local groundCache: { [Model]: { number } } = {}
+local function groundY(at: Vector3, ignore: Instance?): number
+	local key = ignore :: any
+	local c = key and groundCache[key]
+	local now = os.clock()
+	if c and now - c[2] < 0.1 and math.abs(c[3] - at.X) + math.abs(c[4] - at.Z) < 2 then
+		return c[1]
+	end
+	local rp = RaycastParams.new()
+	rp.FilterType = Enum.RaycastFilterType.Exclude
+	local list = { folder }
+	if ignore then
+		table.insert(list, ignore)
+	end
+	local chars = workspace:FindFirstChild("Enemies")
+	if chars then
+		table.insert(list, chars)
+	end
+	for _, pl in ipairs(game:GetService("Players"):GetPlayers()) do
+		if pl.Character then
+			table.insert(list, pl.Character)
+		end
+	end
+	rp.FilterDescendantsInstances = list
+	local r = workspace:Raycast(at + V(0, 4, 0), V(0, -120, 0), rp)
+	local y = r and r.Position.Y or (at.Y - 3)
+	if key then
+		groundCache[key] = { y, now, at.X, at.Z }
+	end
+	return y
+end
 local function disc(at: Vector3, r: number, color: Color3, alpha: number, life: number, toR: number?)
 	local p = piece(V(0.3, r * 2, r * 2), CF(at) * CFrame.Angles(0, 0, math.rad(90)), color, alpha, Enum.PartType.Cylinder)
 	fadeOut(p, life, toR and V(0.1, toR * 2, toR * 2) or nil)
@@ -1123,14 +1155,13 @@ VFX.inkSteed = function(d)
 		local look = rootP.CFrame.LookVector
 		local flat = V(look.X, 0, look.Z)
 		flat = flat.Magnitude > 0.01 and flat.Unit or V(0, 0, -1)
+		-- 3.99.45판: 말은 늘 발밑 땅을 딛는다 (예전엔 몸 높이로 어림해 땅 아래로 꺼졌다). 다리 끝 = 몸 아래 3.3 × k
 		local base
-		if d.ride then
-			-- 천지미분: 거대한 먹 말을 직접 탄다 (서버가 몸을 들어 올려 등 위에 앉힌다)
-			base = rootP.Position - V(0, 0.3 * k + 2.2, 0) + flat * 0.8 * k
-		elseif big then
+		local gy = groundY(rootP.Position, model)
+		if big and not d.ride then
 			base = rootP.Position + V(0, 18, 0) - flat * 8
 		else
-			base = rootP.Position + V(0, 3.3 * k - 3.4, 0)
+			base = V(rootP.Position.X, gy + 3.25 * k, rootP.Position.Z) + (d.ride and flat * 0.8 * k or V(0, 0, 0))
 		end
 		return CFrame.lookAt(base, base + flat) * CF(0, math.sin(t * 16) * 0.2 * k, 0)
 	end
