@@ -3639,6 +3639,8 @@ end
 
 local MAP_SMALL = 250
 local MAP_BIG = 760
+-- 3.99.34판: 큰 지도는 화면을 거의 다 채우는 직사각형 (세상은 네모 그대로, 남는 자리는 바다). placeMap 이 정한다
+local bigW, bigH = MAP_BIG, MAP_BIG
 local SMALL_SPAN = 870 -- 작은 지도 한 변에 보이는 넓이 (칸). 2.2판: 1300 → 870 (1.5배 크게 보인다)
 local bigZoom = 1
 local bigCenter = Vector3.zero
@@ -3647,23 +3649,37 @@ local function viewZoom(): number
 	return mapBig and bigZoom or (2 * H) / SMALL_SPAN
 end
 -- 지도 판을 옮긴다: 작은 지도는 내가 가운데, 큰 지도는 고른 가운데 (세상 밖이 보이지 않게 묶는다)
+-- 지도 판 안쪽 크기 (UIScale을 곱하기 전 값)
+local function mapInnerSize(): Vector2
+	if mapBig then
+		return Vector2.new(bigW - 12, bigH - 12)
+	end
+	return Vector2.new(MAP_SMALL - 12, MAP_SMALL - 12)
+end
+-- 세상 네모 한 변의 길이 (안쪽의 짧은 변 × 확대)
+local function canvasSide(): number
+	local inner = mapInnerSize()
+	return math.min(inner.X, inner.Y) * viewZoom()
+end
 local function applyView(pos: Vector3?)
 	if not mapCanvas then
 		return
 	end
 	local C0, H = mapFrameOf(mapSky)
 	local canvas = activeCanvas()
-	local z = viewZoom()
+	local inner = mapInnerSize()
+	local side = canvasSide()
 	local c = mapBig and bigCenter or (pos or C0)
 	local u, v = (c.X - C0.X + H) / (2 * H), (c.Z - C0.Z + H) / (2 * H)
 	if mapBig then
-		local half = 0.5 / z
-		u = math.clamp(u, half, 1 - half)
-		v = math.clamp(v, half, 1 - half)
+		-- 세상이 판보다 작으면 가운데, 크면 끝을 넘어 비지 않게
+		local hu, hv = inner.X / 2 / side, inner.Y / 2 / side
+		u = hu >= 0.5 and 0.5 or math.clamp(u, hu, 1 - hu)
+		v = hv >= 0.5 and 0.5 or math.clamp(v, hv, 1 - hv)
 		bigCenter = Vector3.new(u * 2 * H - H + C0.X, 0, v * 2 * H - H + C0.Z)
 	end
-	canvas.Size = UDim2.fromScale(z, z)
-	canvas.Position = UDim2.fromScale(0.5 - u * z, 0.5 - v * z)
+	canvas.Size = UDim2.fromOffset(side, side)
+	canvas.Position = UDim2.fromOffset(inner.X / 2 - u * side, inner.Y / 2 - v * side)
 end
 -- 겹치는 글자 비켜 놓기 (중요한 것부터 자리를 잡는다). 2.1판: 감추지 않는다. 위아래로 비켜서라도 다 보인다
 local function declutter()
@@ -3671,13 +3687,11 @@ local function declutter()
 		return
 	end
 	-- 지도 판의 크기 (UIScale을 곱하기 전 값: 글자 크기도 같은 단위라 그대로 견준다)
-	local side = (mapBig and MAP_BIG or MAP_SMALL) - 12
-	local inner = Vector2.new(side, side)
-	local z = viewZoom()
-	local cs = inner.X * z
+	local inner = mapInnerSize()
+	local cs = canvasSide()
 	local canvas = activeCanvas()
-	local ox = canvas.Position.X.Scale * inner.X
-	local oy = canvas.Position.Y.Scale * inner.Y
+	local ox = canvas.Position.X.Offset
+	local oy = canvas.Position.Y.Offset
 	local placed: { { number } } = {}
 	for _, t in ipairs(mapSky and (mapHell and hellTexts or skyTexts) or mapTexts) do
 		local l = t.label
@@ -3727,7 +3741,10 @@ local function placeMap()
 	if mapScaleObj then
 		local sc = V.mapScale or 1
 		if mapBig then
-			sc = math.min(sc, (vp.X - 24) / MAP_BIG, (vp.Y - 60) / MAP_BIG)
+			-- 3.99.34판: 화면을 거의 다 채운다 (가로로 긴 화면이면 가로로 긴 지도)
+			sc = math.max(0.3, math.min(sc, (vp.Y - 60) / 480))
+			bigW = math.floor((vp.X - 24) / sc)
+			bigH = math.floor((vp.Y - 60) / sc)
 		else
 			sc = math.min(sc, (vp.X * 0.45) / MAP_SMALL, (vp.Y - 160 - 200) / MAP_SMALL)
 		end
@@ -3736,7 +3753,7 @@ local function placeMap()
 	if mapBig then
 		mapFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 		mapFrame.Position = UDim2.fromScale(0.5, 0.5)
-		mapFrame.Size = UDim2.new(0, MAP_BIG, 0, MAP_BIG)
+		mapFrame.Size = UDim2.new(0, bigW, 0, bigH)
 	else
 		mapFrame.AnchorPoint = Vector2.new(1, 0)
 		mapFrame.Position = UDim2.new(1, -16, 0, 160)
@@ -4128,11 +4145,7 @@ function UIB.buildMap()
 			elseif dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 				local d = input.Position - dragLast
 				dragLast = input.Position
-				local px = (MAP_BIG - 12)
-				pcall(function()
-					px = mapInner.AbsoluteSize.X
-				end)
-				local cs = math.max(1, px * bigZoom)
+				local cs = math.max(1, activeCanvas().AbsoluteSize.X)
 				local _, VH = mapFrameOf(mapSky)
 				bigCenter -= Vector3.new(d.X / cs * 2 * VH, 0, d.Y / cs * 2 * VH)
 				applyView(nil)
