@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.25" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.26" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -402,6 +402,8 @@ Config.TRAIN_REALM_BONUS = 0.12
 -- 이제 그 경지 적 한 마리 몫에 견준다: 상급 수련(천상 수련)을 '완벽'으로 한 번 하면 그 경지 적 한 마리의 TRAIN_LATE_SHARE만큼.
 -- 생사경 무렵부터 이쪽이 커진다 (그 앞은 예전 그대로). 싸움보다 훨씬 느리지만 오르는 게 눈에 보이게
 Config.TRAIN_LATE_SHARE = 1 / 16 -- 3.99.1판: 1/100 → 1/16 (절정부터 수련이 사냥의 5 ~ 50%뿐이었다. 이제 40 ~ 100%). 2.8판: -- 2.7.7판: 1/50 → 1/150. 2.8판: 1/100 (싸움의 약 1/7 빠르기: 수련은 덤이되, 하는 만큼 보이게)
+-- 3.99.26판 자리를 비운 동안의 수련: 1초에 수련 perSec 몫의 rate 만큼 (10분 ~ 여덟 시간). 한 번에 다음 경지까지의 gapCap 넘게는 오르지 않는다
+Config.OFFLINE = { minSec = 600, maxSec = 8 * 3600, perSec = 4, rate = 0.2, gapCap = 0.25 }
 Config.TRAIN_LATE_REF = 12 -- 천상 수련 '완벽' 한 번에 오르는 몫의 합 (2 × 6). 3.3판: 천상 수련이 24 → 6이 되어 48 → 12 (후반 수련 몫은 그대로)
 function Config.trainMult(idx: number): number
 	local lin = Config.TRAIN_GAIN * (1 + Config.TRAIN_REALM_BONUS * (idx - 1))
@@ -10676,6 +10678,7 @@ type Profile = {
 	mqv: number?, -- 3.74판: 부탁 기록의 판 (부탁이 길어지기 전에 다 끝낸 사람은 끝난 그대로)
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
 	enh: { [string]: number }?, -- 3.41판 게임패스 권법의 강화 단계 (0 ~ 15)
+	lastSeen: number?, -- 3.99.26판: 마지막으로 저장한 때 (os.time, 자리를 비운 동안의 수련)
 	shards: number?, -- 3.41판 비급 조각 (강화 재료, 보스가 떨어뜨린다)
 	receipts: { string }?, -- 3.40판: 이미 준 개발자 상품 영수증 (최근 50개. 같은 구매를 두 번 주지 않게)
 	pvpRule: number?, -- 3.4.1판: 2 = 사람에게 쓰러져야 끌 수 있는 규칙 (예전 규칙으로 열린 것은 다시 잠근다)
@@ -10882,6 +10885,7 @@ local function sanitize(data: any): Profile
 		end
 	end
 	p.shards = math.floor(num(data.shards, 1e6))
+	p.lastSeen = math.floor(num(data.lastSeen, 1e11))
 	-- 3.40판 개발자 상품 영수증
 	p.receipts = {}
 	if type(data.receipts) == "table" then
@@ -11218,6 +11222,8 @@ local function saveProfile(player: Player, final: boolean?)
 	saving += 1
 	local out = table.clone(p) :: any
 	out._job, out._open, out._t = JOB, not final, os.time()
+	out.lastSeen = os.time()
+	p.lastSeen = out.lastSeen
 	for attempt = 1, 3 do
 		local ok = pcall(function()
 			ds:UpdateAsync("p_" .. player.UserId, function(old: any)
@@ -17974,6 +17980,38 @@ local function onPlayerAdded(player: Player)
 	end
 	profiles[player] = profile
 	st.canSave = ok
+	-- 3.99.26판 자리를 비운 동안의 수련: 몸이 스스로 조금씩 수련한다 (10분 이상, 여덟 시간까지)
+	if not BATTLE and ok then
+		local O = Config.OFFLINE
+		local last = profile.lastSeen or 0
+		local away = last > 0 and (os.time() - last) or 0
+		profile.lastSeen = os.time()
+		if away >= O.minSec then
+			local secs = math.min(away, O.maxSec)
+			local idx = Calc.realm(profile)
+			local total = O.perSec * O.rate * secs * Config.trainMult(idx) * gainMult(profile)
+			local cur, nxt = Config.Realms[idx], Config.Realms[idx + 1]
+			local gap = nxt and (nxt.need - cur.need) or cur.need * 0.1
+			total = math.min(total, gap * O.gapCap)
+			local each = math.floor(total / 4)
+			if each > 0 then
+				local got = 0
+				for _, sid in ipairs({ "str", "vit", "agi", "chi" }) do
+					got += addStat(profile, sid, each)
+				end
+				if got > 0 then
+					st.dirty = true
+					local h, m = math.floor(secs / 3600), math.floor(secs % 3600 / 60)
+					local when = h > 0 and string.format("%d시간 %d분", h, m) or string.format("%d분", m)
+					task.delay(4, function()
+						if player.Parent then
+							toast(player, string.format("🧘 자리를 비운 %s 동안 몸이 스스로 수련했다 · 능력치 +%s", when, Config.formatNumber(got)))
+						end
+					end)
+				end
+			end
+		end
+	end
 	if not BATTLE and ok then
 		-- 배틀그라운드에서 쌓은 기록을 받는다: 쓰러뜨린 수 (무쌍신권), 은자
 		task.spawn(function()
@@ -65296,6 +65334,9 @@ return {
 	["세상의 빛깔이 빠지고 발밑에 40칸 넓이의 태극이 그려진다. 태극이 돌며 둘레의 적을 세 번 가운데로 감아 들인다. 마지막에 흑과 백이 하나로 섞이며 금빛 새 하늘이 열린다"] = "The world loses its color and a taiji 40 studs wide is drawn underfoot. It spins, reeling nearby enemies to the center three times. Finally black and white blend into one and a golden new sky opens",
 	["초 오의 (그동안 무적). 하늘만 한 먹의 천마를 타고 네 번 내달린다. 지나는 길마다 가까운 적의 둘레 공간이 깨진다. 마지막에 모든 것이 한 점으로 삼켜졌다가 둘레 40칸이 금빛으로 다시 태어난다"] = "Super ultimate (invincible meanwhile). Ride a sky-sized steed of ink and charge four times. Along the way the space around nearby enemies shatters. Finally everything is swallowed into one point, and 40 studs around you are reborn in gold",
 	["⚒ %s은(는) %s을(를) 익힌 몸이어야 벼릴 수 있어요"] = "⚒ To forge %s you must first learn %s",
+	["🧘 자리를 비운 %s 동안 몸이 스스로 수련했다 · 능력치 +%s"] = "🧘 While you were away for %s your body trained on its own · stats +%s",
+	["%d시간 %d분"] = "%dh %dm",
+	["%d분"] = "%dm",
 }
 ]]></string>
           </Properties>

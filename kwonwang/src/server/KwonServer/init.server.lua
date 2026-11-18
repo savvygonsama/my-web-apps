@@ -72,6 +72,7 @@ type Profile = {
 	mqv: number?, -- 3.74판: 부탁 기록의 판 (부탁이 길어지기 전에 다 끝낸 사람은 끝난 그대로)
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
 	enh: { [string]: number }?, -- 3.41판 게임패스 권법의 강화 단계 (0 ~ 15)
+	lastSeen: number?, -- 3.99.26판: 마지막으로 저장한 때 (os.time, 자리를 비운 동안의 수련)
 	shards: number?, -- 3.41판 비급 조각 (강화 재료, 보스가 떨어뜨린다)
 	receipts: { string }?, -- 3.40판: 이미 준 개발자 상품 영수증 (최근 50개. 같은 구매를 두 번 주지 않게)
 	pvpRule: number?, -- 3.4.1판: 2 = 사람에게 쓰러져야 끌 수 있는 규칙 (예전 규칙으로 열린 것은 다시 잠근다)
@@ -278,6 +279,7 @@ local function sanitize(data: any): Profile
 		end
 	end
 	p.shards = math.floor(num(data.shards, 1e6))
+	p.lastSeen = math.floor(num(data.lastSeen, 1e11))
 	-- 3.40판 개발자 상품 영수증
 	p.receipts = {}
 	if type(data.receipts) == "table" then
@@ -614,6 +616,8 @@ local function saveProfile(player: Player, final: boolean?)
 	saving += 1
 	local out = table.clone(p) :: any
 	out._job, out._open, out._t = JOB, not final, os.time()
+	out.lastSeen = os.time()
+	p.lastSeen = out.lastSeen
 	for attempt = 1, 3 do
 		local ok = pcall(function()
 			ds:UpdateAsync("p_" .. player.UserId, function(old: any)
@@ -7370,6 +7374,38 @@ local function onPlayerAdded(player: Player)
 	end
 	profiles[player] = profile
 	st.canSave = ok
+	-- 3.99.26판 자리를 비운 동안의 수련: 몸이 스스로 조금씩 수련한다 (10분 이상, 여덟 시간까지)
+	if not BATTLE and ok then
+		local O = Config.OFFLINE
+		local last = profile.lastSeen or 0
+		local away = last > 0 and (os.time() - last) or 0
+		profile.lastSeen = os.time()
+		if away >= O.minSec then
+			local secs = math.min(away, O.maxSec)
+			local idx = Calc.realm(profile)
+			local total = O.perSec * O.rate * secs * Config.trainMult(idx) * gainMult(profile)
+			local cur, nxt = Config.Realms[idx], Config.Realms[idx + 1]
+			local gap = nxt and (nxt.need - cur.need) or cur.need * 0.1
+			total = math.min(total, gap * O.gapCap)
+			local each = math.floor(total / 4)
+			if each > 0 then
+				local got = 0
+				for _, sid in ipairs({ "str", "vit", "agi", "chi" }) do
+					got += addStat(profile, sid, each)
+				end
+				if got > 0 then
+					st.dirty = true
+					local h, m = math.floor(secs / 3600), math.floor(secs % 3600 / 60)
+					local when = h > 0 and string.format("%d시간 %d분", h, m) or string.format("%d분", m)
+					task.delay(4, function()
+						if player.Parent then
+							toast(player, string.format("🧘 자리를 비운 %s 동안 몸이 스스로 수련했다 · 능력치 +%s", when, Config.formatNumber(got)))
+						end
+					end)
+				end
+			end
+		end
+	end
 	if not BATTLE and ok then
 		-- 배틀그라운드에서 쌓은 기록을 받는다: 쓰러뜨린 수 (무쌍신권), 은자
 		task.spawn(function()
