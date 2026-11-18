@@ -1975,6 +1975,9 @@ function handlers.hit(data: any)
 			end
 			Fx.hitstop({ a, t }, hs)
 			Fx.styleHit(data.style, pos, data.heavy, dir)
+			if data.style == "gumiho" or data.style == "heukyeom" then
+				pcall(PassArts.hit, data.style, pos, data.heavy == true, data.skill == true, dir, a and tonumber(a:GetAttribute("Enh")) or 0)
+			end
 			if data.skill then
 				local st = Config.STYLE_BY_ID[data.style or ""]
 				Fx.blast(pos, st and st.color or Color3.new(1, 1, 1), st and st.color2 or Color3.new(1, 1, 1), data.heavy and 1.5 or 1)
@@ -2329,6 +2332,11 @@ function handlers.breakthrough(data: any)
 	end
 	shake(1.2)
 	Fx.sound("ping", 1, 0.7)
+end
+
+-- 3.99.32판 후원 순위
+function handlers.donors(list: any)
+	UI.setDonors(list)
 end
 
 -- 3.99.27판 출석: 가운데에 크게 (일곱째 날은 금빛)

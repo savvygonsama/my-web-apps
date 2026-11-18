@@ -2239,6 +2239,31 @@ function PassArts.overlay(data: any)
 	end
 end
 
+-- 3.99.32판 게임패스 권법이 맞힐 때: 구미호권은 여우불이 흩날리고 (강타 · 기술은 여우불 꽃), 흑염마검장은 검은 불꽃의 칼자국 (강타 · 기술은 검은 불길)
+--   강화할수록 더 많이 · 더 크게
+function PassArts.hit(styleId: string, pos: Vector3, heavy: boolean, skill: boolean, dir: Vector3, lv: number?)
+	if not near(pos, 140) then
+		return
+	end
+	local L = math.clamp(lv or 0, 0, 15)
+	if styleId == "gumiho" then
+		local n = (Perf.low and 1 or 2) + math.floor(PassArts.tails(L) / 3)
+		for _ = 1, n do
+			wisp(pos + Vector3.new((math.random() - 0.5) * 3, math.random() * 2, (math.random() - 0.5) * 3), 0.6 + L * 0.03, 0.5 + math.random() * 0.3, math.random() < 0.3 and FOX_PALE or FOX)
+		end
+		if heavy or skill then
+			foxBloom(pos, 3 + L * 0.15)
+		end
+	elseif styleId == "heukyeom" then
+		local face = flatOr(dir)
+		slashMark(pos + Vector3.new(0, 0.5, 0), face, 4 + PassArts.bladeTier(L) * 0.8, (math.random() - 0.5) * 1.6, 0.35)
+		if heavy or skill then
+			slashMark(pos + Vector3.new(0, 0.5, 0), face, 5 + PassArts.bladeTier(L), (math.random() - 0.5) * 1.6 + math.pi / 2, 0.4)
+			flameBurst(pos, PURPLE, CRIMSON, 3.5 + L * 0.12, true)
+		end
+	end
+end
+
 -- 3.76.1판: 이 권법 · 이 오의는 여기서 이름 띠를 그린다 (원래의 '오의 · 이름' 띠는 빼서 두 번 겹치지 않게)
 function PassArts.ownsUlt(styleId: string, slot: any): boolean
 	local u = ULT[styleId]

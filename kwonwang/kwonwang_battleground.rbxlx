@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.31" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.32" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7698,6 +7698,40 @@ function Config.refineCost(r: any, lv: number): any
 	return { shards = math.max(1, math.ceil(r.shards * k)), gems = math.ceil(r.gems * k / 10) * 10, coinShares = math.max(1, math.ceil(r.coinShares * k)), mats = mats }
 end
 
+------------------------------------------------------------------------
+-- 3.99.32판 기술 딜레이 손보기: E · R 이 늦게 터지거나 몸이 오래 묶이던 것
+--   · 장치가 터지기까지 0.38초 넘게 걸리던 E · R 은 0.38초로 (화천붕 · 천근추 · 낙석추 · 폭염륜 · 풍압 · 천제의 창 등)
+--   · 장치가 따로 도는 기술 (장판 · 충격 · 부채꼴 · 줄 · 표적 · 길 · 낙하 · 띄우기) 은 몸이 묶이는 시간을 0.95초까지만
+--     (장치는 그대로 이어서 돈다. 몸을 옮기는 기술 · 붙잡기 · 연쇄는 건드리지 않는다)
+------------------------------------------------------------------------
+do
+	local FREE = { zone = true, shock = true, cone = true, line = true, targets = true, trail = true, drop = true, launch = true, flameRing = true, freeze = true, storm = true }
+	for _, st in ipairs(Config.Styles) do
+		for _, slot in ipairs({ "E", "R" }) do
+			local mv = st.skills and st.skills[slot]
+			local m = mv and mv.mech
+			if m and type(m.delay) == "number" and m.delay > 0.4 and not m.steps then
+				m.delay = 0.38
+			end
+			if mv and m and FREE[m.kind] and mv.dur and mv.dur > 0.95 then
+				mv.dur = 0.95
+			end
+		end
+	end
+end
+
+-- 3.99.32판 후원: 개발자 상품 (productId = 로블록스 사이트에서 만든 번호, 0이면 '준비 중'). 힘은 오르지 않는다. 이름 앞에 💝, 후원 순위
+Config.DONATIONS = {
+	{ id = "don25", productId = 0, price = 25, icon = "🍵", name = "차 한 잔", give = { donate = 25 } },
+	{ id = "don100", productId = 0, price = 100, icon = "🍶", name = "술 한 병", give = { donate = 100 } },
+	{ id = "don500", productId = 0, price = 500, icon = "🏮", name = "등불 하나", give = { donate = 500 } },
+	{ id = "don1000", productId = 0, price = 1000, icon = "🏯", name = "전각 기둥 하나", give = { donate = 1000 } },
+	{ id = "don5000", productId = 0, price = 5000, icon = "🐉", name = "용의 비늘", give = { donate = 5000 } },
+}
+for _, d in ipairs(Config.DONATIONS) do
+	Config.PRODUCT_BY_ID[d.id] = d
+end
+
 return Config
 ]]></string>
       </Properties>
@@ -10931,6 +10965,7 @@ type Profile = {
 	mqv: number?, -- 3.74판: 부탁 기록의 판 (부탁이 길어지기 전에 다 끝낸 사람은 끝난 그대로)
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
 	enh: { [string]: number }?, -- 3.41판 게임패스 권법의 강화 단계 (0 ~ 15)
+	donated: number?, -- 3.99.32판 후원한 로벅스 합
 	pages: { [string]: number }?, -- 3.99.31판 찢어진 비급: 가진 장 (비트)
 	disciple: any?, -- 3.99.30판 문하생 { name, robe, style, lv, xp, job, since }
 	nmBest: number?, -- 3.99.29판 악몽의 탑 최고 층
@@ -11149,6 +11184,7 @@ local function sanitize(data: any): Profile
 	p.lastSeen = math.floor(num(data.lastSeen, 1e11))
 	p.attDay = math.floor(num(data.attDay, 1e7))
 	p.nmBest = math.floor(num(data.nmBest, 1e5))
+	p.donated = math.floor(num(data.donated, 1e9))
 	p.pages = {}
 	if type(data.pages) == "table" then
 		for id, v in pairs(data.pages) do
@@ -12170,6 +12206,7 @@ local function pushState(player: Player)
 		enh = p.enh,
 		shards = p.shards or 0,
 		refine = p.refine or {},
+		donated = p.donated or 0,
 		pages = p.pages or {},
 		disciple = p.disciple and {
 			name = p.disciple.name,
@@ -12273,7 +12310,7 @@ local function updateTag(player: Player)
 	local rbName = p.rebirth > 0 and Config.REBIRTH.names[p.rebirth] or nil
 	-- 3.37판 VIP 게임패스: 이름 앞에 금빛 왕관
 	-- 3.37판 VIP 게임패스: 이름 앞에 금빛 왕관
-	top.Text = string.format("%s[%s%s] %s", Premium.owns(player, "vip") and "👑 " or "", rbName and (rbName .. " · ") or "", realm.name, player.DisplayName)
+	top.Text = string.format("%s%s[%s%s] %s", (p.donated or 0) > 0 and "💝 " or "", Premium.owns(player, "vip") and "👑 " or "", rbName and (rbName .. " · ") or "", realm.name, player.DisplayName)
 	top.TextColor3 = realm.color
 	local tl = g:FindFirstChild("Title") :: TextLabel?
 	local ta = p.title and Config.ACH_BY_ID[p.title]
@@ -12921,6 +12958,7 @@ local Rebirth: any
 local Geuk: any = {}
 local Train: any
 local Tower: any
+local Donate: any
 local Maze: any = {}
 local Raid: any = {}
 -- 2.5판: 초월 권법의 조건 (원래 권법 숙련 20 · 각성 권법 숙련 20 · 천상 재료). stage = "challenge" (시련) / "learn" (배우기)
@@ -17028,6 +17066,10 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			Combat.mount(f, m.id)
 		end
 		pushState(player)
+	elseif action == "donors" then
+		task.spawn(function()
+			Push:FireClient(player, "donors", Donate.top())
+		end)
 	elseif action == "decode" then
 		-- 3.99.31판 비급 해독: 장을 다 모았으면 (퍼즐은 화면에서) 그 권법을 얻는다
 		local M = type(a1) == "string" and Config.MANUSCRIPT_BY_ID[a1]
@@ -18438,10 +18480,46 @@ function Premium.promptProduct(player: Player, id: string)
 		Marketplace:PromptProductPurchase(player, it.productId)
 	end)
 end
+-- 3.99.32판 후원 순위 (열 명, 1분마다 새로)
+Donate = { cache = nil :: any, at = 0 }
+function Donate.top(): { any }
+	if Donate.cache and os.clock() - Donate.at < 60 then
+		return Donate.cache
+	end
+	local rows = {}
+	local ds = Board.store("donate")
+	if ds then
+		local ok, page = pcall(function()
+			return ds:GetSortedAsync(false, 10):GetCurrentPage()
+		end)
+		if ok and type(page) == "table" then
+			for _, e in ipairs(page) do
+				if (tonumber(e.value) or 0) > 0 then
+					table.insert(rows, { name = Board.name(tonumber(e.key) or 0), amount = e.value })
+				end
+			end
+		end
+	end
+	Donate.cache, Donate.at = rows, os.clock()
+	return rows
+end
 local Product = {}
 function Product.give(player: Player, p: Profile, it: any)
 	local g = it.give
-	if g.coins then
+	if g.donate then
+		-- 3.99.32판 후원: 힘은 주지 않는다. 고맙다는 말 · 이름 앞 💝 · 후원 순위
+		p.donated = (p.donated or 0) + g.donate
+		Push:FireAllClients("toast", string.format("💝 %s님이 %s (R$ %d) 을(를) 후원했어요! 고맙습니다", player.DisplayName, it.name, it.price))
+		task.spawn(function()
+			local ds = Board.store("donate")
+			if ds then
+				pcall(function()
+					ds:SetAsync(tostring(player.UserId), p.donated)
+				end)
+			end
+		end)
+		Donate.cache = nil
+	elseif g.coins then
 		local n = Config.productCoins((Calc.realm(p))) * g.coins
 		p.coins += n
 		toast(player, string.format("💰 은자 %s을(를) 받았어요", Config.formatNumber(n)))
@@ -18470,6 +18548,11 @@ if Marketplace then
 			end
 			local it: any = nil
 			for _, x in ipairs(Config.PRODUCTS) do
+				if x.productId > 0 and x.productId == info.ProductId then
+					it = x
+				end
+			end
+			for _, x in ipairs(Config.DONATIONS) do
 				if x.productId > 0 and x.productId == info.ProductId then
 					it = x
 				end
@@ -42834,6 +42917,9 @@ function handlers.hit(data: any)
 			end
 			Fx.hitstop({ a, t }, hs)
 			Fx.styleHit(data.style, pos, data.heavy, dir)
+			if data.style == "gumiho" or data.style == "heukyeom" then
+				pcall(PassArts.hit, data.style, pos, data.heavy == true, data.skill == true, dir, a and tonumber(a:GetAttribute("Enh")) or 0)
+			end
 			if data.skill then
 				local st = Config.STYLE_BY_ID[data.style or ""]
 				Fx.blast(pos, st and st.color or Color3.new(1, 1, 1), st and st.color2 or Color3.new(1, 1, 1), data.heavy and 1.5 or 1)
@@ -43188,6 +43274,11 @@ function handlers.breakthrough(data: any)
 	end
 	shake(1.2)
 	Fx.sound("ping", 1, 0.7)
+end
+
+-- 3.99.32판 후원 순위
+function handlers.donors(list: any)
+	UI.setDonors(list)
 end
 
 -- 3.99.27판 출석: 가운데에 크게 (일곱째 날은 금빛)
@@ -66599,6 +66690,21 @@ return {
 	["떨어뜨리는 보스: "] = "Dropped by:",
 	["✔ 해독"] = "✔ Decoded",
 	["%d / %d장"] = "%d / %d pages",
+	["차 한 잔"] = "A cup of tea",
+	["술 한 병"] = "A bottle of wine",
+	["등불 하나"] = "A lantern",
+	["전각 기둥 하나"] = "A pillar for the hall",
+	["용의 비늘"] = "A dragon's scale",
+	["💝 %s님이 %s (R$ %d) 을(를) 후원했어요! 고맙습니다"] = "💝 %s supported the game with %s (R$ %d)! Thank you",
+	["아직 후원한 사람이 없다. 첫 이름이 되어 주세요"] = "No supporters yet. Be the first name here",
+	["권왕을 아껴 주셔서 고맙습니다. 후원은 게임을 계속 만드는 데 쓰입니다. 힘은 오르지 않고, 이름 앞에 💝가 붙고 후원 순위에 이름이 오릅니다"] = "Thank you for loving Kwonwang. Support goes into making the game. It gives no power — you get a 💝 before your name and a spot on the supporter board",
+	["💝 R$ %d"] = "💝 R$ %d",
+	["준비 중"] = "Coming soon",
+	["💝 후원 순위"] = "💝 Supporters",
+	["내 후원: R$ %s"] = "My support: R$ %s",
+	["불러오는 중..."] = "Loading...",
+	["💝 후원"] = "💝 Support",
+	["%d. %s  ·  R$ %s"] = "%d. %s  ·  R$ %s",
 }
 ]]></string>
           </Properties>
@@ -73659,6 +73765,31 @@ function PassArts.overlay(data: any)
 		local ok, err = pcall(fn, data)
 		if not ok then
 			warn("[권왕] 사신천왕권 연출 오류:", data.kind, err)
+		end
+	end
+end
+
+-- 3.99.32판 게임패스 권법이 맞힐 때: 구미호권은 여우불이 흩날리고 (강타 · 기술은 여우불 꽃), 흑염마검장은 검은 불꽃의 칼자국 (강타 · 기술은 검은 불길)
+--   강화할수록 더 많이 · 더 크게
+function PassArts.hit(styleId: string, pos: Vector3, heavy: boolean, skill: boolean, dir: Vector3, lv: number?)
+	if not near(pos, 140) then
+		return
+	end
+	local L = math.clamp(lv or 0, 0, 15)
+	if styleId == "gumiho" then
+		local n = (Perf.low and 1 or 2) + math.floor(PassArts.tails(L) / 3)
+		for _ = 1, n do
+			wisp(pos + Vector3.new((math.random() - 0.5) * 3, math.random() * 2, (math.random() - 0.5) * 3), 0.6 + L * 0.03, 0.5 + math.random() * 0.3, math.random() < 0.3 and FOX_PALE or FOX)
+		end
+		if heavy or skill then
+			foxBloom(pos, 3 + L * 0.15)
+		end
+	elseif styleId == "heukyeom" then
+		local face = flatOr(dir)
+		slashMark(pos + Vector3.new(0, 0.5, 0), face, 4 + PassArts.bladeTier(L) * 0.8, (math.random() - 0.5) * 1.6, 0.35)
+		if heavy or skill then
+			slashMark(pos + Vector3.new(0, 0.5, 0), face, 5 + PassArts.bladeTier(L), (math.random() - 0.5) * 1.6 + math.pi / 2, 0.4)
+			flameBurst(pos, PURPLE, CRIMSON, 3.5 + L * 0.12, true)
 		end
 	end
 end
@@ -85584,7 +85715,7 @@ local pages: { [string]: Frame } = {}
 local refreshers: { [string]: (boolean?) -> () } = {}
 local current = ""
 local state: any = nil
-local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", forge = "⚒ 권법 제작소", disciple = "🧑‍🎓 문하생", manuscripts = "📜 무공 비급", ach = "🏆 업적과 칭호", dex = "📖 도감" }
+local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", forge = "⚒ 권법 제작소", disciple = "🧑‍🎓 문하생", manuscripts = "📜 무공 비급", donate = "💝 후원", ach = "🏆 업적과 칭호", dex = "📖 도감" }
 
 local function makePage(name: string): Frame
 	local f = new("Frame", { Position = UDim2.new(0, 16, 0, 56), Size = UDim2.new(1, -32, 1, -68), BackgroundTransparency = 1, Visible = false, Parent = window })
@@ -86526,7 +86657,11 @@ end
 UI.setShopTab = setShopTab
 function UIB.buildShop()
 	local page = makePage("shop")
-	local head = text({ Size = UDim2.new(1, -12, 0, 26), TextSize = 16, Font = Enum.Font.GothamBold, TextColor3 = C.gold, Parent = page })
+	local head = text({ Size = UDim2.new(1, -140, 0, 26), TextSize = 16, Font = Enum.Font.GothamBold, TextColor3 = C.gold, Parent = page })
+	-- 3.99.32판 후원 창
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -4, 0, 0), Size = UDim2.new(0, 120, 0, 28), Text = "💝 후원", TextSize = 15, BackgroundColor3 = Color3.fromRGB(200, 70, 110), Parent = page }, function()
+		UI.openPage("donate")
+	end)
 	local tabRow = new("Frame", { Position = UDim2.new(0, 0, 0, 30), Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1, Parent = page }, {
 		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
 	})
@@ -86986,6 +87121,45 @@ function UI.manualReveal(results: { any })
 	Gacha.play(results, function()
 		UI.openPage("shop", { tab = "manuals" })
 	end)
+end
+
+------------------------------------------------------------------------
+-- 3.99.32판 후원: 힘은 오르지 않는다. 이름 앞에 💝, 후원 순위에 이름이 오른다
+------------------------------------------------------------------------
+local donorLabel: TextLabel? = nil
+function UI.setDonors(list: any)
+	if not donorLabel then
+		return
+	end
+	local lines = {}
+	for i, row in ipairs(type(list) == "table" and list or {}) do
+		table.insert(lines, string.format("%d. %s  ·  R$ %s", i, tostring(row.name), Config.formatNumber(tonumber(row.amount) or 0)))
+	end
+	donorLabel.Text = #lines > 0 and table.concat(lines, "\n") or "아직 후원한 사람이 없다. 첫 이름이 되어 주세요"
+end
+function UIB.buildDonate()
+	local page = makePage("donate")
+	text({ Size = UDim2.new(1, 0, 0, 48), TextSize = 16, TextColor3 = Color3.fromRGB(255, 220, 200), TextYAlignment = Enum.TextYAlignment.Top, Text = "권왕을 아껴 주셔서 고맙습니다. 후원은 게임을 계속 만드는 데 쓰입니다. 힘은 오르지 않고, 이름 앞에 💝가 붙고 후원 순위에 이름이 오릅니다", Parent = page })
+	local left = scroller(page, UDim2.new(0.55, -6, 1, -56), UDim2.new(0, 0, 0, 54))
+	new("UIListLayout", { Padding = UDim.new(0, 8), Parent = left })
+	for _, d in ipairs(Config.DONATIONS) do
+		local card = new("Frame", { Size = UDim2.new(1, -12, 0, 64), BackgroundColor3 = Color3.fromRGB(56, 30, 40), Parent = left }, { corner(10), stroke(Color3.fromRGB(255, 150, 180), 1.2) })
+		text({ Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(0, 48, 1, 0), Text = d.icon, TextSize = 32, TextXAlignment = Enum.TextXAlignment.Center, Parent = card })
+		text({ Position = UDim2.new(0, 66, 0, 0), Size = UDim2.new(1, -230, 1, 0), Text = d.name, TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 225, 235), Parent = card })
+		button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0), Size = UDim2.new(0, 150, 0, 44), Text = d.productId > 0 and ("💝 R$ " .. d.price) or "준비 중", TextSize = 18, BackgroundColor3 = d.productId > 0 and Color3.fromRGB(220, 80, 120) or C.panel, Parent = card }, function()
+			Request:FireServer("productBuy", d.id)
+		end)
+	end
+	local right = new("Frame", { Position = UDim2.new(0.55, 6, 0, 54), Size = UDim2.new(0.45, -6, 1, -56), BackgroundColor3 = Color3.fromRGB(40, 24, 30), Parent = page }, { corner(10), stroke(Color3.fromRGB(255, 150, 180), 1.2) })
+	text({ Position = UDim2.new(0, 12, 0, 8), Size = UDim2.new(1, -24, 0, 28), Text = "💝 후원 순위", TextSize = 21, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 200, 220), Parent = right })
+	local mine = text({ Position = UDim2.new(0, 12, 0, 38), Size = UDim2.new(1, -24, 0, 22), TextSize = 15, TextColor3 = C.dim, Parent = right })
+	donorLabel = text({ Position = UDim2.new(0, 12, 0, 66), Size = UDim2.new(1, -24, 1, -74), TextSize = 16, TextYAlignment = Enum.TextYAlignment.Top, Text = "불러오는 중...", Parent = right })
+	refreshers.donate = function(fresh: boolean?)
+		mine.Text = string.format("내 후원: R$ %s", Config.formatNumber((state and state.donated) or 0))
+		if fresh then
+			Request:FireServer("donors")
+		end
+	end
 end
 
 ------------------------------------------------------------------------
@@ -90097,6 +90271,7 @@ function UI.init(req: RemoteEvent)
 	UIB.buildForge()
 	UIB.buildDisciple()
 	UIB.buildManuscripts()
+	UIB.buildDonate()
 	UIB.buildHelp()
 	UIB.buildTest()
 	UIB.buildMap()

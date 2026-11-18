@@ -72,6 +72,7 @@ type Profile = {
 	mqv: number?, -- 3.74판: 부탁 기록의 판 (부탁이 길어지기 전에 다 끝낸 사람은 끝난 그대로)
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
 	enh: { [string]: number }?, -- 3.41판 게임패스 권법의 강화 단계 (0 ~ 15)
+	donated: number?, -- 3.99.32판 후원한 로벅스 합
 	pages: { [string]: number }?, -- 3.99.31판 찢어진 비급: 가진 장 (비트)
 	disciple: any?, -- 3.99.30판 문하생 { name, robe, style, lv, xp, job, since }
 	nmBest: number?, -- 3.99.29판 악몽의 탑 최고 층
@@ -290,6 +291,7 @@ local function sanitize(data: any): Profile
 	p.lastSeen = math.floor(num(data.lastSeen, 1e11))
 	p.attDay = math.floor(num(data.attDay, 1e7))
 	p.nmBest = math.floor(num(data.nmBest, 1e5))
+	p.donated = math.floor(num(data.donated, 1e9))
 	p.pages = {}
 	if type(data.pages) == "table" then
 		for id, v in pairs(data.pages) do
@@ -1311,6 +1313,7 @@ local function pushState(player: Player)
 		enh = p.enh,
 		shards = p.shards or 0,
 		refine = p.refine or {},
+		donated = p.donated or 0,
 		pages = p.pages or {},
 		disciple = p.disciple and {
 			name = p.disciple.name,
@@ -1414,7 +1417,7 @@ local function updateTag(player: Player)
 	local rbName = p.rebirth > 0 and Config.REBIRTH.names[p.rebirth] or nil
 	-- 3.37판 VIP 게임패스: 이름 앞에 금빛 왕관
 	-- 3.37판 VIP 게임패스: 이름 앞에 금빛 왕관
-	top.Text = string.format("%s[%s%s] %s", Premium.owns(player, "vip") and "👑 " or "", rbName and (rbName .. " · ") or "", realm.name, player.DisplayName)
+	top.Text = string.format("%s%s[%s%s] %s", (p.donated or 0) > 0 and "💝 " or "", Premium.owns(player, "vip") and "👑 " or "", rbName and (rbName .. " · ") or "", realm.name, player.DisplayName)
 	top.TextColor3 = realm.color
 	local tl = g:FindFirstChild("Title") :: TextLabel?
 	local ta = p.title and Config.ACH_BY_ID[p.title]
@@ -2062,6 +2065,7 @@ local Rebirth: any
 local Geuk: any = {}
 local Train: any
 local Tower: any
+local Donate: any
 local Maze: any = {}
 local Raid: any = {}
 -- 2.5판: 초월 권법의 조건 (원래 권법 숙련 20 · 각성 권법 숙련 20 · 천상 재료). stage = "challenge" (시련) / "learn" (배우기)
@@ -6169,6 +6173,10 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			Combat.mount(f, m.id)
 		end
 		pushState(player)
+	elseif action == "donors" then
+		task.spawn(function()
+			Push:FireClient(player, "donors", Donate.top())
+		end)
 	elseif action == "decode" then
 		-- 3.99.31판 비급 해독: 장을 다 모았으면 (퍼즐은 화면에서) 그 권법을 얻는다
 		local M = type(a1) == "string" and Config.MANUSCRIPT_BY_ID[a1]
@@ -7579,10 +7587,46 @@ function Premium.promptProduct(player: Player, id: string)
 		Marketplace:PromptProductPurchase(player, it.productId)
 	end)
 end
+-- 3.99.32판 후원 순위 (열 명, 1분마다 새로)
+Donate = { cache = nil :: any, at = 0 }
+function Donate.top(): { any }
+	if Donate.cache and os.clock() - Donate.at < 60 then
+		return Donate.cache
+	end
+	local rows = {}
+	local ds = Board.store("donate")
+	if ds then
+		local ok, page = pcall(function()
+			return ds:GetSortedAsync(false, 10):GetCurrentPage()
+		end)
+		if ok and type(page) == "table" then
+			for _, e in ipairs(page) do
+				if (tonumber(e.value) or 0) > 0 then
+					table.insert(rows, { name = Board.name(tonumber(e.key) or 0), amount = e.value })
+				end
+			end
+		end
+	end
+	Donate.cache, Donate.at = rows, os.clock()
+	return rows
+end
 local Product = {}
 function Product.give(player: Player, p: Profile, it: any)
 	local g = it.give
-	if g.coins then
+	if g.donate then
+		-- 3.99.32판 후원: 힘은 주지 않는다. 고맙다는 말 · 이름 앞 💝 · 후원 순위
+		p.donated = (p.donated or 0) + g.donate
+		Push:FireAllClients("toast", string.format("💝 %s님이 %s (R$ %d) 을(를) 후원했어요! 고맙습니다", player.DisplayName, it.name, it.price))
+		task.spawn(function()
+			local ds = Board.store("donate")
+			if ds then
+				pcall(function()
+					ds:SetAsync(tostring(player.UserId), p.donated)
+				end)
+			end
+		end)
+		Donate.cache = nil
+	elseif g.coins then
 		local n = Config.productCoins((Calc.realm(p))) * g.coins
 		p.coins += n
 		toast(player, string.format("💰 은자 %s을(를) 받았어요", Config.formatNumber(n)))
@@ -7611,6 +7655,11 @@ if Marketplace then
 			end
 			local it: any = nil
 			for _, x in ipairs(Config.PRODUCTS) do
+				if x.productId > 0 and x.productId == info.ProductId then
+					it = x
+				end
+			end
+			for _, x in ipairs(Config.DONATIONS) do
 				if x.productId > 0 and x.productId == info.ProductId then
 					it = x
 				end

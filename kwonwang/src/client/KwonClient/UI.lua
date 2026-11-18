@@ -803,7 +803,7 @@ local pages: { [string]: Frame } = {}
 local refreshers: { [string]: (boolean?) -> () } = {}
 local current = ""
 local state: any = nil
-local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", forge = "⚒ 권법 제작소", disciple = "🧑‍🎓 문하생", manuscripts = "📜 무공 비급", ach = "🏆 업적과 칭호", dex = "📖 도감" }
+local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", forge = "⚒ 권법 제작소", disciple = "🧑‍🎓 문하생", manuscripts = "📜 무공 비급", donate = "💝 후원", ach = "🏆 업적과 칭호", dex = "📖 도감" }
 
 local function makePage(name: string): Frame
 	local f = new("Frame", { Position = UDim2.new(0, 16, 0, 56), Size = UDim2.new(1, -32, 1, -68), BackgroundTransparency = 1, Visible = false, Parent = window })
@@ -1745,7 +1745,11 @@ end
 UI.setShopTab = setShopTab
 function UIB.buildShop()
 	local page = makePage("shop")
-	local head = text({ Size = UDim2.new(1, -12, 0, 26), TextSize = 16, Font = Enum.Font.GothamBold, TextColor3 = C.gold, Parent = page })
+	local head = text({ Size = UDim2.new(1, -140, 0, 26), TextSize = 16, Font = Enum.Font.GothamBold, TextColor3 = C.gold, Parent = page })
+	-- 3.99.32판 후원 창
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -4, 0, 0), Size = UDim2.new(0, 120, 0, 28), Text = "💝 후원", TextSize = 15, BackgroundColor3 = Color3.fromRGB(200, 70, 110), Parent = page }, function()
+		UI.openPage("donate")
+	end)
 	local tabRow = new("Frame", { Position = UDim2.new(0, 0, 0, 30), Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1, Parent = page }, {
 		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
 	})
@@ -2205,6 +2209,45 @@ function UI.manualReveal(results: { any })
 	Gacha.play(results, function()
 		UI.openPage("shop", { tab = "manuals" })
 	end)
+end
+
+------------------------------------------------------------------------
+-- 3.99.32판 후원: 힘은 오르지 않는다. 이름 앞에 💝, 후원 순위에 이름이 오른다
+------------------------------------------------------------------------
+local donorLabel: TextLabel? = nil
+function UI.setDonors(list: any)
+	if not donorLabel then
+		return
+	end
+	local lines = {}
+	for i, row in ipairs(type(list) == "table" and list or {}) do
+		table.insert(lines, string.format("%d. %s  ·  R$ %s", i, tostring(row.name), Config.formatNumber(tonumber(row.amount) or 0)))
+	end
+	donorLabel.Text = #lines > 0 and table.concat(lines, "\n") or "아직 후원한 사람이 없다. 첫 이름이 되어 주세요"
+end
+function UIB.buildDonate()
+	local page = makePage("donate")
+	text({ Size = UDim2.new(1, 0, 0, 48), TextSize = 16, TextColor3 = Color3.fromRGB(255, 220, 200), TextYAlignment = Enum.TextYAlignment.Top, Text = "권왕을 아껴 주셔서 고맙습니다. 후원은 게임을 계속 만드는 데 쓰입니다. 힘은 오르지 않고, 이름 앞에 💝가 붙고 후원 순위에 이름이 오릅니다", Parent = page })
+	local left = scroller(page, UDim2.new(0.55, -6, 1, -56), UDim2.new(0, 0, 0, 54))
+	new("UIListLayout", { Padding = UDim.new(0, 8), Parent = left })
+	for _, d in ipairs(Config.DONATIONS) do
+		local card = new("Frame", { Size = UDim2.new(1, -12, 0, 64), BackgroundColor3 = Color3.fromRGB(56, 30, 40), Parent = left }, { corner(10), stroke(Color3.fromRGB(255, 150, 180), 1.2) })
+		text({ Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(0, 48, 1, 0), Text = d.icon, TextSize = 32, TextXAlignment = Enum.TextXAlignment.Center, Parent = card })
+		text({ Position = UDim2.new(0, 66, 0, 0), Size = UDim2.new(1, -230, 1, 0), Text = d.name, TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 225, 235), Parent = card })
+		button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0), Size = UDim2.new(0, 150, 0, 44), Text = d.productId > 0 and ("💝 R$ " .. d.price) or "준비 중", TextSize = 18, BackgroundColor3 = d.productId > 0 and Color3.fromRGB(220, 80, 120) or C.panel, Parent = card }, function()
+			Request:FireServer("productBuy", d.id)
+		end)
+	end
+	local right = new("Frame", { Position = UDim2.new(0.55, 6, 0, 54), Size = UDim2.new(0.45, -6, 1, -56), BackgroundColor3 = Color3.fromRGB(40, 24, 30), Parent = page }, { corner(10), stroke(Color3.fromRGB(255, 150, 180), 1.2) })
+	text({ Position = UDim2.new(0, 12, 0, 8), Size = UDim2.new(1, -24, 0, 28), Text = "💝 후원 순위", TextSize = 21, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 200, 220), Parent = right })
+	local mine = text({ Position = UDim2.new(0, 12, 0, 38), Size = UDim2.new(1, -24, 0, 22), TextSize = 15, TextColor3 = C.dim, Parent = right })
+	donorLabel = text({ Position = UDim2.new(0, 12, 0, 66), Size = UDim2.new(1, -24, 1, -74), TextSize = 16, TextYAlignment = Enum.TextYAlignment.Top, Text = "불러오는 중...", Parent = right })
+	refreshers.donate = function(fresh: boolean?)
+		mine.Text = string.format("내 후원: R$ %s", Config.formatNumber((state and state.donated) or 0))
+		if fresh then
+			Request:FireServer("donors")
+		end
+	end
 end
 
 ------------------------------------------------------------------------
@@ -5316,6 +5359,7 @@ function UI.init(req: RemoteEvent)
 	UIB.buildForge()
 	UIB.buildDisciple()
 	UIB.buildManuscripts()
+	UIB.buildDonate()
 	UIB.buildHelp()
 	UIB.buildTest()
 	UIB.buildMap()

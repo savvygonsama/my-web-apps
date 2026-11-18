@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.31" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.32" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7676,6 +7676,40 @@ function Config.refineCost(r: any, lv: number): any
 		mats[id] = math.max(1, math.ceil(n * k))
 	end
 	return { shards = math.max(1, math.ceil(r.shards * k)), gems = math.ceil(r.gems * k / 10) * 10, coinShares = math.max(1, math.ceil(r.coinShares * k)), mats = mats }
+end
+
+------------------------------------------------------------------------
+-- 3.99.32판 기술 딜레이 손보기: E · R 이 늦게 터지거나 몸이 오래 묶이던 것
+--   · 장치가 터지기까지 0.38초 넘게 걸리던 E · R 은 0.38초로 (화천붕 · 천근추 · 낙석추 · 폭염륜 · 풍압 · 천제의 창 등)
+--   · 장치가 따로 도는 기술 (장판 · 충격 · 부채꼴 · 줄 · 표적 · 길 · 낙하 · 띄우기) 은 몸이 묶이는 시간을 0.95초까지만
+--     (장치는 그대로 이어서 돈다. 몸을 옮기는 기술 · 붙잡기 · 연쇄는 건드리지 않는다)
+------------------------------------------------------------------------
+do
+	local FREE = { zone = true, shock = true, cone = true, line = true, targets = true, trail = true, drop = true, launch = true, flameRing = true, freeze = true, storm = true }
+	for _, st in ipairs(Config.Styles) do
+		for _, slot in ipairs({ "E", "R" }) do
+			local mv = st.skills and st.skills[slot]
+			local m = mv and mv.mech
+			if m and type(m.delay) == "number" and m.delay > 0.4 and not m.steps then
+				m.delay = 0.38
+			end
+			if mv and m and FREE[m.kind] and mv.dur and mv.dur > 0.95 then
+				mv.dur = 0.95
+			end
+		end
+	end
+end
+
+-- 3.99.32판 후원: 개발자 상품 (productId = 로블록스 사이트에서 만든 번호, 0이면 '준비 중'). 힘은 오르지 않는다. 이름 앞에 💝, 후원 순위
+Config.DONATIONS = {
+	{ id = "don25", productId = 0, price = 25, icon = "🍵", name = "차 한 잔", give = { donate = 25 } },
+	{ id = "don100", productId = 0, price = 100, icon = "🍶", name = "술 한 병", give = { donate = 100 } },
+	{ id = "don500", productId = 0, price = 500, icon = "🏮", name = "등불 하나", give = { donate = 500 } },
+	{ id = "don1000", productId = 0, price = 1000, icon = "🏯", name = "전각 기둥 하나", give = { donate = 1000 } },
+	{ id = "don5000", productId = 0, price = 5000, icon = "🐉", name = "용의 비늘", give = { donate = 5000 } },
+}
+for _, d in ipairs(Config.DONATIONS) do
+	Config.PRODUCT_BY_ID[d.id] = d
 end
 
 return Config
