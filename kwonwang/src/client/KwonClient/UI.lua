@@ -992,7 +992,9 @@ function UIB.buildStyles()
 			table.insert(lines, "")
 			local fname, fdesc = Config.geukForm(s)
 			table.insert(lines, string.format('<font color="#FF9A5A"><b>%s</b></font>  %s. 연타·강타 ×%.1f', fname, fdesc, s.twilight.dmg or 1))
-			table.insert(lines, string.format('<font color="#FF9A5A"><b>Z 강타</b></font>  %s', s.twilight.heavy.name))
+			if s.twilight.heavy then
+				table.insert(lines, string.format('<font color="#FF9A5A"><b>Z 강타</b></font>  %s', s.twilight.heavy.name))
+			end
 			for _, slot in ipairs({ "E", "R", "G", "X" }) do
 				local sk = s.twilight.skills[slot]
 				if sk then

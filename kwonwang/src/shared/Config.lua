@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.43" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.44" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7516,9 +7516,9 @@ do
 					{ t = 0.12, shape = "line", at = "self", length = 30, width = 7, vfx = "inkLash", hit = hit(0, 0, 0, 80, 70, 0.7, 10) },
 					{ t = 0.5, at = "each", n = 3, range = 26, radius = 6, vfx = "inkBind", hit = hit(0, 0, 0, 90, 90, 0.9, 30, 12) },
 				}) },
-			R = { id = "hdR", name = "묵마천행", desc = "먹 줄기가 쉬지 않고 엉키며 그려 내는 천마를 타고 세 번 박차 30칸을 내달린다 (그동안 무적). 발굽마다 먹이 튀어 적을 베고, 마지막에 앞발을 들어 내리찍으면 먹이 사방으로 터진다", pose = "void_sink", dur = 1.3, cd = 9, chi = 26,
-				mech = { kind = "forgeSeq", iframes = true, steps = {
-					{ t = 0.05, shape = "circle", at = "self", radius = 1, life = 1.3, vfx = "inkSteed" },
+			R = { id = "hdR", name = "묵마천행", desc = "먹 줄기가 쉬지 않고 엉키며 그려 내는 천마를 타고 세 번 박차 30칸을 내달린다 (그동안 무적). 발굽마다 먹이 튀어 적을 베고, 앞발을 들어 내리찍으면 먹이 사방으로 터진다. 그 뒤로도 5초 동안 먹 말을 탄 채 두 배 빠르게 내달리며 둘레를 친다", pose = "void_sink", dur = 1.3, cd = 9, chi = 26,
+				mech = { kind = "forgeSeq", iframes = true, afterRide = { dur = 5, every = 0.4, radius = 9, walk = 2, hit = hit(0, 0, 0, 10, 12, 0.25, 10, 4) }, steps = {
+					{ t = 0.05, shape = "circle", at = "self", radius = 1, life = 6.3, vfx = "inkSteed" },
 					{ t = 0.25, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkHoof", hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
 					{ t = 0.5, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkHoof", hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
 					{ t = 0.75, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkHoof", hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
@@ -7532,10 +7532,10 @@ do
 					{ t = 1.6, shape = "circle", at = "self", radius = 30, pull = 30, vfx = "inkTendrils", hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
 					{ t = 2.1, shape = "circle", at = "self", radius = 34, vfx = "inkCore", big = true, hit = hit(0, 0, 0, 270, 300, 1.6, 60, 30) },
 				}) },
-			X = { id = "hdX", name = "천지미분", desc = "초 오의 (그동안 무적). 하늘의 먹이 한데 엉켜 산만 한 천마가 되고, 그 등에 올라타 내달린다. 먹의 용이 네 번 적 여덟에게 내리꽂히고, 마지막에 모든 먹이 한 점으로 삼켜졌다가 둘레 46칸이 금빛으로 터진다", pose = "ult_star", dur = 3.6, cd = 55, chi = 150, armor = true,
-				mech = { kind = "forgeSeq", iframes = true, ride = { hip = 17, from = 0.1, dur = 2.9 }, steps = {
+			X = { id = "hdX", name = "천지미분", desc = "초 오의 (그동안 무적). 하늘의 먹이 한데 엉켜 산만 한 천마가 되고, 그 등에 올라타 내달린다. 먹의 용이 네 번 적 여덟에게 내리꽂히고, 모든 먹이 한 점으로 삼켜졌다가 둘레 46칸이 금빛으로 터진다. 그 뒤로도 5초 동안 거대한 먹 말을 탄 채 내달리며 둘레를 짓밟는다", pose = "ult_star", dur = 3.6, cd = 55, chi = 150, armor = true,
+				mech = { kind = "forgeSeq", iframes = true, ride = { hip = 17, from = 0.1, dur = 7.9 }, afterRide = { dur = 5, every = 0.4, radius = 16, walk = 2.2, vfx = "inkRear", hit = hit(0, 0, 0, 18, 20, 0.3, 14, 6) }, steps = {
 					{ t = 0.05, shape = "circle", at = "self", radius = 46, life = 3.3, vfx = "inkHeaven" },
-					{ t = 0.1, shape = "circle", at = "self", radius = 1, life = 2.9, big = true, ride = true, form = true, vfx = "inkSteed" },
+					{ t = 0.1, shape = "circle", at = "self", radius = 1, life = 7.9, big = true, ride = true, form = true, vfx = "inkSteed" },
 					{ t = 0.5, dash = 10, at = "each", n = 8, range = 32, radius = 7, vfx = "inkDragonDive", hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
 					{ t = 1.0, dash = 10, at = "each", n = 8, range = 32, radius = 7, vfx = "inkDragonDive", hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
 					{ t = 1.5, dash = 10, at = "each", n = 8, range = 32, radius = 7, vfx = "inkDragonDive", hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },

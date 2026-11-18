@@ -3015,7 +3015,10 @@ RunService.RenderStepped:Connect(function()
 	}
 	local twilightNow = char:GetAttribute("Twilight") == true
 	if twilightNow and style.twilight then
-		info.H.name = style.twilight.heavy.name
+		-- 3.99.44판: 강타가 바뀌지 않는 모습 (혼돈화신) 도 있다 (예전엔 여기서 멈춰 아래 표시가 0 그대로 굳었다)
+		if style.twilight.heavy then
+			info.H.name = style.twilight.heavy.name
+		end
 		if style.twilight.combo and style.twilight.combo[1] then
 			info.M1.name = style.twilight.combo[1].name
 		end

@@ -776,6 +776,34 @@ function Skills.run(f: any, move: any, ctx: any)
 		end
 		-- 3.99.23판 제작소 권법 (forgeSeq): 같은 연쇄에 연출 이름 (vfx) 을 실어 보낸다. at = "each" 면 가까운 적 n 마다 따로 터진다 (한 적은 한 번만)
 		Push:FireAllClients("skillfx", { kind = forged and "forgeStart" or "sinStart", m = f.model, dur = total / sp, style = style, mid = move.id })
+		-- 3.99.44판: 기술이 끝난 뒤에도 먹 말을 탄 채 내달린다 (걸음이 빨라지고, 둘레에 먹이 튀며 계속 친다)
+		if forged and m.afterRide then
+			local A = m.afterRide
+			local h = scaled(A.hit, sc)
+			after(total, function()
+				local prev = f.hasteMul
+				f.hasteMul = A.walk
+				task.spawn(function()
+					local n = math.floor(A.dur / A.every)
+					for i = 1, n do
+						task.wait(A.every / sp)
+						if not alive() then
+							break
+						end
+						local at = f.root.Position
+						if i % 2 == 1 then
+							Push:FireAllClients("skillfx", { kind = "forgeStep", m = f.model, vfx = A.vfx or "inkHoof", shape = "circle", at = at, from = at, dir = flat(Combat.look(f)), radius = A.radius, style = style })
+						end
+						for _, o in ipairs(hostilesNear(f, at, A.radius)) do
+							strike(f, o, h, move)
+						end
+					end
+					if f.hasteMul == A.walk then
+						f.hasteMul = prev
+					end
+				end)
+			end)
+		end
 		-- 3.99.41판: 타는 기술 (천지미분) 은 그동안 몸을 들어 올린다 (거대한 말의 등 위)
 		if forged and m.ride and f.hum then
 			local R = m.ride
