@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.32" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.33" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4461,11 +4461,13 @@ function Config.powerGap(ratio: number, boss: boolean?): (number, boolean, boole
 end
 -- 3.84판 권법 인플레이션: 후반 플레이어는 등급 말고도 각성 (×1.55) · 숙련 20 · 깨달음 · 심법 · 환생 특전으로 계산보다 훨씬 세다.
 -- 그 땅의 적 (그 경지의 적 전투력으로 가른다) 체력 · 피해를 그만큼 키운다. 경지 번호 → { 체력, 피해 }
+-- 3.99.33판: 제작소 권법 (신 · 권왕 + 정련 30%) · 비급 권법 · 별 단계로 후반이 다시 세져 사경 (9) 부터 한 번 더 키운다
+--   사경 ~ 생사경 체력 ×1.1, 신화경 ~ 천인합일 체력 ×1.2 · 피해 ×1.05, 무극부터 체력 ×1.3 · 피해 ×1.12
 Config.INFLATION = {
 	{ 1, 1 }, { 1, 1 }, { 1, 1 }, { 1, 1 }, { 1.1, 1 }, { 1.1, 1 }, { 1.12, 1 }, { 1.15, 1 },
-	{ 1.3, 1.08 }, { 1.35, 1.08 }, { 1.4, 1.1 }, { 1.45, 1.1 },
-	{ 1.65, 1.15 }, { 1.7, 1.15 }, { 1.75, 1.18 }, { 1.8, 1.2 },
-	{ 1.9, 1.22 }, { 1.9, 1.22 }, { 1.95, 1.25 }, { 2, 1.25 }, { 2, 1.25 }, { 2, 1.25 },
+	{ 1.43, 1.08 }, { 1.49, 1.08 }, { 1.68, 1.16 }, { 1.74, 1.16 },
+	{ 2.15, 1.29 }, { 2.21, 1.29 }, { 2.28, 1.32 }, { 2.34, 1.34 },
+	{ 2.47, 1.37 }, { 2.47, 1.37 }, { 2.54, 1.4 }, { 2.6, 1.4 }, { 2.6, 1.4 }, { 2.6, 1.4 },
 }
 -- 3.87판 이승 · 천상 · 지옥의 세기 차이 (같은 경지 적이라도 하늘은 더, 지옥은 훨씬 세다). 지옥 보스는 모든 보스 가운데 가장 세다
 Config.AREA = {
@@ -5963,7 +5965,8 @@ Config.LATE_BOSS_MATCH = 0.75 -- 2.3판: 후반 보스는 훨씬 센 상대에�
 Config.LATE_BOSS_DMG = 1.56 -- 후반 보스 (빙마부터 천상계까지)의 공격력 배율 (1.0판: 0.45 → 0.52). 2.7.1판: 3배 (0.52 → 1.56)
 Config.BOSS_LEASH = 480 -- 3.25판: 340 → 480 (보스의 영역을 넓혔다)
 Config.BOSS_PATTERN = { warn = 1.9, cd = 1.6, area = 1.3, length = 1.2, width = 1.25, hit = 1.15 } -- 3.25.3판: 경고 ×1.4 → ×1.9 · 대기 ×1.3 → ×1.6 · 한 방 ×1.1 → ×1.15
-Config.BOSS_ZONE = { arena = 92, clear = 135 } -- 3.47판: 78 · 120 → 92 · 135 (보스전 마당을 넓혔다). -- 보스 마당 (바닥에 그려진다) 반지름 · 이 안쪽 +40칸에는 보통 적을 두지 않는다 -- 보스가 자기 자리에서 이만큼 끌려 나와야 돌아간다 (보통 적은 150)
+Config.BOSS_ZONE = { arena = 120, clear = 170 } -- 3.99.33판: 92 · 135 → 120 · 170 (보스가 커진 만큼 마당도). 하늘 섬에서는 섬 끝을 넘지 않게 줄인다 (World.bossArenas)
+-- -- 3.47판: 78 · 120 → 92 · 135 (보스전 마당을 넓혔다). -- 보스 마당 (바닥에 그려진다) 반지름 · 이 안쪽 +40칸에는 보통 적을 두지 않는다 -- 보스가 자기 자리에서 이만큼 끌려 나와야 돌아간다 (보통 적은 150)
 Config.BOSS_CHASE = 200 -- 상대가 이만큼 멀어져야 보스가 쫓기를 그만둔다
 -- 흡혈 한도: 거대한 체력의 보스를 치면 한 대에 다 차던 것을 막는다
 Config.LIFESTEAL_HIT_CAP = 0.015 -- 한 대에 최대 체력의 이만큼까지
@@ -7295,6 +7298,13 @@ do
 	for _, def in pairs(Config.Bosses) do
 		if def.hiddenBoss and (def.hbLayer == "sky" or def.hbLayer == "hell") then
 			grow(def)
+		end
+	end
+	-- 3.99.33판: 이승 (땅) 의 보스도 1.4배 크게 (천상 · 지옥 보스는 이미 두 배)
+	for _, def in pairs(Config.Bosses) do
+		if not done[def] then
+			done[def] = true
+			def.scale = math.min(7, (def.scale or 1.5) * 1.4)
 		end
 	end
 end
@@ -39985,24 +39995,33 @@ local function bossArenas(_out: any)
 	f.Name = "BossArenas"
 	f.Parent = folder
 	local Z = Config.BOSS_ZONE
-	local R = Z.arena
-	local spots: { Vector3 } = {}
+	local spots: { { any } } = {}
+	-- 3.99.33판: 마당을 넓혔다. 섬 · 지옥 땅에서는 끝을 넘지 않게 (적어도 60칸)
+	local function fit(at: Vector3, area: any): number
+		if area and area.radius and (area.at or area.center) then
+			local c0 = area.at or area.center
+			local d = Vector3.new(at.X - c0.X, 0, at.Z - c0.Z).Magnitude
+			return math.clamp(area.radius - d - 10, 60, Z.arena)
+		end
+		return Z.arena
+	end
 	for _, r in ipairs(Config.Regions) do
 		if r.boss then
-			table.insert(spots, r.boss.at)
+			table.insert(spots, { r.boss.at, Z.arena })
 		end
 	end
 	for _, isl in ipairs(Config.SKY.islands) do
 		if isl.boss then
-			table.insert(spots, isl.boss.at)
+			table.insert(spots, { isl.boss.at, fit(isl.boss.at, isl) })
 		end
 	end
 	for _, zz in ipairs(Config.HELL.zones or {}) do
 		if zz.boss then
-			table.insert(spots, zz.boss.at)
+			table.insert(spots, { zz.boss.at, fit(zz.boss.at, zz) })
 		end
 	end
-	for _, at in ipairs(spots) do
+	for _, sp in ipairs(spots) do
+		local at, R = sp[1], sp[2]
 		local c = Vector3.new(at.X, at.Y + 0.3, at.Z)
 		local floor = part({ Name = "BossFloor", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, R * 2, R * 2), CFrame = CFrame.new(c) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(46, 36, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = f })
 		floor.Transparency = 0.12

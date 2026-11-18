@@ -7503,24 +7503,33 @@ local function bossArenas(_out: any)
 	f.Name = "BossArenas"
 	f.Parent = folder
 	local Z = Config.BOSS_ZONE
-	local R = Z.arena
-	local spots: { Vector3 } = {}
+	local spots: { { any } } = {}
+	-- 3.99.33판: 마당을 넓혔다. 섬 · 지옥 땅에서는 끝을 넘지 않게 (적어도 60칸)
+	local function fit(at: Vector3, area: any): number
+		if area and area.radius and (area.at or area.center) then
+			local c0 = area.at or area.center
+			local d = Vector3.new(at.X - c0.X, 0, at.Z - c0.Z).Magnitude
+			return math.clamp(area.radius - d - 10, 60, Z.arena)
+		end
+		return Z.arena
+	end
 	for _, r in ipairs(Config.Regions) do
 		if r.boss then
-			table.insert(spots, r.boss.at)
+			table.insert(spots, { r.boss.at, Z.arena })
 		end
 	end
 	for _, isl in ipairs(Config.SKY.islands) do
 		if isl.boss then
-			table.insert(spots, isl.boss.at)
+			table.insert(spots, { isl.boss.at, fit(isl.boss.at, isl) })
 		end
 	end
 	for _, zz in ipairs(Config.HELL.zones or {}) do
 		if zz.boss then
-			table.insert(spots, zz.boss.at)
+			table.insert(spots, { zz.boss.at, fit(zz.boss.at, zz) })
 		end
 	end
-	for _, at in ipairs(spots) do
+	for _, sp in ipairs(spots) do
+		local at, R = sp[1], sp[2]
 		local c = Vector3.new(at.X, at.Y + 0.3, at.Z)
 		local floor = part({ Name = "BossFloor", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, R * 2, R * 2), CFrame = CFrame.new(c) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(46, 36, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = f })
 		floor.Transparency = 0.12
