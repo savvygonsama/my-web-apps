@@ -72,6 +72,8 @@ type Profile = {
 	mqv: number?, -- 3.74판: 부탁 기록의 판 (부탁이 길어지기 전에 다 끝낸 사람은 끝난 그대로)
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
 	enh: { [string]: number }?, -- 3.41판 게임패스 권법의 강화 단계 (0 ~ 15)
+	attDay: number?, -- 3.99.27판 출석: 마지막으로 받은 날 (한국 시각 날짜 번호)
+	attStreak: number?, -- 3.99.27판 출석: 이어서 들어온 날 수
 	lastSeen: number?, -- 3.99.26판: 마지막으로 저장한 때 (os.time, 자리를 비운 동안의 수련)
 	shards: number?, -- 3.41판 비급 조각 (강화 재료, 보스가 떨어뜨린다)
 	receipts: { string }?, -- 3.40판: 이미 준 개발자 상품 영수증 (최근 50개. 같은 구매를 두 번 주지 않게)
@@ -280,6 +282,8 @@ local function sanitize(data: any): Profile
 	end
 	p.shards = math.floor(num(data.shards, 1e6))
 	p.lastSeen = math.floor(num(data.lastSeen, 1e11))
+	p.attDay = math.floor(num(data.attDay, 1e7))
+	p.attStreak = math.floor(num(data.attStreak, 1e6))
 	-- 3.40판 개발자 상품 영수증
 	p.receipts = {}
 	if type(data.receipts) == "table" then
@@ -7404,6 +7408,44 @@ local function onPlayerAdded(player: Player)
 					end)
 				end
 			end
+		end
+	end
+	-- 3.99.27판 출석: 하루에 한 번 (한국 시각 자정에 바뀐다). 이어서 들어올수록 크고 일곱째 날이 가장 크다. 하루라도 빠지면 첫날부터
+	if not BATTLE and ok then
+		local A = Config.ATTEND
+		local today = math.floor((os.time() + A.tz) / 86400)
+		local lastDay = profile.attDay or 0
+		if today > lastDay then
+			local streak = (lastDay == today - 1) and ((profile.attStreak or 0) + 1) or 1
+			profile.attDay, profile.attStreak = today, streak
+			local day = (streak - 1) % #A.days + 1
+			local rw = A.days[day]
+			local idx = Calc.realm(profile)
+			local got = {}
+			if rw.coins then
+				local c = rw.coins * Config.productCoins(idx)
+				profile.coins += c
+				table.insert(got, "💰 " .. Config.formatNumber(c))
+			end
+			if rw.shards then
+				profile.shards = (profile.shards or 0) + rw.shards
+				table.insert(got, "🧩 " .. rw.shards)
+			end
+			if rw.scrolls then
+				profile.scrolls += rw.scrolls
+				table.insert(got, "📜 " .. rw.scrolls)
+			end
+			if rw.gems then
+				profile.skyGems += rw.gems
+				table.insert(got, "💠 " .. Config.formatNumber(rw.gems))
+			end
+			st.dirty = true
+			task.delay(7, function()
+				if player.Parent then
+					toast(player, string.format("📅 출석 %d일째 (이어서 %d일) · %s", day, streak, table.concat(got, "  ")))
+					Push:FireClient(player, "attend", { day = day, streak = streak, total = #A.days })
+				end
+			end)
 		end
 	end
 	if not BATTLE and ok then

@@ -2283,6 +2283,12 @@ function handlers.breakthrough(data: any)
 	Fx.sound("ping", 1, 0.7)
 end
 
+-- 3.99.27판 출석: 가운데에 크게 (일곱째 날은 금빛)
+function handlers.attend(data: any)
+	local seventh = data.day == data.total
+	UI.banner(string.format("📅 출석 %d일째", data.day), seventh and "일곱째 날 · 가장 큰 보상" or string.format("이어서 %d일 · 일곱째 날이 가장 크다", data.streak), seventh and Color3.fromRGB(255, 210, 110) or Color3.fromRGB(150, 220, 255))
+end
+
 -- 3.99.23판 권법 제작소: 벼린 순간 단로에서 불기둥이 솟는다
 function handlers.forged(data: any)
 	local st = Config.STYLE_BY_ID[data.style or ""]

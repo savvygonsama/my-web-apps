@@ -4841,4 +4841,8 @@ return {
 	["🧘 자리를 비운 %s 동안 몸이 스스로 수련했다 · 능력치 +%s"] = "🧘 While you were away for %s your body trained on its own · stats +%s",
 	["%d시간 %d분"] = "%dh %dm",
 	["%d분"] = "%dm",
+	["📅 출석 %d일째 (이어서 %d일) · %s"] = "📅 Day %d check-in (%d days in a row) · %s",
+	["📅 출석 %d일째"] = "📅 Day %d check-in",
+	["일곱째 날 · 가장 큰 보상"] = "Day seven · the biggest reward",
+	["이어서 %d일 · 일곱째 날이 가장 크다"] = "%d days in a row · day seven is the biggest",
 }
