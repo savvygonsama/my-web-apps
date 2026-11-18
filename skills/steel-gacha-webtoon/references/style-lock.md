@@ -60,6 +60,29 @@ No text, no labels.
 ## 앱 쪽에서 맞추는 것
 `scripts/add_episode.py`가 모든 컷을 같은 폭(1000px)·WebP로 맞춘다. 비율이 다른 컷이 섞여도 뷰어는 세로로 이어 보여 주지만, 가능하면 모든 컷을 2:3으로 받는다.
 
+## Gemini 무료판으로 그릴 때 (8화부터)
+- **기준 이미지 묶음**(앱 저장소에서 만든 PNG): 01 다섯 단체(`webtoon/s00-1`), 02 완성 컷 견본실(`webtoon/ep07-1`), 03~07 캐릭터 시트(`webtoon/s00-po`·`ssial`·`dogeum`·`eg`·`tarae`), 08 빈 2:3 캔버스. Gemini는 글보다 첨부 이미지를 더 강하게 따른다. 매 화 새 채팅 첫 메시지에 01·02와 그 화 등장 캐릭터 시트를 첨부하고, 3~4장마다 01을 다시 첨부한다.
+- **Gem**: 「스틸가챠s 작화」 Gem의 지침에 STYLE LOCK G1과 캐릭터 문장을 넣는다(무료 계정에 Gem이 없으면 매 채팅 첫 메시지에 붙여 넣는다).
+- **Gemini에서 잘 생기는 흔들림과 막는 문장**: 선이 굵어짐 → "lines thinner, like the anchor"; 채도·대비 상승 → "tone colors down to the anchor's soft muted colors"; 광택·그림자·3D → "flat cel colors only, remove all shading and shine"; 정사각형 → 08 빈 캔버스를 첨부하고 "draw on this 2:3 canvas"; 한글 깨짐 → 빈 말풍선으로 받고 글자는 따로 넣는다.
+- **한 메시지에 한 장면**: 무료판은 한 번에 한 장이 기본이고 하루 생성 횟수 제한이 있다. 한 화를 하루에 다 못 뽑을 수 있으니 일정을 넉넉히 잡는다.
+- **첫 보정 테스트**: 새 Gem에서 01을 첨부해 "포오와 씨알이 견본실에서 차를 마시는 한 장"을 먼저 그려 보고, 아래 체크리스트로 02와 나란히 비교한다. 맞을 때까지 고친 뒤 본편을 시작한다.
+
+### STYLE LOCK G1 (Gemini용, 글자 그대로 붙여 넣기)
+```
+STYLE LOCK G1 — apply to EVERY image in this webtoon.
+1. REFERENCE FIRST: the attached STYLE ANCHOR images are the absolute standard. Copy their line weight, colors, proportions, face style and amount of detail exactly. If my words and the anchor disagree, follow the anchor.
+2. LINES: one uniform, thin-to-medium dark charcoal outline (#2B2F36), about 4 px wide on a 1024 px image, the SAME weight on characters and background. NOT thick, NOT bold marker lines, no brush-pressure variation, no sketchy or double lines.
+3. COLOR: flat cel colors only, soft and slightly muted, close to pastel. Do NOT raise saturation or contrast. No gradients, no gloss, no metallic shine, no highlights, no rim light, no airbrush, no texture or grain, no 3D rendering. The only shadow is one soft flat oval under the feet.
+4. PALETTE (keep exactly): PO vest #BE473D, SSIAL vest #2A6DA8, DOGEUM vest #7C5D91, DOGEUM body #B9B2A8, EG teal #2A8F96, EG grey #A3A9B0, TARAE wire #5F646B, silver body #C5CBD2, face plate #EEF0F2, outline #2B2F36.
+5. LIGHT: calm daylight. Background lighter and less saturated than the characters. No colored mood lighting on the characters; at night only the window gets dark.
+6. PROPORTIONS: chibi about 2.2 heads tall, big head, mitten hands with no fingers, stubby legs. Faces: small solid black dot eyes, one short simple mouth line, light face plate. No realistic anatomy, no detailed shiny anime eyes.
+7. CAMERA: default waist-up medium shot, characters fill 55-70% of the image height. Simple background with at most 5 props.
+8. FORMAT: ONE single full-bleed PORTRAIT image, ratio 2:3 (1024x1536). Never square, never landscape, never several panels, no borders, no frames, no captions, no signature.
+9. TEXT: clean white speech bubbles with black text only where I give it. No other text, logos or brand names. If you cannot write the Korean text exactly, leave the bubble EMPTY instead of writing wrong letters.
+10. CHARACTERS: never redesign; copy the attached character sheets; never mix features between characters. All characters are genderless; refer to them only by name.
+11. CONSISTENCY: every image must look like the next page of the same webtoon as the anchor, drawn by the same artist on the same day.
+```
+
 ## 같은 사물이 여러 장면에 나올 때 (4화 우산에서 배운 것)
 - **형태를 번호 매긴 문장으로 [0]에 못 박는다**: 손잡이 하나, 살 정확히 4개(좌 2·우 2), 천 없음, 머리는 꼭대기 한가운데. "LOCKED, IDENTICAL IN EVERY SCENE"을 대문자로 쓴다.
 - **정의 장면을 하나 정한다**: 그 사물만 크게, 정면, 전신으로 그리는 장면(4화는 4컷). 이후 장면은 "copy it exactly from scene N"으로 그 장면을 가리킨다.
