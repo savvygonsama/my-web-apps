@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.37" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.38" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7487,8 +7487,8 @@ do
 		id = "hondon", name = "혼돈개천권", hanja = "混沌開天拳", icon = "🌌", grade = "신", fx = "void",
 		color = Color3.fromRGB(235, 235, 245), color2 = Color3.fromRGB(255, 214, 120),
 		palette = { Color3.fromRGB(16, 16, 20), Color3.fromRGB(248, 248, 252), Color3.fromRGB(255, 210, 110) },
-		desc = "무극신권이 끝에 닿은 자리. 무극 이전, 흑과 백이 아직 나뉘지 않은 혼돈을 주먹에 담았다. 먹으로 천마를 빚어 타고 달리며, 손이 닿는 곳마다 세상이 다시 그려진다.",
-		gimmick = "혼돈체: 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 20% 짧음. 무극신권의 기술이 모두 한 단계 위로 올라섰다. R은 먹으로 빚은 천마를 타고 내달린다 (그동안 무적). 초 오의(X)가 있다",
+		desc = "무극신권이 끝에 닿은 자리. 하늘과 땅이 나뉘기 전, 먹이 쉬지 않고 엉키던 혼돈을 주먹에 담았다. 손이 닿는 곳마다 먹 줄기가 휘몰아쳐 감기고, 엉킨 먹이 천마가 되고 용이 된다.",
+		gimmick = "혼돈체: 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 20% 짧음. 맞힐 때마다 먹이 튄다. R은 엉킨 먹 줄기로 그린 천마를 타고 내달린다 (그동안 무적). 초 오의(X)가 있다",
 		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (무극신권을 익히고 여섯 번 모두 환생한 몸으로)",
 		deflect = 0.34, postureMult = 1.5, speed = 1.2, cdMult = 0.8, dashCd = 0.55, stance = "stance_mugeuk",
 		combo = {
@@ -7500,36 +7500,38 @@ do
 		heavy = { id = "hdH", name = "개천장", pose = "void_sink", dur = 0.62, lunge = 6, hits = { hit(0.3, 10, 9, 130, 140, 1.1, 70, 10, true) } },
 		finisher = { id = "hdF", name = "혼돈승천", pose = "void_push", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
 		skills = {
-			E = { id = "hdE", name = "음양혼돈구", desc = "검은 구슬과 흰 구슬이 서로 감아 돌며 앞으로 나아가 둘레의 적을 빨아들인다. 두 구슬이 하나로 합쳐지는 순간 안으로 무너지며 금빛으로 터진다", pose = "void_point", dur = 0.9, cd = 7, chi = 22,
+			-- 3.99.38판 새로: 먹 줄기가 엉키고 감기고 터지는 기술 넷
+			E = { id = "hdE", name = "묵사박", desc = "손끝에서 먹 줄기 일곱이 휘몰아치며 앞으로 26칸을 가른다. 가까운 적 셋에게 먹이 엉켜 감겼다가 한꺼번에 터진다", pose = "void_point", dur = 0.8, cd = 7, chi = 22,
 				mech = seq({
-					{ t = 0.3, shape = "circle", at = "front", dist = 14, radius = 10, pull = 30, vfx = "yinyang", hit = hit(0, 0, 0, 60, 60, 0.6, 0) },
-					{ t = 0.78, shape = "circle", at = "front", dist = 14, radius = 11, vfx = "implode", col = 3, hit = hit(0, 0, 0, 110, 110, 1.0, 40, 14) },
+					{ t = 0.12, shape = "line", at = "self", length = 26, width = 6, vfx = "inkLash", hit = hit(0, 0, 0, 80, 70, 0.7, 10) },
+					{ t = 0.5, at = "each", n = 3, range = 26, radius = 6, vfx = "inkBind", hit = hit(0, 0, 0, 90, 90, 0.9, 30, 12) },
 				}) },
-			R = { id = "hdR", name = "묵마천행", desc = "먹으로 천마를 빚어 올라탄다 (그동안 무적). 세 번 박차고 30칸을 내달리며 발굽마다 먹이 튀어 적을 베고, 마지막에 앞발을 들어 내리찍으면 먹의 물결이 둘레로 터진다", pose = "void_sink", dur = 1.3, cd = 9, chi = 26,
+			R = { id = "hdR", name = "묵마천행", desc = "먹 줄기가 쉬지 않고 엉키며 그려 내는 천마를 타고 세 번 박차 30칸을 내달린다 (그동안 무적). 발굽마다 먹이 튀어 적을 베고, 마지막에 앞발을 들어 내리찍으면 먹이 사방으로 터진다", pose = "void_sink", dur = 1.3, cd = 9, chi = 26,
 				mech = { kind = "forgeSeq", iframes = true, steps = {
-					{ t = 0.05, shape = "circle", at = "self", radius = 1, life = 1.3, vfx = "inkHorse" },
-					{ t = 0.25, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkSplash", col = 1, hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
-					{ t = 0.5, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkSplash", col = 1, hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
-					{ t = 0.75, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkSplash", col = 1, hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
-					{ t = 1.05, shape = "circle", at = "self", radius = 13, vfx = "inkStomp", col = 3, hit = hit(0, 0, 0, 70, 90, 1.0, 40, 16) },
+					{ t = 0.05, shape = "circle", at = "self", radius = 1, life = 1.3, vfx = "inkSteed" },
+					{ t = 0.25, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkHoof", hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
+					{ t = 0.5, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkHoof", hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
+					{ t = 0.75, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkHoof", hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
+					{ t = 1.05, shape = "circle", at = "self", radius = 13, vfx = "inkRear", hit = hit(0, 0, 0, 80, 90, 1.0, 40, 16) },
 				} } },
-			G = { id = "hdG", name = "혼돈태극", desc = "세상의 빛깔이 빠지고 발밑에 40칸 넓이의 태극이 그려진다. 태극이 돌며 둘레의 적을 세 번 가운데로 감아 들인다. 마지막에 흑과 백이 하나로 섞이며 금빛 새 하늘이 열린다", pose = "ult_taiji", dur = 2.5, cd = 28, chi = 100, armor = true,
+			G = { id = "hdG", name = "혼돈묵해", desc = "발밑에서 먹이 엉키며 둘레 26칸에 바다처럼 번진다. 먹 촉수가 세 번 솟아 적을 가운데로 감아 들이고, 마지막에 모든 먹이 한 점으로 모였다가 금빛으로 터진다", pose = "ult_taiji", dur = 2.4, cd = 28, chi = 100, armor = true,
 				mech = seq({
-					{ t = 0.4, shape = "circle", at = "self", radius = 26, pull = 40, life = 1.9, vfx = "taiji", hit = hit(0, 0, 0, 30, 40, 0.5, 0) },
-					{ t = 0.9, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "voidPulse", col = 1, hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
-					{ t = 1.3, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "voidPulse", col = 2, hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
-					{ t = 1.7, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "voidPulse", col = 1, hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
-					{ t = 2.2, shape = "circle", at = "self", radius = 28, vfx = "genesis", big = true, hit = hit(0, 0, 0, 260, 300, 1.6, 60, 30) },
+					{ t = 0.3, shape = "circle", at = "self", radius = 26, pull = 40, life = 2.1, vfx = "inkSea", hit = hit(0, 0, 0, 30, 40, 0.5, 0) },
+					{ t = 0.8, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "inkTendrils", hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
+					{ t = 1.2, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "inkTendrils", hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
+					{ t = 1.6, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "inkTendrils", hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
+					{ t = 2.1, shape = "circle", at = "self", radius = 28, vfx = "inkCore", big = true, hit = hit(0, 0, 0, 270, 300, 1.6, 60, 30) },
 				}) },
-			X = { id = "hdX", name = "태초이전", desc = "초 오의 (그동안 무적). 하늘만 한 먹의 천마를 타고 네 번 내달린다. 지나는 길마다 가까운 적의 둘레 공간이 깨진다. 마지막에 모든 것이 한 점으로 삼켜졌다가 둘레 40칸이 금빛으로 다시 태어난다", pose = "ult_star", dur = 3.8, cd = 55, chi = 150, armor = true,
+			X = { id = "hdX", name = "천지미분", desc = "초 오의 (그동안 무적). 하늘이 먹으로 엉키고, 하늘만 한 먹의 천마가 머리 위에서 함께 내달린다. 먹의 용이 네 번 적 여덟에게 내리꽂히고, 마지막에 모든 먹이 한 점으로 삼켜졌다가 둘레 40칸이 금빛으로 터진다", pose = "ult_star", dur = 3.6, cd = 55, chi = 150, armor = true,
 				mech = { kind = "forgeSeq", iframes = true, steps = {
-					{ t = 0.05, shape = "circle", at = "self", radius = 1, life = 2.4, big = true, vfx = "inkHorse" },
-					{ t = 0.5, dash = 12, at = "each", n = 8, range = 30, radius = 7, vfx = "shatter", col = 1, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
-					{ t = 1.0, dash = 12, at = "each", n = 8, range = 30, radius = 7, vfx = "inkSplash", col = 1, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
-					{ t = 1.5, dash = 12, at = "each", n = 8, range = 30, radius = 7, vfx = "shatter", col = 2, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
-					{ t = 2.0, dash = 12, at = "each", n = 8, range = 30, radius = 7, vfx = "inkSplash", col = 1, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
-					{ t = 2.7, shape = "circle", at = "self", radius = 40, pull = 50, vfx = "blackhole", col = 1, hit = hit(0, 0, 0, 40, 60, 0.6, 0) },
-					{ t = 3.3, shape = "circle", at = "self", radius = 40, vfx = "genesis", big = true, hit = hit(0, 0, 0, 420, 480, 1.8, 80, 30) },
+					{ t = 0.05, shape = "circle", at = "self", radius = 40, life = 3.3, vfx = "inkHeaven" },
+					{ t = 0.1, shape = "circle", at = "self", radius = 1, life = 2.6, big = true, vfx = "inkSteed" },
+					{ t = 0.5, dash = 10, at = "each", n = 8, range = 32, radius = 7, vfx = "inkDragonDive", hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
+					{ t = 1.0, dash = 10, at = "each", n = 8, range = 32, radius = 7, vfx = "inkDragonDive", hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
+					{ t = 1.5, dash = 10, at = "each", n = 8, range = 32, radius = 7, vfx = "inkDragonDive", hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
+					{ t = 2.0, dash = 10, at = "each", n = 8, range = 32, radius = 7, vfx = "inkDragonDive", hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
+					{ t = 2.6, shape = "circle", at = "self", radius = 40, pull = 50, life = 0.8, vfx = "inkSea", hit = hit(0, 0, 0, 40, 60, 0.6, 0) },
+					{ t = 3.2, shape = "circle", at = "self", radius = 40, vfx = "inkCore", big = true, hit = hit(0, 0, 0, 430, 480, 1.8, 80, 30) },
 				} } },
 		},
 	})
@@ -42960,6 +42962,9 @@ function handlers.hit(data: any)
 			end
 			Fx.hitstop({ a, t }, hs)
 			Fx.styleHit(data.style, pos, data.heavy, dir)
+			if data.style == "hondon" then
+				pcall(ForgeFx.hit, data.style, pos, data.heavy == true, data.skill == true)
+			end
 			if data.style == "gumiho" or data.style == "heukyeom" then
 				pcall(PassArts.hit, data.style, pos, data.heavy == true, data.skill == true, dir, a and tonumber(a:GetAttribute("Enh")) or 0)
 			end
@@ -55319,8 +55324,330 @@ VFX.skullBurst = function(d, c, c2)
 end
 
 ------------------------------------------------------------------------
+-- 3.99.38판 혼돈개천권 (새로): 먹 줄기 엔진. 덩어리 대신, 보이지 않는 붓끝이 쉬지 않고 휘돌며 꼬리 (Trail) 로 먹 획을 남긴다
+--   획이 계속 겹치고 엉키며 형체 (말 · 용 · 소용돌이) 를 그렸다 지운다
+------------------------------------------------------------------------
+local INK2 = Color3.fromRGB(10, 10, 14)
+local INKEDGE = Color3.fromRGB(70, 60, 90)
+local BRUSH_GOLD = Color3.fromRGB(255, 205, 110)
+type Brush = { p: BasePart, tr: Trail, a0: Attachment, a1: Attachment }
+-- 붓끝 하나: 보이지 않는 조각 + 두 점 사이의 꼬리 (먹 획)
+local function brush(width: number, life: number, color: Color3, glow: boolean?): Brush
+	local p = piece(V(0.1, 0.1, 0.1), CF(), WHITE, 1)
+	local a0 = Instance.new("Attachment")
+	a0.Position = V(0, width / 2, 0)
+	a0.Parent = p
+	local a1 = Instance.new("Attachment")
+	a1.Position = V(0, -width / 2, 0)
+	a1.Parent = p
+	local tr = Instance.new("Trail")
+	tr.Attachment0 = a0
+	tr.Attachment1 = a1
+	tr.Lifetime = life
+	tr.MinLength = 0.02
+	tr.FaceCamera = true
+	tr.Color = glow and ColorSequence.new(color, BRUSH_GOLD) or ColorSequence.new(color, INKEDGE)
+	tr.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, glow and 0.1 or 0), NumberSequenceKeypoint.new(0.6, glow and 0.5 or 0.25), NumberSequenceKeypoint.new(1, 1) })
+	tr.WidthScale = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.4, 0.75), NumberSequenceKeypoint.new(1, 0.1) })
+	tr.LightEmission = glow and 0.8 or 0
+	tr.LightInfluence = glow and 0 or 0.4
+	tr.Parent = p
+	return { p = p, tr = tr, a0 = a0, a1 = a1 }
+end
+local function dropBrush(b: Brush, after: number)
+	b.tr.Enabled = false
+	Debris:AddItem(b.p, after + 0.1)
+end
+-- 붓끝을 따라 떨어지는 먹물 방울 (내려앉으며 번진다)
+local function inkDrips(parent: BasePart, rate: number, size: number)
+	local e = Instance.new("ParticleEmitter")
+	e.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	e.Color = ColorSequence.new(INK2, INKEDGE)
+	e.LightInfluence = 0.3
+	e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, size * 0.4), NumberSequenceKeypoint.new(1, size) })
+	e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.15), NumberSequenceKeypoint.new(1, 1) })
+	e.Lifetime = NumberRange.new(0.6, 1.1)
+	e.Rate = rate
+	e.Speed = NumberRange.new(0.5, 2)
+	e.SpreadAngle = Vector2.new(180, 180)
+	e.Acceleration = V(0, -6, 0)
+	e.Drag = 2
+	e.Parent = parent
+	return e
+end
+-- 먹 소용돌이: n개의 붓끝이 center() 둘레를 저마다 다른 빠르기로 휘돈다 (반지름 r(t), 높이 h)
+--   opt.converge = 끝으로 갈수록 가운데로 모인다 · opt.rise = 위로 솟는다 · opt.gold = 금빛 획 몇 개
+local function inkSwirl(center: () -> Vector3, n: number, r: number, h: number, life: number, opt: any?)
+	local o = opt or {}
+	local list = {}
+	for i = 1, n do
+		local gold = o.gold and i % 5 == 0
+		local b = brush((o.width or 0.7) * (0.6 + math.random() * 0.8), o.trail or 0.55, gold and BRUSH_GOLD or INK2, gold)
+		table.insert(list, { b = b, f1 = 1.2 + math.random() * 2.4, f2 = 1.5 + math.random() * 3, f3 = 0.9 + math.random() * 2.2, p1 = math.random() * 6.3, p2 = math.random() * 6.3, p3 = math.random() * 6.3, rk = 0.55 + math.random() * 0.6 })
+	end
+	local drip = o.drips and piece(V(0.1, 0.1, 0.1), CF(center()), WHITE, 1) or nil
+	if drip then
+		inkDrips(drip, o.drips, 1.6)
+	end
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		local c = center()
+		if t > life then
+			conn:Disconnect()
+			for _, s in ipairs(list) do
+				dropBrush(s.b, o.trail or 0.55)
+			end
+			if drip then
+				Debris:AddItem(drip, 0.05)
+			end
+			return
+		end
+		local k = t / life
+		local rr = r * (o.converge and (1 - 0.85 * k * k) or 1) * (o.grow and math.min(1, t / 0.25) or 1)
+		for _, s in ipairs(list) do
+			local a = t * s.f1 * (o.speed or 1) + s.p1
+			local x = math.cos(a) * rr * s.rk + math.sin(t * s.f3 + s.p3) * rr * 0.25
+			local z = math.sin(a) * rr * s.rk + math.cos(t * s.f2 + s.p2) * rr * 0.25
+			local y = math.sin(t * s.f2 + s.p2) * h * 0.5 + (o.rise and k * o.rise or 0)
+			s.b.p.CFrame = CF(c + V(x, y, z)) * CFrame.Angles(t * s.f3, a, 0)
+		end
+		if drip then
+			drip.CFrame = CF(c)
+		end
+	end)
+end
+-- 먹 획 한 줄기가 from 에서 to 로 휘몰아 날아간다 (뱀처럼 굽이치며)
+local function inkStroke(from: Vector3, to: Vector3, time: number, width: number, wave: number, gold: boolean?)
+	local b = brush(width, 0.5, gold and BRUSH_GOLD or INK2, gold)
+	local dir = to - from
+	local side = dir.Magnitude > 0.01 and dir.Unit:Cross(V(0, 1, 0)) or V(1, 0, 0)
+	if side.Magnitude < 0.01 then
+		side = V(1, 0, 0)
+	end
+	local ph = math.random() * 6.3
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local k = math.min(1, (os.clock() - t0) / time)
+		local p = from:Lerp(to, k) + side.Unit * math.sin(k * math.pi * 3 + ph) * wave * (1 - k) + V(0, math.sin(k * math.pi) * wave * 0.4, 0)
+		b.p.CFrame = CF(p) * CFrame.Angles(k * 7, ph, 0)
+		if k >= 1 then
+			conn:Disconnect()
+			dropBrush(b, 0.5)
+		end
+	end)
+end
+-- 먹 터짐: 획이 사방으로 튀고 먹물이 번진다
+local function inkBurst(at: Vector3, r: number, big: boolean?)
+	local n = big and 16 or 9
+	for i = 1, n do
+		local a = i / n * math.pi * 2 + math.random() * 0.3
+		local to = at + V(math.cos(a) * r, (math.random() - 0.2) * r * 0.5, math.sin(a) * r)
+		inkStroke(at, to, 0.22 + math.random() * 0.12, big and 1.1 or 0.7, r * 0.2, i % 6 == 0)
+	end
+	local blot = piece(V(0.3, 2, 2), CF(ground(at) + V(0, 0.15, 0)) * CFrame.Angles(0, 0, math.rad(90)), INK2, 0.15, Enum.PartType.Cylinder)
+	blot.Material = Enum.Material.SmoothPlastic
+	tween(blot, 0.25, { Size = V(0.3, r * 1.6, r * 1.6) })
+	task.delay(0.9, function()
+		fadeOut(blot, 0.6)
+	end)
+	local holder = piece(V(0.1, 0.1, 0.1), CF(at), WHITE, 1)
+	local e = inkDrips(holder, 0, big and 3 or 2)
+	e.Speed = NumberRange.new(r * 0.6, r * 1.2)
+	e:Emit(big and 30 or 14)
+	Debris:AddItem(holder, 1.4)
+	if big then
+		Fx.flash(at, BRUSH_GOLD, r * 2, 3, 0.3)
+	end
+end
+
+-- E 묵사박: 먹 줄기 다발이 앞으로 휘몰아쳐 감기고, 감긴 자리에서 다시 엉켰다 터진다
+VFX.inkLash = function(d)
+	local from = (d.from :: Vector3) + V(0, 2.5, 0)
+	local dir = d.dir :: Vector3
+	local len = d.length or 26
+	for i = 1, 7 do
+		local side = V(-dir.Z, 0, dir.X) * ((i - 4) * 0.7)
+		inkStroke(from + side * 0.3, from + dir * len + side + V(0, (math.random() - 0.5) * 2, 0), 0.22 + i * 0.015, 0.8, 2.2, i == 4)
+	end
+end
+VFX.inkBind = function(d)
+	local at = d.at + V(0, 2, 0)
+	inkSwirl(function()
+		return at
+	end, 8, d.radius or 6, 3, 0.55, { converge = true, width = 0.6, trail = 0.35 })
+	task.delay(0.5, function()
+		inkBurst(at, (d.radius or 6) * 1.2, d.big)
+	end)
+end
+-- R 묵마천행: 먹 줄기가 쉬지 않고 말의 뼈대를 따라 긁고 엉키며 말을 그린다 (탄 사람 밑에서 함께 달린다)
+local HORSE: { { Vector3 } } = {
+	{ V(0, 0, 2.4), V(0, 0.3, -2.4) }, -- 등
+	{ V(0, -0.9, 2), V(0, -0.8, -2) }, -- 배
+	{ V(0, 0.3, -2.4), V(0, 2.2, -3.4) }, -- 목
+	{ V(0, 2.2, -3.4), V(0, 1.4, -5) }, -- 머리
+	{ V(0, 2.6, -3.1), V(0, 0.6, -2.0) }, -- 갈기
+	{ V(0, 0.2, 2.4), V(0, -1.2, 4.4) }, -- 꼬리
+	{ V(-0.8, -0.6, -1.9), V(-0.8, -3.3, -2.3) }, -- 앞다리
+	{ V(0.8, -0.6, -1.9), V(0.8, -3.3, -1.5) },
+	{ V(-0.8, -0.6, 1.9), V(-0.8, -3.3, 1.5) }, -- 뒷다리
+	{ V(0.8, -0.6, 1.9), V(0.8, -3.3, 2.3) },
+}
+VFX.inkSteed = function(d)
+	local model = d.m
+	local root = typeof(model) == "Instance" and model:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return
+	end
+	local big = d.big == true
+	local k = big and 3.4 or 1.25
+	local life = d.life or 1.3
+	local strands = {}
+	for si, seg in ipairs(HORSE) do
+		local per = (si == 5 or si == 6) and 2 or 3
+		for j = 1, per do
+			local gold = (si == 5 and j == 1) or (si == 4 and j == 1)
+			table.insert(strands, { b = brush((big and 1.6 or 0.55) * (0.7 + math.random() * 0.6), big and 0.45 or 0.3, gold and BRUSH_GOLD or INK2, gold), seg = si, f = 5 + math.random() * 6, ph = math.random() * 6.3, j = math.random() * 6.3 })
+		end
+	end
+	local holder = piece(V(0.1, 0.1, 0.1), CF(root.Position), WHITE, 1)
+	inkDrips(holder, big and 60 or 26, big and 4 or 1.8)
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		if not root.Parent or t > life then
+			conn:Disconnect()
+			for _, s in ipairs(strands) do
+				dropBrush(s.b, 0.5)
+			end
+			Debris:AddItem(holder, 0.05)
+			inkBurst(root.Position - V(0, 1.5, 0), big and 14 or 7, big)
+			return
+		end
+		local look = root.CFrame.LookVector
+		local flat = V(look.X, 0, look.Z)
+		flat = flat.Magnitude > 0.01 and flat.Unit or V(0, 0, -1)
+		local base = big and (root.Position + V(0, 12, 0) - flat * 5) or (root.Position + V(0, -0.6, 0))
+		local body = CFrame.lookAt(base, base + flat) * CF(0, math.sin(t * 16) * 0.2 * k, 0)
+		holder.CFrame = body
+		local gal = t * 16
+		for _, s in ipairs(strands) do
+			local seg = HORSE[s.seg]
+			local a, b = seg[1], seg[2]
+			-- 다리는 내닫는 박자에 맞춰 앞뒤로 젓는다
+			if s.seg >= 7 then
+				local sw = math.sin(gal + (s.seg % 2) * math.pi + (s.seg >= 9 and 1.2 or 0)) * 1.1
+				b = b + V(0, math.max(0, math.sin(gal + s.seg)) * 0.6, sw)
+			end
+			local u = 0.5 + 0.5 * math.sin(t * s.f + s.ph)
+			local p = a:Lerp(b, u)
+			local jx, jy = math.sin(t * 23 + s.j) * 0.3, math.cos(t * 19 + s.j) * 0.3
+			s.b.p.CFrame = body * CF((p + V(jx, jy, 0)) * k) * CFrame.Angles(t * 3, s.j, 0)
+		end
+	end)
+	Fx.flash(root.Position, BRUSH_GOLD, 18, 1.5, 0.3)
+end
+VFX.inkHoof = function(d)
+	local g = ground(d.at)
+	inkBurst(g + V(0, 0.5, 0), d.radius or 6, false)
+	shake(0.25)
+end
+VFX.inkRear = function(d)
+	local g = ground(d.at)
+	inkSwirl(function()
+		return g + V(0, 1.5, 0)
+	end, 10, (d.radius or 12) * 0.4, 2, 0.35, { width = 0.9, trail = 0.3, grow = true })
+	task.delay(0.3, function()
+		inkBurst(g + V(0, 1, 0), d.radius or 12, true)
+		Fx.ring(g + V(0, 0.5, 0), BRUSH_GOLD, 3, (d.radius or 12) * 2, 0.45)
+		shake(0.7)
+	end)
+end
+-- G 혼돈묵해: 발밑에서 먹이 엉키며 바다처럼 번지고, 먹 촉수가 세 번 솟아 감아 들인다. 끝에 모든 먹이 한 점으로 모였다 터진다
+VFX.inkSea = function(d)
+	local g = ground(d.at) + V(0, 0.3, 0)
+	local r = d.radius or 24
+	local life = d.life or 2
+	-- 바닥에 번지는 먹 (낮게 깔린 소용돌이)
+	inkSwirl(function()
+		return g
+	end, 18, r * 0.8, 0.6, life, { width = 1.4, trail = 0.9, grow = true, speed = 0.7, drips = 20 })
+	local stain = piece(V(0.2, 2, 2), CF(g) * CFrame.Angles(0, 0, math.rad(90)), INK2, 0.35, Enum.PartType.Cylinder)
+	stain.Material = Enum.Material.SmoothPlastic
+	tween(stain, 0.5, { Size = V(0.2, r * 2, r * 2) })
+	task.delay(life, function()
+		fadeOut(stain, 0.5)
+	end)
+end
+VFX.inkTendrils = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 22
+	for i = 1, 8 do
+		local a = i / 8 * math.pi * 2 + math.random() * 0.4
+		local base = g + V(math.cos(a) * r * 0.85, 0, math.sin(a) * r * 0.85)
+		-- 바깥에서 솟아 가운데로 휘어 들어오는 먹 촉수
+		inkStroke(base, base + V(0, 9 + math.random() * 4, 0), 0.18, 1.2, 1.5, i % 4 == 0)
+		task.delay(0.18, function()
+			inkStroke(base + V(0, 11, 0), g + V(0, 2, 0), 0.25, 1.1, 3, false)
+		end)
+	end
+	shake(0.35)
+end
+VFX.inkCore = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 28
+	local at = g + V(0, 4, 0)
+	inkSwirl(function()
+		return at
+	end, 22, r * 0.7, 6, 0.45, { converge = true, width = 1.3, trail = 0.4, gold = true, speed = 1.6 })
+	task.delay(0.42, function()
+		inkBurst(at, r, true)
+		inkBurst(at + V(0, 3, 0), r * 0.6, true)
+		Fx.ring(g + V(0, 0.5, 0), BRUSH_GOLD, 4, r * 2.2, 0.55)
+		Fx.flash(at, WHITE, r * 2.5, 5, 0.35)
+		shake(1.3)
+	end)
+end
+-- X 천지미분: 하늘을 휘감는 먹의 용 (줄기 수십 개가 한 몸으로 엉켜 굽이친다) 이 적에게 내리꽂힌다
+VFX.inkDragonDive = function(d)
+	local g = ground(d.at)
+	local sky = g + V((math.random() - 0.5) * 40, 45, (math.random() - 0.5) * 40)
+	for i = 1, 5 do
+		inkStroke(sky + V((math.random() - 0.5) * 3, (math.random() - 0.5) * 3, (math.random() - 0.5) * 3), g + V(0, 1, 0), 0.24 + i * 0.012, 1.4, 6, i == 3)
+	end
+	task.delay(0.27, function()
+		inkBurst(g + V(0, 1, 0), d.radius or 8, false)
+		shake(0.3)
+	end)
+end
+VFX.inkHeaven = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 40
+	inkSwirl(function()
+		return g + V(0, 14, 0)
+	end, 26, r * 0.8, 18, d.life or 2.2, { width = 2, trail = 1, speed = 0.55, gold = true, drips = 30 })
+end
+
+------------------------------------------------------------------------
 function ForgeFx.init(o: any)
 	opts = o or {}
+end
+
+-- 3.99.38판 손맛: 혼돈개천권은 맞힐 때마다 먹이 튄다 (강타 · 기술은 크게)
+function ForgeFx.hit(styleId: string, pos: Vector3, heavy: boolean, skill: boolean)
+	if styleId == "hondon" then
+		local n = (heavy or skill) and 6 or 3
+		for _ = 1, n do
+			local a = math.random() * math.pi * 2
+			inkStroke(pos, pos + V(math.cos(a) * 5, (math.random() - 0.3) * 3, math.sin(a) * 5), 0.14, (heavy or skill) and 0.8 or 0.5, 1, false)
+		end
+		if heavy or skill then
+			inkBurst(pos, 5, false)
+		end
+	end
 end
 
 function ForgeFx.handles(data: any): boolean
@@ -66748,6 +67075,15 @@ return {
 	["불러오는 중..."] = "Loading...",
 	["💝 후원"] = "💝 Support",
 	["%d. %s  ·  R$ %s"] = "%d. %s  ·  R$ %s",
+	["무극신권이 끝에 닿은 자리. 하늘과 땅이 나뉘기 전, 먹이 쉬지 않고 엉키던 혼돈을 주먹에 담았다. 손이 닿는 곳마다 먹 줄기가 휘몰아쳐 감기고, 엉킨 먹이 천마가 되고 용이 된다."] = "Where the Limitless Fist reaches its end. It holds the chaos before heaven and earth split, when ink never stopped tangling. Wherever the fist lands, strands of ink whirl and bind, and tangled ink becomes a heavenly steed, then a dragon.",
+	["혼돈체: 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 20% 짧음. 맞힐 때마다 먹이 튄다. R은 엉킨 먹 줄기로 그린 천마를 타고 내달린다 (그동안 무적). 초 오의(X)가 있다"] = "Chaos Body: the sturdiest blocks and parries (posture ×1.5), all cooldowns 20% shorter. Ink splashes with every hit. R rides a heavenly steed drawn in tangled strands of ink (invincible meanwhile). Has a super ultimate (X)",
+	["묵사박"] = "Ink Lash",
+	["손끝에서 먹 줄기 일곱이 휘몰아치며 앞으로 26칸을 가른다. 가까운 적 셋에게 먹이 엉켜 감겼다가 한꺼번에 터진다"] = "Seven strands of ink lash out from the fingertips, cleaving 26 studs ahead. Ink tangles around the three nearest enemies, then bursts all at once",
+	["먹 줄기가 쉬지 않고 엉키며 그려 내는 천마를 타고 세 번 박차 30칸을 내달린다 (그동안 무적). 발굽마다 먹이 튀어 적을 베고, 마지막에 앞발을 들어 내리찍으면 먹이 사방으로 터진다"] = "Ride a heavenly steed drawn by ever-tangling strands of ink, spurring three times to charge 30 studs (invincible meanwhile). Ink splashes from every hoof to cut enemies, and finally it rears and stamps, bursting ink in every direction",
+	["혼돈묵해"] = "Sea of Chaos Ink",
+	["발밑에서 먹이 엉키며 둘레 26칸에 바다처럼 번진다. 먹 촉수가 세 번 솟아 적을 가운데로 감아 들이고, 마지막에 모든 먹이 한 점으로 모였다가 금빛으로 터진다"] = "Ink tangles underfoot and spreads like a sea 26 studs around. Ink tendrils rise three times, reeling enemies to the center, and finally all the ink gathers into one point and bursts in gold",
+	["천지미분"] = "Before Heaven and Earth",
+	["초 오의 (그동안 무적). 하늘이 먹으로 엉키고, 하늘만 한 먹의 천마가 머리 위에서 함께 내달린다. 먹의 용이 네 번 적 여덟에게 내리꽂히고, 마지막에 모든 먹이 한 점으로 삼켜졌다가 둘레 40칸이 금빛으로 터진다"] = "Super ultimate (invincible meanwhile). The sky tangles with ink and a sky-sized steed of ink charges overhead. Ink dragons dive on eight enemies four times, and finally all the ink is swallowed into one point and 40 studs around you burst in gold",
 }
 ]]></string>
           </Properties>

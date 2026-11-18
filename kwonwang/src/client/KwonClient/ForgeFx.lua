@@ -806,8 +806,330 @@ VFX.skullBurst = function(d, c, c2)
 end
 
 ------------------------------------------------------------------------
+-- 3.99.38판 혼돈개천권 (새로): 먹 줄기 엔진. 덩어리 대신, 보이지 않는 붓끝이 쉬지 않고 휘돌며 꼬리 (Trail) 로 먹 획을 남긴다
+--   획이 계속 겹치고 엉키며 형체 (말 · 용 · 소용돌이) 를 그렸다 지운다
+------------------------------------------------------------------------
+local INK2 = Color3.fromRGB(10, 10, 14)
+local INKEDGE = Color3.fromRGB(70, 60, 90)
+local BRUSH_GOLD = Color3.fromRGB(255, 205, 110)
+type Brush = { p: BasePart, tr: Trail, a0: Attachment, a1: Attachment }
+-- 붓끝 하나: 보이지 않는 조각 + 두 점 사이의 꼬리 (먹 획)
+local function brush(width: number, life: number, color: Color3, glow: boolean?): Brush
+	local p = piece(V(0.1, 0.1, 0.1), CF(), WHITE, 1)
+	local a0 = Instance.new("Attachment")
+	a0.Position = V(0, width / 2, 0)
+	a0.Parent = p
+	local a1 = Instance.new("Attachment")
+	a1.Position = V(0, -width / 2, 0)
+	a1.Parent = p
+	local tr = Instance.new("Trail")
+	tr.Attachment0 = a0
+	tr.Attachment1 = a1
+	tr.Lifetime = life
+	tr.MinLength = 0.02
+	tr.FaceCamera = true
+	tr.Color = glow and ColorSequence.new(color, BRUSH_GOLD) or ColorSequence.new(color, INKEDGE)
+	tr.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, glow and 0.1 or 0), NumberSequenceKeypoint.new(0.6, glow and 0.5 or 0.25), NumberSequenceKeypoint.new(1, 1) })
+	tr.WidthScale = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.4, 0.75), NumberSequenceKeypoint.new(1, 0.1) })
+	tr.LightEmission = glow and 0.8 or 0
+	tr.LightInfluence = glow and 0 or 0.4
+	tr.Parent = p
+	return { p = p, tr = tr, a0 = a0, a1 = a1 }
+end
+local function dropBrush(b: Brush, after: number)
+	b.tr.Enabled = false
+	Debris:AddItem(b.p, after + 0.1)
+end
+-- 붓끝을 따라 떨어지는 먹물 방울 (내려앉으며 번진다)
+local function inkDrips(parent: BasePart, rate: number, size: number)
+	local e = Instance.new("ParticleEmitter")
+	e.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	e.Color = ColorSequence.new(INK2, INKEDGE)
+	e.LightInfluence = 0.3
+	e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, size * 0.4), NumberSequenceKeypoint.new(1, size) })
+	e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.15), NumberSequenceKeypoint.new(1, 1) })
+	e.Lifetime = NumberRange.new(0.6, 1.1)
+	e.Rate = rate
+	e.Speed = NumberRange.new(0.5, 2)
+	e.SpreadAngle = Vector2.new(180, 180)
+	e.Acceleration = V(0, -6, 0)
+	e.Drag = 2
+	e.Parent = parent
+	return e
+end
+-- 먹 소용돌이: n개의 붓끝이 center() 둘레를 저마다 다른 빠르기로 휘돈다 (반지름 r(t), 높이 h)
+--   opt.converge = 끝으로 갈수록 가운데로 모인다 · opt.rise = 위로 솟는다 · opt.gold = 금빛 획 몇 개
+local function inkSwirl(center: () -> Vector3, n: number, r: number, h: number, life: number, opt: any?)
+	local o = opt or {}
+	local list = {}
+	for i = 1, n do
+		local gold = o.gold and i % 5 == 0
+		local b = brush((o.width or 0.7) * (0.6 + math.random() * 0.8), o.trail or 0.55, gold and BRUSH_GOLD or INK2, gold)
+		table.insert(list, { b = b, f1 = 1.2 + math.random() * 2.4, f2 = 1.5 + math.random() * 3, f3 = 0.9 + math.random() * 2.2, p1 = math.random() * 6.3, p2 = math.random() * 6.3, p3 = math.random() * 6.3, rk = 0.55 + math.random() * 0.6 })
+	end
+	local drip = o.drips and piece(V(0.1, 0.1, 0.1), CF(center()), WHITE, 1) or nil
+	if drip then
+		inkDrips(drip, o.drips, 1.6)
+	end
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		local c = center()
+		if t > life then
+			conn:Disconnect()
+			for _, s in ipairs(list) do
+				dropBrush(s.b, o.trail or 0.55)
+			end
+			if drip then
+				Debris:AddItem(drip, 0.05)
+			end
+			return
+		end
+		local k = t / life
+		local rr = r * (o.converge and (1 - 0.85 * k * k) or 1) * (o.grow and math.min(1, t / 0.25) or 1)
+		for _, s in ipairs(list) do
+			local a = t * s.f1 * (o.speed or 1) + s.p1
+			local x = math.cos(a) * rr * s.rk + math.sin(t * s.f3 + s.p3) * rr * 0.25
+			local z = math.sin(a) * rr * s.rk + math.cos(t * s.f2 + s.p2) * rr * 0.25
+			local y = math.sin(t * s.f2 + s.p2) * h * 0.5 + (o.rise and k * o.rise or 0)
+			s.b.p.CFrame = CF(c + V(x, y, z)) * CFrame.Angles(t * s.f3, a, 0)
+		end
+		if drip then
+			drip.CFrame = CF(c)
+		end
+	end)
+end
+-- 먹 획 한 줄기가 from 에서 to 로 휘몰아 날아간다 (뱀처럼 굽이치며)
+local function inkStroke(from: Vector3, to: Vector3, time: number, width: number, wave: number, gold: boolean?)
+	local b = brush(width, 0.5, gold and BRUSH_GOLD or INK2, gold)
+	local dir = to - from
+	local side = dir.Magnitude > 0.01 and dir.Unit:Cross(V(0, 1, 0)) or V(1, 0, 0)
+	if side.Magnitude < 0.01 then
+		side = V(1, 0, 0)
+	end
+	local ph = math.random() * 6.3
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local k = math.min(1, (os.clock() - t0) / time)
+		local p = from:Lerp(to, k) + side.Unit * math.sin(k * math.pi * 3 + ph) * wave * (1 - k) + V(0, math.sin(k * math.pi) * wave * 0.4, 0)
+		b.p.CFrame = CF(p) * CFrame.Angles(k * 7, ph, 0)
+		if k >= 1 then
+			conn:Disconnect()
+			dropBrush(b, 0.5)
+		end
+	end)
+end
+-- 먹 터짐: 획이 사방으로 튀고 먹물이 번진다
+local function inkBurst(at: Vector3, r: number, big: boolean?)
+	local n = big and 16 or 9
+	for i = 1, n do
+		local a = i / n * math.pi * 2 + math.random() * 0.3
+		local to = at + V(math.cos(a) * r, (math.random() - 0.2) * r * 0.5, math.sin(a) * r)
+		inkStroke(at, to, 0.22 + math.random() * 0.12, big and 1.1 or 0.7, r * 0.2, i % 6 == 0)
+	end
+	local blot = piece(V(0.3, 2, 2), CF(ground(at) + V(0, 0.15, 0)) * CFrame.Angles(0, 0, math.rad(90)), INK2, 0.15, Enum.PartType.Cylinder)
+	blot.Material = Enum.Material.SmoothPlastic
+	tween(blot, 0.25, { Size = V(0.3, r * 1.6, r * 1.6) })
+	task.delay(0.9, function()
+		fadeOut(blot, 0.6)
+	end)
+	local holder = piece(V(0.1, 0.1, 0.1), CF(at), WHITE, 1)
+	local e = inkDrips(holder, 0, big and 3 or 2)
+	e.Speed = NumberRange.new(r * 0.6, r * 1.2)
+	e:Emit(big and 30 or 14)
+	Debris:AddItem(holder, 1.4)
+	if big then
+		Fx.flash(at, BRUSH_GOLD, r * 2, 3, 0.3)
+	end
+end
+
+-- E 묵사박: 먹 줄기 다발이 앞으로 휘몰아쳐 감기고, 감긴 자리에서 다시 엉켰다 터진다
+VFX.inkLash = function(d)
+	local from = (d.from :: Vector3) + V(0, 2.5, 0)
+	local dir = d.dir :: Vector3
+	local len = d.length or 26
+	for i = 1, 7 do
+		local side = V(-dir.Z, 0, dir.X) * ((i - 4) * 0.7)
+		inkStroke(from + side * 0.3, from + dir * len + side + V(0, (math.random() - 0.5) * 2, 0), 0.22 + i * 0.015, 0.8, 2.2, i == 4)
+	end
+end
+VFX.inkBind = function(d)
+	local at = d.at + V(0, 2, 0)
+	inkSwirl(function()
+		return at
+	end, 8, d.radius or 6, 3, 0.55, { converge = true, width = 0.6, trail = 0.35 })
+	task.delay(0.5, function()
+		inkBurst(at, (d.radius or 6) * 1.2, d.big)
+	end)
+end
+-- R 묵마천행: 먹 줄기가 쉬지 않고 말의 뼈대를 따라 긁고 엉키며 말을 그린다 (탄 사람 밑에서 함께 달린다)
+local HORSE: { { Vector3 } } = {
+	{ V(0, 0, 2.4), V(0, 0.3, -2.4) }, -- 등
+	{ V(0, -0.9, 2), V(0, -0.8, -2) }, -- 배
+	{ V(0, 0.3, -2.4), V(0, 2.2, -3.4) }, -- 목
+	{ V(0, 2.2, -3.4), V(0, 1.4, -5) }, -- 머리
+	{ V(0, 2.6, -3.1), V(0, 0.6, -2.0) }, -- 갈기
+	{ V(0, 0.2, 2.4), V(0, -1.2, 4.4) }, -- 꼬리
+	{ V(-0.8, -0.6, -1.9), V(-0.8, -3.3, -2.3) }, -- 앞다리
+	{ V(0.8, -0.6, -1.9), V(0.8, -3.3, -1.5) },
+	{ V(-0.8, -0.6, 1.9), V(-0.8, -3.3, 1.5) }, -- 뒷다리
+	{ V(0.8, -0.6, 1.9), V(0.8, -3.3, 2.3) },
+}
+VFX.inkSteed = function(d)
+	local model = d.m
+	local root = typeof(model) == "Instance" and model:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return
+	end
+	local big = d.big == true
+	local k = big and 3.4 or 1.25
+	local life = d.life or 1.3
+	local strands = {}
+	for si, seg in ipairs(HORSE) do
+		local per = (si == 5 or si == 6) and 2 or 3
+		for j = 1, per do
+			local gold = (si == 5 and j == 1) or (si == 4 and j == 1)
+			table.insert(strands, { b = brush((big and 1.6 or 0.55) * (0.7 + math.random() * 0.6), big and 0.45 or 0.3, gold and BRUSH_GOLD or INK2, gold), seg = si, f = 5 + math.random() * 6, ph = math.random() * 6.3, j = math.random() * 6.3 })
+		end
+	end
+	local holder = piece(V(0.1, 0.1, 0.1), CF(root.Position), WHITE, 1)
+	inkDrips(holder, big and 60 or 26, big and 4 or 1.8)
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		if not root.Parent or t > life then
+			conn:Disconnect()
+			for _, s in ipairs(strands) do
+				dropBrush(s.b, 0.5)
+			end
+			Debris:AddItem(holder, 0.05)
+			inkBurst(root.Position - V(0, 1.5, 0), big and 14 or 7, big)
+			return
+		end
+		local look = root.CFrame.LookVector
+		local flat = V(look.X, 0, look.Z)
+		flat = flat.Magnitude > 0.01 and flat.Unit or V(0, 0, -1)
+		local base = big and (root.Position + V(0, 12, 0) - flat * 5) or (root.Position + V(0, -0.6, 0))
+		local body = CFrame.lookAt(base, base + flat) * CF(0, math.sin(t * 16) * 0.2 * k, 0)
+		holder.CFrame = body
+		local gal = t * 16
+		for _, s in ipairs(strands) do
+			local seg = HORSE[s.seg]
+			local a, b = seg[1], seg[2]
+			-- 다리는 내닫는 박자에 맞춰 앞뒤로 젓는다
+			if s.seg >= 7 then
+				local sw = math.sin(gal + (s.seg % 2) * math.pi + (s.seg >= 9 and 1.2 or 0)) * 1.1
+				b = b + V(0, math.max(0, math.sin(gal + s.seg)) * 0.6, sw)
+			end
+			local u = 0.5 + 0.5 * math.sin(t * s.f + s.ph)
+			local p = a:Lerp(b, u)
+			local jx, jy = math.sin(t * 23 + s.j) * 0.3, math.cos(t * 19 + s.j) * 0.3
+			s.b.p.CFrame = body * CF((p + V(jx, jy, 0)) * k) * CFrame.Angles(t * 3, s.j, 0)
+		end
+	end)
+	Fx.flash(root.Position, BRUSH_GOLD, 18, 1.5, 0.3)
+end
+VFX.inkHoof = function(d)
+	local g = ground(d.at)
+	inkBurst(g + V(0, 0.5, 0), d.radius or 6, false)
+	shake(0.25)
+end
+VFX.inkRear = function(d)
+	local g = ground(d.at)
+	inkSwirl(function()
+		return g + V(0, 1.5, 0)
+	end, 10, (d.radius or 12) * 0.4, 2, 0.35, { width = 0.9, trail = 0.3, grow = true })
+	task.delay(0.3, function()
+		inkBurst(g + V(0, 1, 0), d.radius or 12, true)
+		Fx.ring(g + V(0, 0.5, 0), BRUSH_GOLD, 3, (d.radius or 12) * 2, 0.45)
+		shake(0.7)
+	end)
+end
+-- G 혼돈묵해: 발밑에서 먹이 엉키며 바다처럼 번지고, 먹 촉수가 세 번 솟아 감아 들인다. 끝에 모든 먹이 한 점으로 모였다 터진다
+VFX.inkSea = function(d)
+	local g = ground(d.at) + V(0, 0.3, 0)
+	local r = d.radius or 24
+	local life = d.life or 2
+	-- 바닥에 번지는 먹 (낮게 깔린 소용돌이)
+	inkSwirl(function()
+		return g
+	end, 18, r * 0.8, 0.6, life, { width = 1.4, trail = 0.9, grow = true, speed = 0.7, drips = 20 })
+	local stain = piece(V(0.2, 2, 2), CF(g) * CFrame.Angles(0, 0, math.rad(90)), INK2, 0.35, Enum.PartType.Cylinder)
+	stain.Material = Enum.Material.SmoothPlastic
+	tween(stain, 0.5, { Size = V(0.2, r * 2, r * 2) })
+	task.delay(life, function()
+		fadeOut(stain, 0.5)
+	end)
+end
+VFX.inkTendrils = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 22
+	for i = 1, 8 do
+		local a = i / 8 * math.pi * 2 + math.random() * 0.4
+		local base = g + V(math.cos(a) * r * 0.85, 0, math.sin(a) * r * 0.85)
+		-- 바깥에서 솟아 가운데로 휘어 들어오는 먹 촉수
+		inkStroke(base, base + V(0, 9 + math.random() * 4, 0), 0.18, 1.2, 1.5, i % 4 == 0)
+		task.delay(0.18, function()
+			inkStroke(base + V(0, 11, 0), g + V(0, 2, 0), 0.25, 1.1, 3, false)
+		end)
+	end
+	shake(0.35)
+end
+VFX.inkCore = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 28
+	local at = g + V(0, 4, 0)
+	inkSwirl(function()
+		return at
+	end, 22, r * 0.7, 6, 0.45, { converge = true, width = 1.3, trail = 0.4, gold = true, speed = 1.6 })
+	task.delay(0.42, function()
+		inkBurst(at, r, true)
+		inkBurst(at + V(0, 3, 0), r * 0.6, true)
+		Fx.ring(g + V(0, 0.5, 0), BRUSH_GOLD, 4, r * 2.2, 0.55)
+		Fx.flash(at, WHITE, r * 2.5, 5, 0.35)
+		shake(1.3)
+	end)
+end
+-- X 천지미분: 하늘을 휘감는 먹의 용 (줄기 수십 개가 한 몸으로 엉켜 굽이친다) 이 적에게 내리꽂힌다
+VFX.inkDragonDive = function(d)
+	local g = ground(d.at)
+	local sky = g + V((math.random() - 0.5) * 40, 45, (math.random() - 0.5) * 40)
+	for i = 1, 5 do
+		inkStroke(sky + V((math.random() - 0.5) * 3, (math.random() - 0.5) * 3, (math.random() - 0.5) * 3), g + V(0, 1, 0), 0.24 + i * 0.012, 1.4, 6, i == 3)
+	end
+	task.delay(0.27, function()
+		inkBurst(g + V(0, 1, 0), d.radius or 8, false)
+		shake(0.3)
+	end)
+end
+VFX.inkHeaven = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 40
+	inkSwirl(function()
+		return g + V(0, 14, 0)
+	end, 26, r * 0.8, 18, d.life or 2.2, { width = 2, trail = 1, speed = 0.55, gold = true, drips = 30 })
+end
+
+------------------------------------------------------------------------
 function ForgeFx.init(o: any)
 	opts = o or {}
+end
+
+-- 3.99.38판 손맛: 혼돈개천권은 맞힐 때마다 먹이 튄다 (강타 · 기술은 크게)
+function ForgeFx.hit(styleId: string, pos: Vector3, heavy: boolean, skill: boolean)
+	if styleId == "hondon" then
+		local n = (heavy or skill) and 6 or 3
+		for _ = 1, n do
+			local a = math.random() * math.pi * 2
+			inkStroke(pos, pos + V(math.cos(a) * 5, (math.random() - 0.3) * 3, math.sin(a) * 5), 0.14, (heavy or skill) and 0.8 or 0.5, 1, false)
+		end
+		if heavy or skill then
+			inkBurst(pos, 5, false)
+		end
+	end
 end
 
 function ForgeFx.handles(data: any): boolean

@@ -4988,4 +4988,13 @@ return {
 	["불러오는 중..."] = "Loading...",
 	["💝 후원"] = "💝 Support",
 	["%d. %s  ·  R$ %s"] = "%d. %s  ·  R$ %s",
+	["무극신권이 끝에 닿은 자리. 하늘과 땅이 나뉘기 전, 먹이 쉬지 않고 엉키던 혼돈을 주먹에 담았다. 손이 닿는 곳마다 먹 줄기가 휘몰아쳐 감기고, 엉킨 먹이 천마가 되고 용이 된다."] = "Where the Limitless Fist reaches its end. It holds the chaos before heaven and earth split, when ink never stopped tangling. Wherever the fist lands, strands of ink whirl and bind, and tangled ink becomes a heavenly steed, then a dragon.",
+	["혼돈체: 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 20% 짧음. 맞힐 때마다 먹이 튄다. R은 엉킨 먹 줄기로 그린 천마를 타고 내달린다 (그동안 무적). 초 오의(X)가 있다"] = "Chaos Body: the sturdiest blocks and parries (posture ×1.5), all cooldowns 20% shorter. Ink splashes with every hit. R rides a heavenly steed drawn in tangled strands of ink (invincible meanwhile). Has a super ultimate (X)",
+	["묵사박"] = "Ink Lash",
+	["손끝에서 먹 줄기 일곱이 휘몰아치며 앞으로 26칸을 가른다. 가까운 적 셋에게 먹이 엉켜 감겼다가 한꺼번에 터진다"] = "Seven strands of ink lash out from the fingertips, cleaving 26 studs ahead. Ink tangles around the three nearest enemies, then bursts all at once",
+	["먹 줄기가 쉬지 않고 엉키며 그려 내는 천마를 타고 세 번 박차 30칸을 내달린다 (그동안 무적). 발굽마다 먹이 튀어 적을 베고, 마지막에 앞발을 들어 내리찍으면 먹이 사방으로 터진다"] = "Ride a heavenly steed drawn by ever-tangling strands of ink, spurring three times to charge 30 studs (invincible meanwhile). Ink splashes from every hoof to cut enemies, and finally it rears and stamps, bursting ink in every direction",
+	["혼돈묵해"] = "Sea of Chaos Ink",
+	["발밑에서 먹이 엉키며 둘레 26칸에 바다처럼 번진다. 먹 촉수가 세 번 솟아 적을 가운데로 감아 들이고, 마지막에 모든 먹이 한 점으로 모였다가 금빛으로 터진다"] = "Ink tangles underfoot and spreads like a sea 26 studs around. Ink tendrils rise three times, reeling enemies to the center, and finally all the ink gathers into one point and bursts in gold",
+	["천지미분"] = "Before Heaven and Earth",
+	["초 오의 (그동안 무적). 하늘이 먹으로 엉키고, 하늘만 한 먹의 천마가 머리 위에서 함께 내달린다. 먹의 용이 네 번 적 여덟에게 내리꽂히고, 마지막에 모든 먹이 한 점으로 삼켜졌다가 둘레 40칸이 금빛으로 터진다"] = "Super ultimate (invincible meanwhile). The sky tangles with ink and a sky-sized steed of ink charges overhead. Ink dragons dive on eight enemies four times, and finally all the ink is swallowed into one point and 40 studs around you burst in gold",
 }

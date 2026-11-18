@@ -1975,6 +1975,9 @@ function handlers.hit(data: any)
 			end
 			Fx.hitstop({ a, t }, hs)
 			Fx.styleHit(data.style, pos, data.heavy, dir)
+			if data.style == "hondon" then
+				pcall(ForgeFx.hit, data.style, pos, data.heavy == true, data.skill == true)
+			end
 			if data.style == "gumiho" or data.style == "heukyeom" then
 				pcall(PassArts.hit, data.style, pos, data.heavy == true, data.skill == true, dir, a and tonumber(a:GetAttribute("Enh")) or 0)
 			end
