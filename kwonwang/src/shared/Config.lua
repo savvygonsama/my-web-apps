@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.45" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.46" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7480,15 +7480,14 @@ do
 					{ t = 1.46, at = "target", range = 34, shape = "circle", radius = 7, vfx = "dragonDive", col = 1, hit = hit(0, 0, 0, 14, 30, 0.4, 10, 10) },
 					{ t = 1.9, shape = "circle", at = "self", radius = 20, vfx = "crown", big = true, hit = hit(0, 0, 0, 120, 300, 1.5, 70, 20) },
 				}) },
-			X = { id = "gyX", name = "구룡멸세", desc = "초 오의 (그동안 무적). 하늘이 금빛으로 갈라지고 아홉 용이 쉬지 않고 적에게 내리꽂힌다. 마지막에 하늘만 한 용왕관이 내 둘레를 짓눌러 모두 무너뜨린다", pose = "point_sky", dur = 3.6, cd = 50, chi = 140, armor = true,
-				mech = { kind = "forgeSeq", iframes = true, steps = (function()
-					local t = {}
-					for k = 0, 12 do
-						table.insert(t, { t = 0.5 + k * 0.2, at = "target", range = 40, shape = "circle", radius = 8, vfx = "dragonDive", col = (k % 2) + 1, hit = hit(0, 0, 0, 30, 50, 0.5, 10, 10) })
-					end
-					table.insert(t, { t = 3.3, shape = "circle", at = "self", radius = 30, vfx = "crown", big = true, hit = hit(0, 0, 0, 240, 460, 1.8, 80, 30) })
-					return t
-				end)() } },
+			X = { id = "gyX", name = "구룡멸세", desc = "초 오의 (그동안 무적). 산만 한 황금 용왕이 하늘에 나타나 둘레를 두 바퀴 휘감아 돈다. 돌면서 아래로 금빛 숨을 세 번 뿜어 적 여덟을 태우고, 마지막에 한가운데로 내리꽂혀 하늘까지 닿는 금빛 불기둥이 솟는다", pose = "point_sky", dur = 3.6, cd = 50, chi = 140, armor = true,
+				mech = { kind = "forgeSeq", iframes = true, steps = {
+					{ t = 0.3, shape = "circle", at = "self", radius = 30, life = 2.4, vfx = "goldDragonCircle" },
+					{ t = 0.9, at = "each", n = 8, range = 36, radius = 8, vfx = "dragonBreath", hit = hit(0, 0, 0, 90, 140, 0.6, 10, 8) },
+					{ t = 1.5, at = "each", n = 8, range = 36, radius = 8, vfx = "dragonBreath", hit = hit(0, 0, 0, 90, 140, 0.6, 10, 8) },
+					{ t = 2.1, at = "each", n = 8, range = 36, radius = 8, vfx = "dragonBreath", hit = hit(0, 0, 0, 90, 140, 0.6, 10, 8) },
+					{ t = 3.0, shape = "circle", at = "self", radius = 30, vfx = "dragonPillar", big = true, hit = hit(0, 0, 0, 240, 460, 1.8, 80, 30) },
+				} } },
 		},
 	})
 
@@ -7516,9 +7515,9 @@ do
 					{ t = 0.12, shape = "line", at = "self", length = 30, width = 7, vfx = "inkLash", hit = hit(0, 0, 0, 80, 70, 0.7, 10) },
 					{ t = 0.5, at = "each", n = 3, range = 26, radius = 6, vfx = "inkBind", hit = hit(0, 0, 0, 90, 90, 0.9, 30, 12) },
 				}) },
-			R = { id = "hdR", name = "묵마천행", desc = "먹 줄기가 쉬지 않고 엉키며 그려 내는 천마를 타고 세 번 박차 30칸을 내달린다 (그동안 무적). 발굽마다 먹이 튀어 적을 베고, 앞발을 들어 내리찍으면 먹이 사방으로 터진다. 그 뒤로도 5초 동안 먹 말을 탄 채 두 배 빠르게 내달리며 둘레를 친다", pose = "void_sink", dur = 1.3, cd = 9, chi = 26,
-				mech = { kind = "forgeSeq", iframes = true, afterRide = { dur = 5, every = 0.4, radius = 9, walk = 2, hit = hit(0, 0, 0, 10, 12, 0.25, 10, 4) }, steps = {
-					{ t = 0.05, shape = "circle", at = "self", radius = 1, life = 6.3, vfx = "inkSteed" },
+			R = { id = "hdR", name = "묵마천행", desc = "먹 줄기가 쉬지 않고 엉키며 그려 내는 천마를 타고 세 번 박차 30칸을 내달린다 (그동안 무적). 발굽마다 먹이 튀어 적을 베고, 앞발을 들어 내리찍으면 먹이 사방으로 터진다. 그 뒤로도 10초 동안 먹 말을 탄 채 두 배 빠르게 내달리며 둘레를 친다", pose = "void_sink", dur = 1.3, cd = 9, chi = 26,
+				mech = { kind = "forgeSeq", iframes = true, afterRide = { dur = 10, every = 0.4, radius = 9, walk = 2, hit = hit(0, 0, 0, 10, 12, 0.25, 10, 4) }, steps = {
+					{ t = 0.05, shape = "circle", at = "self", radius = 1, life = 11.3, vfx = "inkSteed" },
 					{ t = 0.25, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkHoof", hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
 					{ t = 0.5, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkHoof", hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
 					{ t = 0.75, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "inkHoof", hit = hit(0, 0, 0, 36, 40, 0.5, 20, 8) },
@@ -7532,16 +7531,16 @@ do
 					{ t = 1.6, shape = "circle", at = "self", radius = 30, pull = 30, vfx = "inkTendrils", hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
 					{ t = 2.1, shape = "circle", at = "self", radius = 34, vfx = "inkCore", big = true, hit = hit(0, 0, 0, 270, 300, 1.6, 60, 30) },
 				}) },
-			X = { id = "hdX", name = "천지미분", desc = "초 오의 (그동안 무적). 하늘의 먹이 한데 엉켜 산만 한 천마가 되고, 그 등에 올라타 내달린다. 먹의 용이 네 번 적 여덟에게 내리꽂히고, 모든 먹이 한 점으로 삼켜졌다가 둘레 46칸이 금빛으로 터진다. 그 뒤로도 5초 동안 거대한 먹 말을 탄 채 내달리며 둘레를 짓밟는다", pose = "ult_star", dur = 3.6, cd = 55, chi = 150, armor = true,
-				mech = { kind = "forgeSeq", iframes = true, ride = { hip = 17, from = 0.1, dur = 7.9 }, afterRide = { dur = 5, every = 0.4, radius = 16, walk = 2.2, vfx = "inkRear", hit = hit(0, 0, 0, 18, 20, 0.3, 14, 6) }, steps = {
+			X = { id = "hdX", name = "천지미분", desc = "초 오의 (그동안 무적). 하늘의 먹이 한데 엉켜 산만 한 천마가 되고, 그 등에 올라타 내달린다. 먹의 용이 네 번 적 여덟에게 내리꽂히고, 하늘에서 먹의 회오리가 내려와 적을 빨아들인 뒤, 하늘만 한 붓이 세상을 두 획으로 가른다 (둘레 46칸). 그 뒤로도 10초 동안 거대한 먹 말을 탄 채 내달리며 둘레를 짓밟는다", pose = "ult_star", dur = 3.6, cd = 55, chi = 150, armor = true,
+				mech = { kind = "forgeSeq", iframes = true, ride = { hip = 17, from = 0.1, dur = 12.9 }, afterRide = { dur = 10, every = 0.4, radius = 16, walk = 2.2, vfx = "inkRear", hit = hit(0, 0, 0, 18, 20, 0.3, 14, 6) }, steps = {
 					{ t = 0.05, shape = "circle", at = "self", radius = 46, life = 3.3, vfx = "inkHeaven" },
-					{ t = 0.1, shape = "circle", at = "self", radius = 1, life = 7.9, big = true, ride = true, form = true, vfx = "inkSteed" },
+					{ t = 0.1, shape = "circle", at = "self", radius = 1, life = 12.9, big = true, ride = true, form = true, vfx = "inkSteed" },
 					{ t = 0.5, dash = 10, at = "each", n = 8, range = 32, radius = 7, vfx = "inkDragonDive", hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
 					{ t = 1.0, dash = 10, at = "each", n = 8, range = 32, radius = 7, vfx = "inkDragonDive", hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
 					{ t = 1.5, dash = 10, at = "each", n = 8, range = 32, radius = 7, vfx = "inkDragonDive", hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
 					{ t = 2.0, dash = 10, at = "each", n = 8, range = 32, radius = 7, vfx = "inkDragonDive", hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
-					{ t = 2.6, shape = "circle", at = "self", radius = 46, pull = 50, life = 0.8, vfx = "inkSea", hit = hit(0, 0, 0, 40, 60, 0.6, 0) },
-					{ t = 3.2, shape = "circle", at = "self", radius = 46, vfx = "inkCore", big = true, hit = hit(0, 0, 0, 430, 480, 1.8, 80, 30) },
+					{ t = 2.5, shape = "circle", at = "self", radius = 46, pull = 50, life = 0.7, vfx = "inkFunnel", hit = hit(0, 0, 0, 40, 60, 0.6, 0) },
+					{ t = 3.2, shape = "circle", at = "self", radius = 46, vfx = "inkCleave", big = true, hit = hit(0, 0, 0, 430, 480, 1.8, 80, 30) },
 				} } },
 		},
 	})
@@ -7680,14 +7679,14 @@ do
 					{ t = 1.6, at = "each", n = 6, range = 26, radius = 6, vfx = "specterFire", col = 1, hit = hit(0, 0, 0, 26, 24, 0.5, 6, 8) },
 					{ t = 2.2, shape = "circle", at = "self", radius = 24, vfx = "specterSkull", col = 1, big = true, hit = hit(0, 0, 0, 140, 160, 1.5, 60, 26) },
 				}) },
-			X = { id = "ghX", name = "귀문개방", desc = "초 오의 (그동안 무적). 저승 문이 열려 둘레의 적을 빨아들이고, 귀화와 백골의 손이 네 번 거듭 적 여덟을 덮친다. 마지막에 문이 닫히며 둘레 36칸이 푸른 불로 터진다", pose = "ult_star", dur = 3.6, cd = 60, chi = 150, armor = true,
+			X = { id = "ghX", name = "귀문개방", desc = "초 오의 (그동안 무적). 등 뒤에 저승의 문이 열리고, 망자의 혼이 강물처럼 쏟아져 나와 적 여덟을 네 번 덮친다. 마지막에 하늘만 한 혼의 낫이 둘레 36칸을 한 바퀴 베어 넘긴다", pose = "ult_star", dur = 3.6, cd = 60, chi = 150, armor = true,
 				mech = { kind = "forgeSeq", iframes = true, steps = {
-					{ t = 0.5, shape = "circle", at = "self", radius = 30, pull = 40, vfx = "specterCircle", col = 1, hit = hit(0, 0, 0, 30, 30, 0.5, 0) },
-					{ t = 0.9, at = "each", n = 8, range = 34, radius = 7, vfx = "specterFire", col = 1, hit = hit(0, 0, 0, 30, 30, 0.5, 6, 8) },
-					{ t = 1.4, at = "each", n = 8, range = 34, radius = 7, vfx = "specterHands", col = 2, hit = hit(0, 0, 0, 30, 30, 0.5, 6, 10) },
-					{ t = 1.9, at = "each", n = 8, range = 34, radius = 7, vfx = "specterFire", col = 1, hit = hit(0, 0, 0, 30, 30, 0.5, 6, 8) },
-					{ t = 2.4, at = "each", n = 8, range = 34, radius = 7, vfx = "specterHands", col = 2, hit = hit(0, 0, 0, 30, 30, 0.5, 6, 10) },
-					{ t = 3.1, shape = "circle", at = "self", radius = 36, vfx = "specterSkull", col = 1, big = true, hit = hit(0, 0, 0, 240, 270, 1.8, 80, 30) },
+					{ t = 0.3, shape = "circle", at = "self", radius = 30, pull = 30, life = 3.0, vfx = "ghostGate", hit = hit(0, 0, 0, 30, 30, 0.5, 0) },
+					{ t = 0.9, at = "each", n = 8, range = 34, radius = 7, vfx = "ghostTorrent", hit = hit(0, 0, 0, 30, 30, 0.5, 6, 8) },
+					{ t = 1.4, at = "each", n = 8, range = 34, radius = 7, vfx = "ghostTorrent", hit = hit(0, 0, 0, 30, 30, 0.5, 6, 10) },
+					{ t = 1.9, at = "each", n = 8, range = 34, radius = 7, vfx = "ghostTorrent", hit = hit(0, 0, 0, 30, 30, 0.5, 6, 8) },
+					{ t = 2.4, at = "each", n = 8, range = 34, radius = 7, vfx = "ghostTorrent", hit = hit(0, 0, 0, 30, 30, 0.5, 6, 10) },
+					{ t = 3.1, shape = "circle", at = "self", radius = 36, vfx = "soulReap", big = true, hit = hit(0, 0, 0, 240, 270, 1.8, 80, 30) },
 				} } },
 		},
 	})
@@ -7800,6 +7799,8 @@ do
 		st.pulse = { every = 3, kind = "inkKnot", radius = 11, delay = 0.15, name = "먹 매듭", dmg = 56, posture = 46, stun = 0.45, kb = 12, up = 3, pull = 18 }
 		st.geukGauge = { max = 100, hit = 2, skillHit = 1, hurt = 4, cut = 1.2, dur = 25 }
 		st.inkForm = true -- 3.99.42판: 황혼 (일월극변) 이 아니라 혼돈화신 (세상은 그대로)
+		-- 3.99.46판 혼돈옥 (영역): 화신이 되는 순간 먹의 영역이 펼쳐지고, 가장 가까운 적 하나 (40칸 안) 를 그 안으로 끌어와 6초 가둔다 (0.5초마다 친다, 막을 수 없다)
+		st.inkPrison = { range = 40, radius = 9, domain = 24, dur = 6, every = 0.5, dmg = 40, posture = 40 } -- 영역 반지름 24 (보이는 것), 묶인 적은 가운데 9칸 안
 		local sk = {}
 		for slot, mv in pairs(st.skills) do
 			local c = deepCopy(mv)

@@ -4223,6 +4223,49 @@ function Geuk.trigger(f: any, st: any)
 	end
 	-- 3.99.42판 혼돈개천권 · 혼돈화신: 세상은 그대로 (일월극변의 황혼 · 컷씬을 띄우지 않는다). 몸의 먹은 화면이 Twilight 표시를 보고 그린다
 	if st.inkForm then
+		-- 3.99.46판 혼돈화신 · 혼돈옥: 가장 가까운 적 하나를 먹이 일그러뜨린 공간에 가둔다 (그 자리에 묶여 계속 맞는다)
+		local P = st.inkPrison
+		if P then
+			local best, bd = nil, P.range
+			for _, o in pairs(Combat.fighters) do
+				if o ~= f and Combat.hostile(f, o) and not o.dead and o.root and o.root.Parent then
+					local d = (o.root.Position - f.root.Position).Magnitude
+					if d < bd then
+						best, bd = o, d
+					end
+				end
+			end
+			if best then
+				local tgt = best
+				-- 영역이 화신을 가운데로 펼쳐지고, 고른 적은 영역 안 (화신 앞 8칸) 으로 끌려와 묶인다
+				local origin = f.root.Position
+				local fwd = Vector3.new(tgt.root.Position.X - origin.X, 0, tgt.root.Position.Z - origin.Z)
+				fwd = fwd.Magnitude > 0.1 and fwd.Unit or Vector3.new(0, 0, -1)
+				local center = origin + fwd * 8
+				if not tgt.root.Anchored then
+					tgt.root.CFrame = CFrame.lookAt(center + Vector3.new(0, 1, 0), origin + Vector3.new(0, 1, 0))
+					tgt.root.AssemblyLinearVelocity = Vector3.zero
+				end
+				Push:FireAllClients("skillfx", { kind = "forgeStep", vfx = "inkPrison", m = f.model, t = tgt.model, at = origin, from = center, dir = fwd, radius = P.domain, life = P.dur, style = "hondon" })
+				task.spawn(function()
+					local n = math.floor(P.dur / P.every)
+					for _ = 1, n do
+						if f.dead or tgt.dead or not tgt.root.Parent or not f.root.Parent then
+							break
+						end
+						-- 일그러진 공간 밖으로는 못 나간다 (가운데로 끌려온다)
+						local d = tgt.root.Position - center
+						if Vector3.new(d.X, 0, d.Z).Magnitude > P.radius * 0.5 and not tgt.root.Anchored then
+							tgt.root.CFrame = CFrame.new(center + Vector3.new(0, 1, 0)) * tgt.root.CFrame.Rotation
+							tgt.root.AssemblyLinearVelocity = Vector3.zero
+						end
+						Combat.stun(tgt, P.every + 0.1)
+						Combat.applyHit(f, tgt, { dmg = P.dmg, posture = P.posture, stun = 0.2, kb = 0 }, { chain = true, isSkill = true, unblockable = true, move = { name = "혼돈옥" } })
+						task.wait(P.every)
+					end
+				end)
+			end
+		end
 		return
 	end
 	local GF = st.godForm

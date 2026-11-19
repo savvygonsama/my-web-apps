@@ -1166,7 +1166,14 @@ VFX.inkSteed = function(d)
 		return CFrame.lookAt(base, base + flat) * CF(0, math.sin(t * 16) * 0.2 * k, 0)
 	end
 	-- 먹 획 빔 (뼈마다 셋, 갈기 · 머리는 금빛 하나)
-	beamBeast(HORSE, bodyAt, life, k, INK2, INKEDGE, { per = 3, w = 0.75, gold = { 4, 5 }, legs = { 7, 8, 9, 10 }, form = d.form and 0.6 or nil, amp = 1.1 })
+	beamBeast(HORSE, bodyAt, life, k, INK2, INKEDGE, { per = 5, w = 0.7, gold = { 4, 5 }, legs = { 7, 8, 9, 10 }, form = d.form and 0.6 or nil, amp = 1.6 })
+	-- 3.99.46판: 몸통을 가로지르며 엉킨 먹 획 열여덟 (뼈대 아무 두 점을 잇는 줄이 쉬지 않고 휘청인다)
+	local tangle: { { Vector3 } } = {}
+	for _ = 1, 18 do
+		local b1, b2 = HORSE[math.random(1, 6)], HORSE[math.random(1, #HORSE)]
+		table.insert(tangle, { b1[1]:Lerp(b1[2], math.random()), b2[1]:Lerp(b2[2], math.random()) })
+	end
+	beamBeast(tangle, bodyAt, life, k, INK2, INKEDGE, { per = 1, w = 0.45, gold = { 3, 11 }, form = d.form and 0.6 or nil, amp = 2.4 })
 	-- 몸 둘레를 휘도는 먹 줄기 (꼬리는 짧게: 달려도 번지지 않게)
 	inkSwirl(function()
 		local b = bodyAt(os.clock())
@@ -2097,6 +2104,278 @@ calligraphy = function(at: Vector3, text: string, life: number)
 		tween(l, 0.5, { TextTransparency = 1, TextStrokeTransparency = 1 })
 		Debris:AddItem(anchor, 0.6)
 	end)
+end
+
+------------------------------------------------------------------------
+-- 3.99.46판 혼돈옥 (영역): 화신을 가운데로 먹의 영역이 반구로 펼쳐진다 (경선 같은 먹 획이 하늘을 덮고 출렁인다)
+--   고른 적은 영역 안에서 먹 사슬에 묶인다. 영역 안의 내 화면은 먹그림이 되고 이름이 크게 뜬다
+------------------------------------------------------------------------
+local function domainTitle(text: string, sub: string, life: number)
+	local pg = Players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
+	if not pg then
+		return
+	end
+	local sg = Instance.new("ScreenGui")
+	sg.Name = "KwonDomainTitle"
+	sg.IgnoreGuiInset = true
+	sg.DisplayOrder = 6
+	sg.Parent = pg
+	local l = Instance.new("TextLabel")
+	l.BackgroundTransparency = 1
+	l.AnchorPoint = Vector2.new(0.5, 0.5)
+	l.Position = UDim2.fromScale(0.5, 0.42)
+	l.Size = UDim2.fromScale(0.8, 0.16)
+	l.Font = Enum.Font.Antique
+	l.TextScaled = true
+	l.Text = text
+	l.TextColor3 = WHITE
+	l.TextStrokeColor3 = INK2
+	l.TextStrokeTransparency = 0
+	l.TextTransparency = 1
+	l.Parent = sg
+	local l2 = l:Clone()
+	l2.Position = UDim2.fromScale(0.5, 0.54)
+	l2.Size = UDim2.fromScale(0.6, 0.06)
+	l2.Font = Enum.Font.GothamBlack
+	l2.Text = sub
+	l2.TextColor3 = BRUSH_GOLD
+	l2.Parent = sg
+	tween(l, 0.25, { TextTransparency = 0 })
+	tween(l2, 0.4, { TextTransparency = 0 })
+	task.delay(life, function()
+		tween(l, 0.5, { TextTransparency = 1, TextStrokeTransparency = 1 })
+		tween(l2, 0.5, { TextTransparency = 1, TextStrokeTransparency = 1 })
+		Debris:AddItem(sg, 0.6)
+	end)
+end
+VFX.inkPrison = function(d)
+	local caster = d.m
+	local target = d.t
+	local center = ground(d.at)
+	local R = d.radius or 24
+	local life = d.life or 6
+	-- 바닥: 먹이 둥글게 번지는 영역
+	local floor = piece(V(0.3, 2, 2), CF(center + V(0, 0.2, 0)) * CFrame.Angles(0, 0, math.rad(90)), INK2, 0.08, Enum.PartType.Cylinder)
+	floor.Material = Enum.Material.SmoothPlastic
+	tween(floor, 0.5, { Size = V(0.3, R * 2, R * 2) })
+	local rim = piece(V(0.35, 2, 2), CF(center + V(0, 0.25, 0)) * CFrame.Angles(0, 0, math.rad(90)), BRUSH_GOLD, 0.2, Enum.PartType.Cylinder)
+	tween(rim, 0.5, { Size = V(0.35, R * 2 + 1.2, R * 2 + 1.2) })
+	task.delay(life, function()
+		fadeOut(floor, 0.6)
+		fadeOut(rim, 0.6)
+	end)
+	-- 하늘: 경선 열여섯 (땅의 한 점에서 꼭대기를 지나 맞은편으로 휘는 먹 획) 이 출렁이며 반구를 덮는다
+	local dome: { { Vector3 } } = {}
+	for i = 1, 16 do
+		local a = i / 16 * math.pi * 2
+		local p0 = V(math.cos(a) * R, 0, math.sin(a) * R)
+		table.insert(dome, { p0, V(0, R * 0.85, 0) })
+	end
+	for i = 1, 10 do
+		local a1, a2 = math.random() * math.pi * 2, math.random() * math.pi * 2
+		table.insert(dome, { V(math.cos(a1) * R * 0.9, R * 0.3, math.sin(a1) * R * 0.9), V(math.cos(a2) * R * 0.9, R * 0.5, math.sin(a2) * R * 0.9) })
+	end
+	-- 영역이 펼쳐진다: 처음 0.45초 동안 하늘 사방의 먹 획이 날아와 반구를 짠다
+	beamBeast(dome, function(t)
+		return CF(center) * CFrame.Angles(0, t * 0.6, 0)
+	end, life, 1, INK2, INKEDGE, { per = 2, w = 1.6, gold = { 1, 5, 9, 13 }, amp = 7, form = 0.45 })
+	-- 영역 벽을 도는 먹 줄기
+	inkSwirl(function()
+		return center + V(0, R * 0.35, 0)
+	end, 30, R, R * 0.6, life, { width = 1.4, trail = 0.8, speed = 0.8, gold = true, drips = 30 })
+	-- 갇힌 적: 땅의 여섯 점에서 뻗은 먹 사슬이 몸을 묶는다
+	local troot = typeof(target) == "Instance" and target:FindFirstChild("HumanoidRootPart")
+	if troot and troot:IsA("BasePart") then
+		local chains: { { Vector3 } } = {}
+		for i = 1, 6 do
+			local a = i / 6 * math.pi * 2
+			table.insert(chains, { V(math.cos(a) * 7, -3, math.sin(a) * 7), V(0, 0.5, 0) })
+		end
+		local tr = troot :: BasePart
+		beamBeast(chains, function()
+			return tr.Parent and CF(tr.Position) or nil
+		end, life, 1, INK2, INKEDGE, { per = 2, w = 0.5, gold = { 2, 5 }, amp = 1.2 })
+		inkSwirl(function()
+			return tr.Position
+		end, 12, 3, 4, life, { width = 0.6, trail = 0.4, speed = 2.5, gold = true })
+	end
+	-- 영역 안의 내 화면
+	local cam = workspace.CurrentCamera
+	local me = Players.LocalPlayer.Character
+	if cam and ((cam.CFrame.Position - center).Magnitude < R + 10 or me == caster or me == target) then
+		inkScreen(life)
+		domainTitle("混沌獄", "혼돈옥 · 먹의 영역", 1.8)
+		shake(0.8)
+	end
+	Fx.flash(center + V(0, 6, 0), BRUSH_GOLD, R * 2, 4, 0.4)
+	pcall(Fx.sound, "splash", 1, 0.45, center)
+end
+
+-- 천지미분 끝 (오의와 다르게): 하늘에서 먹의 회오리 → 하늘만 한 붓의 두 획
+VFX.inkFunnel = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 40
+	local life = d.life or 0.7
+	-- 위로 갈수록 넓어지는 깔때기: 높이마다 고리 소용돌이
+	for lvl = 0, 4 do
+		local h = lvl * 9
+		inkSwirl(function()
+			return g + V(0, h, 0)
+		end, 10, 4 + lvl * r * 0.18, 2, life, { width = 1.6, trail = 0.5, speed = 3 - lvl * 0.3, converge = lvl == 0, gold = lvl % 2 == 0 })
+	end
+	shake(0.6)
+end
+VFX.inkCleave = function(d)
+	local g = ground(d.at) + V(0, 3, 0)
+	local r = d.radius or 46
+	local look = d.dir or V(0, 0, -1)
+	local right = V(-look.Z, 0, look.X)
+	-- 첫 획: 왼쪽 위에서 오른쪽 아래로, 둘째 획: 오른쪽 위에서 왼쪽 아래로 (굵은 붓, 금빛 테)
+	local strokes = { { g - right * r + V(0, r * 0.5, 0) - look * r * 0.3, g + right * r - V(0, 1, 0) + look * r * 0.3 }, { g + right * r + V(0, r * 0.5, 0) - look * r * 0.3, g - right * r - V(0, 1, 0) + look * r * 0.3 } }
+	for si, st in ipairs(strokes) do
+		task.delay((si - 1) * 0.28, function()
+			for j = 1, 7 do
+				local off = V(0, (j - 4) * 0.8, 0)
+				inkStroke(st[1] + off, st[2] + off, 0.2, j == 4 and 4 or 2.6, 3, j == 4)
+			end
+			shake(0.9)
+		end)
+	end
+	task.delay(0.65, function()
+		inkBurst(g, r * 0.8, true)
+		inkBurst(g + right * r * 0.5, r * 0.4, true)
+		inkBurst(g - right * r * 0.5, r * 0.4, true)
+		Fx.ring(ground(d.at) + V(0, 0.5, 0), BRUSH_GOLD, 4, r * 2.2, 0.6)
+		Fx.flash(g, WHITE, r * 2.5, 6, 0.4)
+		calligraphy(g + V(0, 30, 0), "天地", 1.4)
+		shake(1.5)
+	end)
+end
+
+-- 구룡멸세 (오의 구룡천강과 다르게): 하늘을 두 바퀴 휘감는 황금 용왕 → 금빛 숨 → 하늘까지 닿는 불기둥
+local GOLDD, GOLDD2, GOLDFIRE = Color3.fromRGB(255, 205, 80), Color3.fromRGB(255, 250, 220), Color3.fromRGB(255, 110, 40)
+VFX.goldDragonCircle = function(d)
+	local c = ground(d.at)
+	local R = d.radius or 30
+	local life = d.life or 2.4
+	gSerpent(function(u)
+		local a = u * math.pi * 4
+		return c + V(math.cos(a) * R, 16 + math.sin(u * math.pi * 6) * 4, math.sin(a) * R)
+	end, life, 42, 5, GOLDD, GOLDD2, 0.012)
+	for i = 1, 3 do
+		gSerpent(function(u)
+			local a = u * math.pi * 4 + i * 0.3
+			return c + V(math.cos(a) * (R + i * 2), 18 + i, math.sin(a) * (R + i * 2))
+		end, life, 10, 1.4, GOLDFIRE, GOLDD, 0.02)
+	end
+	shake(0.5)
+end
+VFX.dragonBreath = function(d)
+	local g = ground(d.at)
+	local from = g + V((math.random() - 0.5) * 20, 18, (math.random() - 0.5) * 20)
+	for i = 1, 6 do
+		gStroke(from, g + V((math.random() - 0.5) * 4, 0.5, (math.random() - 0.5) * 4), 0.18 + i * 0.02, 1.6, 1.5, GOLDFIRE, GOLDD, true, 0.4)
+	end
+	task.delay(0.2, function()
+		gEmit(g + V(0, 1, 0), TEX_FIRE, GOLDD, GOLDFIRE, 30, 3, 10, 0.7, 1, V(0, 8, 0))
+		shake(0.25)
+	end)
+end
+VFX.dragonPillar = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 30
+	-- 용이 한가운데로 내리꽂힌다
+	gSerpent(function(u)
+		return (g + V(0, 60, 0)):Lerp(g + V(0, 1, 0), u)
+	end, 0.3, 30, 6, GOLDD, GOLDD2, 0.01)
+	task.delay(0.3, function()
+		-- 하늘까지 닿는 금빛 불기둥 (빔 기둥 + 불 입자 + 둘레 고리)
+		local col: { { Vector3 } } = {}
+		for i = 1, 10 do
+			local a = i / 10 * math.pi * 2
+			table.insert(col, { V(math.cos(a) * 5, 0, math.sin(a) * 5), V(math.cos(a + 1) * 3, 160, math.sin(a + 1) * 3) })
+		end
+		beamBeast(col, function(t)
+			return t < 1.4 and CF(g) * CFrame.Angles(0, t * 2.5, 0) or nil
+		end, 1.4, 1, GOLDD, GOLDFIRE, { per = 1, w = 4, glow = true, amp = 3 })
+		gEmit(g + V(0, 4, 0), TEX_FIRE, GOLDD, GOLDFIRE, 80, 6, 30, 1.2, 1, V(0, 30, 0))
+		Fx.ring(g + V(0, 0.5, 0), GOLDD, 4, r * 2.4, 0.6)
+		Fx.ring(g + V(0, 8, 0), GOLDFIRE, 4, r * 1.8, 0.5)
+		Fx.flash(g + V(0, 10, 0), GOLDD, r * 2.6, 6, 0.45)
+		shake(1.5)
+	end)
+end
+
+-- 귀문개방 (오의 백귀야행과 다르게): 등 뒤의 저승 문 → 혼의 강 → 하늘만 한 혼의 낫
+VFX.ghostGate = function(d)
+	local caster = d.m
+	local root = typeof(caster) == "Instance" and caster:FindFirstChild("HumanoidRootPart")
+	local look = d.dir or V(0, 0, -1)
+	local base = (root and root:IsA("BasePart")) and (root :: BasePart).Position or d.at
+	local g = ground(base) - look * 10
+	local life = d.life or 3
+	-- 문: 두 기둥 + 아치 (혼빛 빔) 와 그 안의 소용돌이
+	local right = V(-look.Z, 0, look.X)
+	local frame: { { Vector3 } } = {
+		{ right * -7, right * -7 + V(0, 20, 0) }, { right * 7, right * 7 + V(0, 20, 0) },
+		{ right * -7 + V(0, 20, 0), V(0, 25, 0) }, { right * 7 + V(0, 20, 0), V(0, 25, 0) },
+	}
+	beamBeast(frame, function(t)
+		return t < life and CF(g) or nil
+	end, life, 1, GHOST2, GHOST, { per = 3, w = 1.2, glow = true, amp = 0.8 })
+	gSwirl(function()
+		return g + V(0, 11, 0)
+	end, 20, 6, 8, life, GHOST, GHOST2, { width = 0.8, trail = 0.6, speed = 2 })
+	specterFlame(g + V(0, 2, 0), 4, life)
+end
+VFX.ghostTorrent = function(d)
+	local caster = d.m
+	local root = typeof(caster) == "Instance" and caster:FindFirstChild("HumanoidRootPart")
+	local look = d.dir or V(0, 0, -1)
+	local gate = ((root and root:IsA("BasePart")) and (root :: BasePart).Position or d.from) - look * 10 + V(0, 11, 0)
+	local at = d.at + V(0, 2, 0)
+	for i = 1, 3 do
+		gSerpent(function(u)
+			local mid = gate:Lerp(at, 0.5) + V((math.random() - 0.5) * 6, 10, (math.random() - 0.5) * 6)
+			return gate:Lerp(mid, u):Lerp(mid:Lerp(at, u), u)
+		end, 0.3 + i * 0.04, 6, 1, GHOST, GHOST2, 0.02)
+	end
+	task.delay(0.35, function()
+		specterFlame(at, 2.2, 0.6)
+	end)
+end
+VFX.soulReap = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 36
+	local look = d.dir or V(0, 0, -1)
+	-- 하늘만 한 혼의 낫: 자루 + 휜 날이 한 바퀴 돌며 벤다 (빔으로 그린 낫, 지나간 자리에 혼빛 획)
+	local blade: { { Vector3 } } = {}
+	for i = 0, 7 do
+		local a1, a2 = i / 8 * 1.6, (i + 1) / 8 * 1.6
+		table.insert(blade, { V(math.sin(a1) * r * 0.5, 10 + math.cos(a1) * 4, -r + math.cos(a1) * r * 0.25), V(math.sin(a2) * r * 0.5, 10 + math.cos(a2) * 4, -r + math.cos(a2) * r * 0.25) })
+	end
+	table.insert(blade, { V(0, 8, 0), V(0, 12, -r) })
+	local yaw0 = math.atan2(-look.X, -look.Z)
+	beamBeast(blade, function(t)
+		if t > 0.75 then
+			return nil
+		end
+		local k = t / 0.75
+		return CF(g) * CFrame.Angles(0, yaw0 + k * math.pi * 2, 0)
+	end, 0.75, 1, GHOST2, GHOST, { per = 2, w = 2.2, glow = true, amp = 0.6 })
+	for i = 1, 16 do
+		task.delay(i * 0.045, function()
+			local a = yaw0 + i / 16 * math.pi * 2
+			local p = g + V(-math.sin(a) * r, 2, -math.cos(a) * r)
+			specterFlame(p, 2.2, 0.6)
+		end)
+	end
+	task.delay(0.75, function()
+		Fx.ring(g + V(0, 0.5, 0), GHOST, 4, r * 2.2, 0.5)
+		Fx.flash(g + V(0, 6, 0), GHOST, r * 2.2, 5, 0.4)
+		shake(1.3)
+	end)
+	shake(0.6)
 end
 
 function ForgeFx.handles(data: any): boolean
