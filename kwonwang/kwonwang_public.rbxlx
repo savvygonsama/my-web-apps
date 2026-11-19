@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.57" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.58" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -13790,8 +13790,75 @@ function Trial.ended(player: Player, won: boolean)
 	end
 end
 
-Skills.init(Push)
-Combat.init(Push, {
+-- 3.99.58판 성능: 전투 연출 알림 (기술 연출 · 맞힘 · 동작 시작 등) 은 그 자리 근처의 사람에게만 보낸다.
+--   예전엔 맵 어디서 적 하나가 주먹을 휘둘러도 서버의 모든 사람에게 갔다 (사람이 많을수록 통신이 무거워졌다)
+--   자리를 알 수 없는 알림이나 목록에 없는 알림은 예전처럼 모두에게
+local NEAR_KINDS = { skillfx = true, hit = true, act = true, afterimage = true, blink = true, pdodge = true, proj = true, chain = true, interrupt = true, poise = true, broken = true, star = true }
+local NEAR_R = 450
+local function posOfArg(v: any): Vector3?
+	local tv = typeof(v)
+	if tv == "Vector3" then
+		return v
+	elseif tv == "Instance" then
+		if v:IsA("Model") then
+			local r = v:FindFirstChild("HumanoidRootPart")
+			if r and r:IsA("BasePart") then
+				return r.Position
+			end
+			local pp = v.PrimaryPart
+			return pp and pp.Position or nil
+		elseif v:IsA("BasePart") then
+			return v.Position
+		end
+	elseif tv == "table" then
+		for _, k in ipairs({ "at", "pos", "from" }) do
+			if typeof(v[k]) == "Vector3" then
+				return v[k]
+			end
+		end
+		for _, k in ipairs({ "m", "a", "t" }) do
+			if typeof(v[k]) == "Instance" then
+				local q = posOfArg(v[k])
+				if q then
+					return q
+				end
+			end
+		end
+	end
+	return nil
+end
+local PushNear: any = {
+	FireClient = function(_self: any, player: Player, ...: any)
+		Push:FireClient(player, ...)
+	end,
+	FireAllClients = function(_self: any, kind: any, ...: any)
+		if not NEAR_KINDS[kind] then
+			Push:FireAllClients(kind, ...)
+			return
+		end
+		local at: Vector3? = nil
+		for i = 1, select("#", ...) do
+			at = posOfArg((select(i, ...)))
+			if at then
+				break
+			end
+		end
+		if not at then
+			Push:FireAllClients(kind, ...)
+			return
+		end
+		for _, pl in ipairs(Players:GetPlayers()) do
+			local ch = pl.Character
+			local r = ch and ch:FindFirstChild("HumanoidRootPart")
+			-- 몸이 없거나 (막 들어온 사람) 가까운 사람에게만
+			if not r or not r:IsA("BasePart") or (r.Position - at).Magnitude <= NEAR_R then
+				Push:FireClient(pl, kind, ...)
+			end
+		end
+	end,
+}
+Skills.init(PushNear)
+Combat.init(PushNear, {
 	onKill = function(f: any, by: any)
 		if f.npc then
 			Npc.onDeath(f)
@@ -14102,7 +14169,7 @@ if not okWorld then
 	warn("[권왕] 맵 만들기 오류:", builtWorld)
 end
 local W: any = okWorld and builtWorld or { train = {}, rings = {} }
-Npc.init(Push)
+Npc.init(PushNear)
 
 task.spawn(function()
 	local dt = 0.05
@@ -39589,7 +39656,59 @@ local function edgeSecret(out: any)
 	-- 벼랑 (높은 바위 단)과 오르는 비탈
 	part({ Name = "EdgeCliff", Size = Vector3.new(420, H, 170), Position = Vector3.new(0, H / 2 - 0.5, cz), Color = Color3.fromRGB(118, 122, 128), Material = Enum.Material.Slate, Parent = f })
 	part({ Name = "EdgeCliffTop", Size = Vector3.new(420, 1, 170), Position = Vector3.new(0, H, cz), Color = Color3.fromRGB(140, 150, 140), Material = Enum.Material.Grass, Parent = f })
-	wedge({ Name = "EdgeRamp", Size = Vector3.new(36, H, 150), CFrame = CFrame.new(0, H / 2 - 0.5, cz - 85 - 75) * CFrame.Angles(0, math.pi, 0), Color = Color3.fromRGB(128, 132, 136), Material = Enum.Material.Slate, Parent = f })
+	-- 3.99.58판: 비탈이 거꾸로 놓여 높은 쪽이 벼랑 반대편을 봤다 (벼랑 위로 오를 수 없었다). 높은 쪽 (쐐기의 +Z) 이 벼랑에 닿게
+	wedge({ Name = "EdgeRamp", Size = Vector3.new(36, H, 150), CFrame = CFrame.new(0, H / 2 - 0.5, cz - 85 - 75), Color = Color3.fromRGB(128, 132, 136), Material = Enum.Material.Slate, Parent = f })
+	-- 3.99.58판: 상자 같던 벼랑과 미끄럼틀 같던 비탈을 바위 지형처럼. 땅 쪽 (-Z) 면과 양옆에 크기 · 높이 · 기울기가 다른 바위 덩이를 겹쳐 쌓고,
+	--   꼭대기 가장자리에 들쭉날쭉한 바위 이빨, 비탈 위엔 디딤돌 판 (밟는 면은 원래 비탈 그대로), 비탈 양옆엔 큰 바위
+	do
+		local ROCKC = { Color3.fromRGB(112, 116, 122), Color3.fromRGB(98, 102, 108), Color3.fromRGB(126, 128, 130) }
+		local function chunk(at: Vector3, sx: number, sy: number, sz: number, yaw: number)
+			part({ Name = "CliffChunk", Size = Vector3.new(sx, sy, sz), CFrame = CFrame.new(at) * CFrame.Angles(rng:NextNumber(-0.12, 0.12), yaw, rng:NextNumber(-0.1, 0.1)), Color = ROCKC[rng:NextInteger(1, #ROCKC)], Material = Enum.Material.Slate, Parent = f })
+		end
+		local front = cz - 85
+		-- 땅 쪽 면: 비탈 자리 (가운데 ±22) 는 비운다
+		for x = -205, 205, 13 do
+			if math.abs(x) > 24 then
+				local h = rng:NextNumber(H * 0.55, H + 5)
+				chunk(Vector3.new(x + rng:NextNumber(-4, 4), h / 2 - 1, front + rng:NextNumber(-3, 2)), rng:NextNumber(14, 22), h, rng:NextNumber(8, 14), rng:NextNumber(-0.25, 0.25))
+				-- 아래쪽에 떨어져 나간 바위
+				if rng:NextNumber() < 0.6 then
+					local s0 = rng:NextNumber(3, 7)
+					chunk(Vector3.new(x + rng:NextNumber(-6, 6), s0 * 0.35, front - rng:NextNumber(7, 14)), s0 * 1.3, s0, s0, rng:NextNumber(0, 6))
+				end
+			end
+		end
+		-- 양옆 면
+		for _, sx in ipairs({ -1, 1 }) do
+			for z = cz - 80, cz + 80, 14 do
+				local h = rng:NextNumber(H * 0.55, H + 4)
+				chunk(Vector3.new(sx * (210 + rng:NextNumber(-2, 3)), h / 2 - 1, z + rng:NextNumber(-3, 3)), rng:NextNumber(8, 13), h, rng:NextNumber(14, 20), rng:NextNumber(-0.25, 0.25))
+			end
+		end
+		-- 꼭대기 가장자리의 바위 이빨
+		for x = -200, 200, 17 do
+			if math.abs(x) > 24 then
+				local s0 = rng:NextNumber(3, 6)
+				chunk(Vector3.new(x + rng:NextNumber(-5, 5), H + s0 * 0.4, front + rng:NextNumber(3, 9)), s0 * 1.4, s0 * rng:NextNumber(1, 1.8), s0, rng:NextNumber(0, 6))
+			end
+		end
+		-- 비탈: 디딤돌 판 (밟는 면 위에 살짝 얹어 안 부딪히게) 과 양옆의 큰 바위
+		local rampLen, rampZ0 = 150, front
+		for i = 0, 18 do
+			local u = (i + 0.5) / 19
+			local z = rampZ0 - rampLen + u * rampLen
+			local y = H * u
+			part({ Name = "RampSlab", Size = Vector3.new(rng:NextNumber(26, 32), 0.6, 7.4), CFrame = CFrame.new(rng:NextNumber(-1.5, 1.5), y + 0.35, z) * CFrame.Angles(-math.atan2(H, rampLen), rng:NextNumber(-0.05, 0.05), 0), Color = Color3.fromRGB(150, 146, 138), Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+		end
+		for _, sx in ipairs({ -1, 1 }) do
+			for i = 0, 7 do
+				local u = i / 7
+				local z = rampZ0 - rampLen + u * rampLen
+				local h = H * u + rng:NextNumber(4, 8)
+				chunk(Vector3.new(sx * rng:NextNumber(20, 24), h / 2 - 1, z), rng:NextNumber(7, 11), h, rng:NextNumber(14, 19), rng:NextNumber(-0.2, 0.2))
+			end
+		end
+	end
 	-- 벼랑 앞면의 바위 (들쭉날쭉)
 	for k = -10, 10 do
 		local h = rng:NextNumber(H * 0.6, H + 6)
@@ -40533,8 +40652,9 @@ local function hellWorld(out: any)
 		part({ Name = "RiverGlow", Size = Vector3.new(420, 0.4, 62), Position = c + Vector3.new(0, 1.05, 0), Color = rgb(255, 60, 50), Material = Enum.Material.Neon, Transparency = 0.7, CanCollide = false, Parent = f })
 		-- 돌다리: 남북으로 강을 건넌다
 		part({ Name = "RiverBridge", Size = Vector3.new(16, 1.4, 96), Position = c + Vector3.new(0, 2.6, 0), Color = rgb(110, 100, 104), Material = Enum.Material.Cobblestone, Parent = f })
-		wedge({ Name = "BridgeRampN", Size = Vector3.new(16, 2.6, 18), CFrame = CFrame.new(c + Vector3.new(0, 1.3, -57)) * CFrame.Angles(0, math.pi, 0), Color = rgb(110, 100, 104), Material = Enum.Material.Cobblestone, Parent = f })
-		wedge({ Name = "BridgeRampS", Size = Vector3.new(16, 2.6, 18), CFrame = CFrame.new(c + Vector3.new(0, 1.3, 57)), Color = rgb(110, 100, 104), Material = Enum.Material.Cobblestone, Parent = f })
+		-- 3.99.58판: 양쪽 비탈이 거꾸로였다 (높은 쪽이 다리 바깥). 쐐기의 높은 쪽 (+Z) 이 다리 끝에 닿게
+		wedge({ Name = "BridgeRampN", Size = Vector3.new(16, 2.6, 18), CFrame = CFrame.new(c + Vector3.new(0, 1.3, -57)), Color = rgb(110, 100, 104), Material = Enum.Material.Cobblestone, Parent = f })
+		wedge({ Name = "BridgeRampS", Size = Vector3.new(16, 2.6, 18), CFrame = CFrame.new(c + Vector3.new(0, 1.3, 57)) * CFrame.Angles(0, math.pi, 0), Color = rgb(110, 100, 104), Material = Enum.Material.Cobblestone, Parent = f })
 		for _, sx in ipairs({ -1, 1 }) do
 			for i = -4, 4 do
 				part({ Name = "BridgePost", Size = Vector3.new(1.4, 4.4, 1.4), Position = c + Vector3.new(sx * 7.4, 5.5, i * 11), Color = rgb(70, 62, 68), Material = Enum.Material.Granite, Parent = f })
@@ -44161,7 +44281,12 @@ function handlers.hit(data: any)
 		end
 		local skillStyle = data.skill and Config.STYLE_BY_ID[data.style or ""]
 		local col = data.crit and Color3.fromRGB(255, 220, 80) or (hurt and Color3.fromRGB(255, 90, 80) or (skillStyle and skillStyle.color2:Lerp(Color3.new(1, 1, 1), 0.3) or Color3.new(1, 1, 1)))
-		Fx.text(pos + Vector3.new(0, 2, 0), (data.crit and "치명 " or "") .. tostring(math.floor((data.dmg or 0) + 0.5)), col, data.crit and 34 or 26)
+		-- 3.99.58판: 후반의 큰 피해가 열몇 자리로 길게 찍혀 읽히지 않았다 (1.2K · 3.4M · 5.6B 처럼)
+		Fx.text(pos + Vector3.new(0, 2, 0), (data.crit and "치명 " or "") .. Config.formatNumber(math.floor((data.dmg or 0) + 0.5)), col, data.crit and 34 or 26)
+		-- 맞는 순간 몸이 하얗게 번쩍인다 (치명은 금빛, 내가 맞으면 붉게)
+		if t then
+			pcall(Fx.hitFlash, t, data.crit and Color3.fromRGB(255, 225, 120) or (hurt and Color3.fromRGB(255, 90, 80) or Color3.new(1, 1, 1)), data.heavy and 0.16 or 0.11)
+		end
 		if data.broken then
 			Fx.text(pos + Vector3.new(0, 5, 0), "파훼!", Color3.fromRGB(255, 200, 80), 40)
 			Fx.ring(pos, Color3.fromRGB(255, 200, 80), 2, 18, 0.45)
@@ -58860,7 +58985,8 @@ function Fx.text(pos: Vector3, text: string, color: Color3, size: number, rise: 
 	sc.Scale = 1.8
 	sc.Parent = l
 	tween(sc, 0.14, { Scale = 1 }, Enum.EasingStyle.Back)
-	tween(anchor, 0.8, { Position = pos + Vector3.new(math.random() * 2 - 1, rise or 3.5, 0) })
+	-- 3.99.58판: 여러 숫자가 한자리에 겹치지 않게 옆으로 조금씩 흩는다
+	tween(anchor, 0.8, { Position = pos + Vector3.new(math.random() * 3 - 1.5, (rise or 3.5) + math.random() * 1.2, math.random() * 2 - 1) })
 	task.delay(0.45, function()
 		tween(l, 0.35, { TextTransparency = 1 })
 		tween(st, 0.35, { Transparency = 1 })
@@ -60842,6 +60968,40 @@ end
 local Anim: any = nil
 function Fx.bindAnim(a: any)
 	Anim = a
+end
+
+-- 3.99.58판 맞는 순간 몸이 하얗게 번쩍인다 (모델마다 Highlight 하나를 두고 다시 쓴다. 켜져 있는 것은 잠깐뿐이라 31개 한도에 닿지 않는다)
+local flashHL: { [Model]: Highlight } = setmetatable({}, { __mode = "k" }) :: any
+local flashSeq: { [Model]: number } = setmetatable({}, { __mode = "k" }) :: any
+function Fx.hitFlash(m: Model?, color: Color3?, secs: number?)
+	if not m or not m.Parent then
+		return
+	end
+	local h = flashHL[m]
+	if not h or h.Parent ~= m then
+		h = Instance.new("Highlight")
+		h.Name = "KwonHitFlash"
+		h.DepthMode = Enum.HighlightDepthMode.Occluded
+		h.OutlineTransparency = 1
+		h.FillTransparency = 1
+		h.Enabled = false
+		h.Adornee = m
+		h.Parent = m
+		flashHL[m] = h
+	end
+	local hl = h :: Highlight
+	local seq = (flashSeq[m] or 0) + 1
+	flashSeq[m] = seq
+	hl.FillColor = color or Color3.new(1, 1, 1)
+	hl.FillTransparency = 0.25
+	hl.Enabled = true
+	local t = secs or 0.12
+	TweenService:Create(hl, TweenInfo.new(t, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { FillTransparency = 1 }):Play()
+	task.delay(t + 0.02, function()
+		if flashSeq[m] == seq and hl.Parent then
+			hl.Enabled = false
+		end
+	end)
 end
 
 function Fx.hitstop(models: { Model }, secs: number)
@@ -88697,27 +88857,43 @@ end
 -- 알림과 큰 글자
 ------------------------------------------------------------------------
 local toastBox: Frame
+-- 3.99.58판: 글자만 떠 있던 알림을 어두운 알약 모양 칸 위에 (살짝 떠오르며 나타나고 스르르 사라진다)
+local toastSeq = 0
 function UI.toast(msg: string)
 	if not toastBox then
 		return
 	end
-	local l = text({ Size = UDim2.new(1, 0, 0, 34), Text = msg, TextSize = 21, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = toastBox })
+	toastSeq += 1
+	local pill = new("Frame", { LayoutOrder = toastSeq, Size = UDim2.new(0, 0, 0, 34), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = Color3.fromRGB(16, 11, 10), BackgroundTransparency = 1, Parent = toastBox }, {
+		corner(17),
+		new("UIPadding", { PaddingLeft = UDim.new(0, 18), PaddingRight = UDim.new(0, 18) }),
+	})
+	local edge = new("UIStroke", { Color = C.gold, Thickness = 1, Transparency = 1, Parent = pill })
+	local l = text({ Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X, Text = msg, TextSize = 19, TextWrapped = false, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.7, TextTransparency = 1, Parent = pill })
+	local inT = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	TweenService:Create(pill, inT, { BackgroundTransparency = 0.3 }):Play()
+	TweenService:Create(edge, inT, { Transparency = 0.75 }):Play()
+	TweenService:Create(l, inT, { TextTransparency = 0 }):Play()
 	task.delay(3, function()
-		if not l.Parent then
+		if not pill.Parent then
 			return
 		end
-		TweenService:Create(l, TweenInfo.new(0.4), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+		local outT = TweenInfo.new(0.4)
+		TweenService:Create(pill, outT, { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(edge, outT, { Transparency = 1 }):Play()
+		TweenService:Create(l, outT, { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
 		task.delay(0.45, function()
-			l:Destroy()
+			pill:Destroy()
 		end)
 	end)
-	local kids = toastBox:GetChildren()
-	if #kids > 6 then
-		for i = 1, #kids - 6 do
-			if kids[i]:IsA("TextLabel") then
-				kids[i]:Destroy()
-			end
+	local pills = {}
+	for _, k in ipairs(toastBox:GetChildren()) do
+		if k:IsA("Frame") then
+			table.insert(pills, k)
 		end
+	end
+	for i = 1, #pills - 6 do
+		pills[i]:Destroy()
 	end
 end
 
@@ -88747,13 +88923,22 @@ function UI.banner(title: string, sub: string?, color: Color3?)
 	end
 	local f = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.2, (slot - 1) * 128 * uiScale), Size = UDim2.new(0, 760, 0, 110), BackgroundTransparency = 1, ZIndex = 20, Parent = gui })
 	bannerSlots[slot] = { frame = f, born = os.clock() }
-	local sc = new("UIScale", { Scale = uiScale * 1.6, Parent = f })
-	local t = text({ Size = UDim2.new(1, 0, 0, 64), Text = title, TextSize = 50, Font = Enum.Font.GothamBlack, TextColor3 = color or C.gold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0, Parent = f })
-	local s = text({ Position = UDim2.new(0, 0, 0, 66), Size = UDim2.new(1, 0, 0, 34), Text = sub or "", TextSize = 22, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = f })
-	TweenService:Create(sc, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScale }):Play()
+	-- 3.99.58판: 크게 튀어 오르던 것을 가라앉혔다 (살짝 커졌다 제자리로, 글자는 스며 나오고 아래에 가는 빛줄 하나)
+	local sc = new("UIScale", { Scale = uiScale * 1.08, Parent = f })
+	local c0 = color or C.gold
+	local t = text({ Size = UDim2.new(1, 0, 0, 60), Text = title, TextSize = 44, Font = Enum.Font.GothamBlack, TextColor3 = c0, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.35, TextTransparency = 1, Parent = f })
+	local line = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 62), Size = UDim2.new(0, 0, 0, 1), BackgroundColor3 = c0, BorderSizePixel = 0, Parent = f })
+	new("UIGradient", { Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0), NumberSequenceKeypoint.new(1, 1) }), Parent = line })
+	local s = text({ Position = UDim2.new(0, 0, 0, 68), Size = UDim2.new(1, 0, 0, 32), Text = sub or "", TextSize = 20, Font = Enum.Font.GothamMedium, TextColor3 = C.text, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.6, TextTransparency = 1, Parent = f })
+	local inT = TweenInfo.new(0.35, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+	TweenService:Create(sc, inT, { Scale = uiScale }):Play()
+	TweenService:Create(t, inT, { TextTransparency = 0 }):Play()
+	TweenService:Create(s, inT, { TextTransparency = 0.05 }):Play()
+	TweenService:Create(line, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), { Size = UDim2.new(0.6, 0, 0, 1) }):Play()
 	task.delay(2.2, function()
 		TweenService:Create(t, TweenInfo.new(0.4), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
 		TweenService:Create(s, TweenInfo.new(0.4), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+		TweenService:Create(line, TweenInfo.new(0.4), { BackgroundTransparency = 1 }):Play()
 		task.delay(0.45, function()
 			local cur = bannerSlots[slot]
 			if cur and cur.frame == f then
@@ -93699,7 +93884,7 @@ function UI.init(req: RemoteEvent)
 	for _, top in ipairs({ true, false }) do
 		table.insert(bars, new("Frame", { AnchorPoint = Vector2.new(0, top and 0 or 1), Position = UDim2.fromScale(0, top and 0 or 1), Size = UDim2.new(1, 0, 0, 0), BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, ZIndex = 30, Parent = gui }))
 	end
-	toastBox = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 120), Size = UDim2.new(0, 760, 0, 230), BackgroundTransparency = 1, Parent = gui }, { new("UIListLayout", { VerticalAlignment = Enum.VerticalAlignment.Top }) })
+	toastBox = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 120), Size = UDim2.new(0, 760, 0, 230), BackgroundTransparency = 1, Parent = gui }, { new("UIListLayout", { VerticalAlignment = Enum.VerticalAlignment.Top, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }) })
 	scaled(toastBox)
 	UIB.buildHud()
 	-- 위 왼쪽: 경지·은자·능력치, 메뉴

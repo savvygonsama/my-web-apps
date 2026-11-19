@@ -6318,7 +6318,59 @@ local function edgeSecret(out: any)
 	-- 벼랑 (높은 바위 단)과 오르는 비탈
 	part({ Name = "EdgeCliff", Size = Vector3.new(420, H, 170), Position = Vector3.new(0, H / 2 - 0.5, cz), Color = Color3.fromRGB(118, 122, 128), Material = Enum.Material.Slate, Parent = f })
 	part({ Name = "EdgeCliffTop", Size = Vector3.new(420, 1, 170), Position = Vector3.new(0, H, cz), Color = Color3.fromRGB(140, 150, 140), Material = Enum.Material.Grass, Parent = f })
-	wedge({ Name = "EdgeRamp", Size = Vector3.new(36, H, 150), CFrame = CFrame.new(0, H / 2 - 0.5, cz - 85 - 75) * CFrame.Angles(0, math.pi, 0), Color = Color3.fromRGB(128, 132, 136), Material = Enum.Material.Slate, Parent = f })
+	-- 3.99.58판: 비탈이 거꾸로 놓여 높은 쪽이 벼랑 반대편을 봤다 (벼랑 위로 오를 수 없었다). 높은 쪽 (쐐기의 +Z) 이 벼랑에 닿게
+	wedge({ Name = "EdgeRamp", Size = Vector3.new(36, H, 150), CFrame = CFrame.new(0, H / 2 - 0.5, cz - 85 - 75), Color = Color3.fromRGB(128, 132, 136), Material = Enum.Material.Slate, Parent = f })
+	-- 3.99.58판: 상자 같던 벼랑과 미끄럼틀 같던 비탈을 바위 지형처럼. 땅 쪽 (-Z) 면과 양옆에 크기 · 높이 · 기울기가 다른 바위 덩이를 겹쳐 쌓고,
+	--   꼭대기 가장자리에 들쭉날쭉한 바위 이빨, 비탈 위엔 디딤돌 판 (밟는 면은 원래 비탈 그대로), 비탈 양옆엔 큰 바위
+	do
+		local ROCKC = { Color3.fromRGB(112, 116, 122), Color3.fromRGB(98, 102, 108), Color3.fromRGB(126, 128, 130) }
+		local function chunk(at: Vector3, sx: number, sy: number, sz: number, yaw: number)
+			part({ Name = "CliffChunk", Size = Vector3.new(sx, sy, sz), CFrame = CFrame.new(at) * CFrame.Angles(rng:NextNumber(-0.12, 0.12), yaw, rng:NextNumber(-0.1, 0.1)), Color = ROCKC[rng:NextInteger(1, #ROCKC)], Material = Enum.Material.Slate, Parent = f })
+		end
+		local front = cz - 85
+		-- 땅 쪽 면: 비탈 자리 (가운데 ±22) 는 비운다
+		for x = -205, 205, 13 do
+			if math.abs(x) > 24 then
+				local h = rng:NextNumber(H * 0.55, H + 5)
+				chunk(Vector3.new(x + rng:NextNumber(-4, 4), h / 2 - 1, front + rng:NextNumber(-3, 2)), rng:NextNumber(14, 22), h, rng:NextNumber(8, 14), rng:NextNumber(-0.25, 0.25))
+				-- 아래쪽에 떨어져 나간 바위
+				if rng:NextNumber() < 0.6 then
+					local s0 = rng:NextNumber(3, 7)
+					chunk(Vector3.new(x + rng:NextNumber(-6, 6), s0 * 0.35, front - rng:NextNumber(7, 14)), s0 * 1.3, s0, s0, rng:NextNumber(0, 6))
+				end
+			end
+		end
+		-- 양옆 면
+		for _, sx in ipairs({ -1, 1 }) do
+			for z = cz - 80, cz + 80, 14 do
+				local h = rng:NextNumber(H * 0.55, H + 4)
+				chunk(Vector3.new(sx * (210 + rng:NextNumber(-2, 3)), h / 2 - 1, z + rng:NextNumber(-3, 3)), rng:NextNumber(8, 13), h, rng:NextNumber(14, 20), rng:NextNumber(-0.25, 0.25))
+			end
+		end
+		-- 꼭대기 가장자리의 바위 이빨
+		for x = -200, 200, 17 do
+			if math.abs(x) > 24 then
+				local s0 = rng:NextNumber(3, 6)
+				chunk(Vector3.new(x + rng:NextNumber(-5, 5), H + s0 * 0.4, front + rng:NextNumber(3, 9)), s0 * 1.4, s0 * rng:NextNumber(1, 1.8), s0, rng:NextNumber(0, 6))
+			end
+		end
+		-- 비탈: 디딤돌 판 (밟는 면 위에 살짝 얹어 안 부딪히게) 과 양옆의 큰 바위
+		local rampLen, rampZ0 = 150, front
+		for i = 0, 18 do
+			local u = (i + 0.5) / 19
+			local z = rampZ0 - rampLen + u * rampLen
+			local y = H * u
+			part({ Name = "RampSlab", Size = Vector3.new(rng:NextNumber(26, 32), 0.6, 7.4), CFrame = CFrame.new(rng:NextNumber(-1.5, 1.5), y + 0.35, z) * CFrame.Angles(-math.atan2(H, rampLen), rng:NextNumber(-0.05, 0.05), 0), Color = Color3.fromRGB(150, 146, 138), Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+		end
+		for _, sx in ipairs({ -1, 1 }) do
+			for i = 0, 7 do
+				local u = i / 7
+				local z = rampZ0 - rampLen + u * rampLen
+				local h = H * u + rng:NextNumber(4, 8)
+				chunk(Vector3.new(sx * rng:NextNumber(20, 24), h / 2 - 1, z), rng:NextNumber(7, 11), h, rng:NextNumber(14, 19), rng:NextNumber(-0.2, 0.2))
+			end
+		end
+	end
 	-- 벼랑 앞면의 바위 (들쭉날쭉)
 	for k = -10, 10 do
 		local h = rng:NextNumber(H * 0.6, H + 6)
@@ -7262,8 +7314,9 @@ local function hellWorld(out: any)
 		part({ Name = "RiverGlow", Size = Vector3.new(420, 0.4, 62), Position = c + Vector3.new(0, 1.05, 0), Color = rgb(255, 60, 50), Material = Enum.Material.Neon, Transparency = 0.7, CanCollide = false, Parent = f })
 		-- 돌다리: 남북으로 강을 건넌다
 		part({ Name = "RiverBridge", Size = Vector3.new(16, 1.4, 96), Position = c + Vector3.new(0, 2.6, 0), Color = rgb(110, 100, 104), Material = Enum.Material.Cobblestone, Parent = f })
-		wedge({ Name = "BridgeRampN", Size = Vector3.new(16, 2.6, 18), CFrame = CFrame.new(c + Vector3.new(0, 1.3, -57)) * CFrame.Angles(0, math.pi, 0), Color = rgb(110, 100, 104), Material = Enum.Material.Cobblestone, Parent = f })
-		wedge({ Name = "BridgeRampS", Size = Vector3.new(16, 2.6, 18), CFrame = CFrame.new(c + Vector3.new(0, 1.3, 57)), Color = rgb(110, 100, 104), Material = Enum.Material.Cobblestone, Parent = f })
+		-- 3.99.58판: 양쪽 비탈이 거꾸로였다 (높은 쪽이 다리 바깥). 쐐기의 높은 쪽 (+Z) 이 다리 끝에 닿게
+		wedge({ Name = "BridgeRampN", Size = Vector3.new(16, 2.6, 18), CFrame = CFrame.new(c + Vector3.new(0, 1.3, -57)), Color = rgb(110, 100, 104), Material = Enum.Material.Cobblestone, Parent = f })
+		wedge({ Name = "BridgeRampS", Size = Vector3.new(16, 2.6, 18), CFrame = CFrame.new(c + Vector3.new(0, 1.3, 57)) * CFrame.Angles(0, math.pi, 0), Color = rgb(110, 100, 104), Material = Enum.Material.Cobblestone, Parent = f })
 		for _, sx in ipairs({ -1, 1 }) do
 			for i = -4, 4 do
 				part({ Name = "BridgePost", Size = Vector3.new(1.4, 4.4, 1.4), Position = c + Vector3.new(sx * 7.4, 5.5, i * 11), Color = rgb(70, 62, 68), Material = Enum.Material.Granite, Parent = f })

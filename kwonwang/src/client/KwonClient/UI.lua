@@ -291,27 +291,43 @@ end
 -- 알림과 큰 글자
 ------------------------------------------------------------------------
 local toastBox: Frame
+-- 3.99.58판: 글자만 떠 있던 알림을 어두운 알약 모양 칸 위에 (살짝 떠오르며 나타나고 스르르 사라진다)
+local toastSeq = 0
 function UI.toast(msg: string)
 	if not toastBox then
 		return
 	end
-	local l = text({ Size = UDim2.new(1, 0, 0, 34), Text = msg, TextSize = 21, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = toastBox })
+	toastSeq += 1
+	local pill = new("Frame", { LayoutOrder = toastSeq, Size = UDim2.new(0, 0, 0, 34), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = Color3.fromRGB(16, 11, 10), BackgroundTransparency = 1, Parent = toastBox }, {
+		corner(17),
+		new("UIPadding", { PaddingLeft = UDim.new(0, 18), PaddingRight = UDim.new(0, 18) }),
+	})
+	local edge = new("UIStroke", { Color = C.gold, Thickness = 1, Transparency = 1, Parent = pill })
+	local l = text({ Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X, Text = msg, TextSize = 19, TextWrapped = false, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.7, TextTransparency = 1, Parent = pill })
+	local inT = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	TweenService:Create(pill, inT, { BackgroundTransparency = 0.3 }):Play()
+	TweenService:Create(edge, inT, { Transparency = 0.75 }):Play()
+	TweenService:Create(l, inT, { TextTransparency = 0 }):Play()
 	task.delay(3, function()
-		if not l.Parent then
+		if not pill.Parent then
 			return
 		end
-		TweenService:Create(l, TweenInfo.new(0.4), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+		local outT = TweenInfo.new(0.4)
+		TweenService:Create(pill, outT, { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(edge, outT, { Transparency = 1 }):Play()
+		TweenService:Create(l, outT, { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
 		task.delay(0.45, function()
-			l:Destroy()
+			pill:Destroy()
 		end)
 	end)
-	local kids = toastBox:GetChildren()
-	if #kids > 6 then
-		for i = 1, #kids - 6 do
-			if kids[i]:IsA("TextLabel") then
-				kids[i]:Destroy()
-			end
+	local pills = {}
+	for _, k in ipairs(toastBox:GetChildren()) do
+		if k:IsA("Frame") then
+			table.insert(pills, k)
 		end
+	end
+	for i = 1, #pills - 6 do
+		pills[i]:Destroy()
 	end
 end
 
@@ -341,13 +357,22 @@ function UI.banner(title: string, sub: string?, color: Color3?)
 	end
 	local f = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.2, (slot - 1) * 128 * uiScale), Size = UDim2.new(0, 760, 0, 110), BackgroundTransparency = 1, ZIndex = 20, Parent = gui })
 	bannerSlots[slot] = { frame = f, born = os.clock() }
-	local sc = new("UIScale", { Scale = uiScale * 1.6, Parent = f })
-	local t = text({ Size = UDim2.new(1, 0, 0, 64), Text = title, TextSize = 50, Font = Enum.Font.GothamBlack, TextColor3 = color or C.gold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0, Parent = f })
-	local s = text({ Position = UDim2.new(0, 0, 0, 66), Size = UDim2.new(1, 0, 0, 34), Text = sub or "", TextSize = 22, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = f })
-	TweenService:Create(sc, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScale }):Play()
+	-- 3.99.58판: 크게 튀어 오르던 것을 가라앉혔다 (살짝 커졌다 제자리로, 글자는 스며 나오고 아래에 가는 빛줄 하나)
+	local sc = new("UIScale", { Scale = uiScale * 1.08, Parent = f })
+	local c0 = color or C.gold
+	local t = text({ Size = UDim2.new(1, 0, 0, 60), Text = title, TextSize = 44, Font = Enum.Font.GothamBlack, TextColor3 = c0, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.35, TextTransparency = 1, Parent = f })
+	local line = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 62), Size = UDim2.new(0, 0, 0, 1), BackgroundColor3 = c0, BorderSizePixel = 0, Parent = f })
+	new("UIGradient", { Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0), NumberSequenceKeypoint.new(1, 1) }), Parent = line })
+	local s = text({ Position = UDim2.new(0, 0, 0, 68), Size = UDim2.new(1, 0, 0, 32), Text = sub or "", TextSize = 20, Font = Enum.Font.GothamMedium, TextColor3 = C.text, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.6, TextTransparency = 1, Parent = f })
+	local inT = TweenInfo.new(0.35, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+	TweenService:Create(sc, inT, { Scale = uiScale }):Play()
+	TweenService:Create(t, inT, { TextTransparency = 0 }):Play()
+	TweenService:Create(s, inT, { TextTransparency = 0.05 }):Play()
+	TweenService:Create(line, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), { Size = UDim2.new(0.6, 0, 0, 1) }):Play()
 	task.delay(2.2, function()
 		TweenService:Create(t, TweenInfo.new(0.4), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
 		TweenService:Create(s, TweenInfo.new(0.4), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+		TweenService:Create(line, TweenInfo.new(0.4), { BackgroundTransparency = 1 }):Play()
 		task.delay(0.45, function()
 			local cur = bannerSlots[slot]
 			if cur and cur.frame == f then
@@ -5293,7 +5318,7 @@ function UI.init(req: RemoteEvent)
 	for _, top in ipairs({ true, false }) do
 		table.insert(bars, new("Frame", { AnchorPoint = Vector2.new(0, top and 0 or 1), Position = UDim2.fromScale(0, top and 0 or 1), Size = UDim2.new(1, 0, 0, 0), BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, ZIndex = 30, Parent = gui }))
 	end
-	toastBox = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 120), Size = UDim2.new(0, 760, 0, 230), BackgroundTransparency = 1, Parent = gui }, { new("UIListLayout", { VerticalAlignment = Enum.VerticalAlignment.Top }) })
+	toastBox = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 120), Size = UDim2.new(0, 760, 0, 230), BackgroundTransparency = 1, Parent = gui }, { new("UIListLayout", { VerticalAlignment = Enum.VerticalAlignment.Top, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }) })
 	scaled(toastBox)
 	UIB.buildHud()
 	-- 위 왼쪽: 경지·은자·능력치, 메뉴

@@ -2026,7 +2026,12 @@ function handlers.hit(data: any)
 		end
 		local skillStyle = data.skill and Config.STYLE_BY_ID[data.style or ""]
 		local col = data.crit and Color3.fromRGB(255, 220, 80) or (hurt and Color3.fromRGB(255, 90, 80) or (skillStyle and skillStyle.color2:Lerp(Color3.new(1, 1, 1), 0.3) or Color3.new(1, 1, 1)))
-		Fx.text(pos + Vector3.new(0, 2, 0), (data.crit and "치명 " or "") .. tostring(math.floor((data.dmg or 0) + 0.5)), col, data.crit and 34 or 26)
+		-- 3.99.58판: 후반의 큰 피해가 열몇 자리로 길게 찍혀 읽히지 않았다 (1.2K · 3.4M · 5.6B 처럼)
+		Fx.text(pos + Vector3.new(0, 2, 0), (data.crit and "치명 " or "") .. Config.formatNumber(math.floor((data.dmg or 0) + 0.5)), col, data.crit and 34 or 26)
+		-- 맞는 순간 몸이 하얗게 번쩍인다 (치명은 금빛, 내가 맞으면 붉게)
+		if t then
+			pcall(Fx.hitFlash, t, data.crit and Color3.fromRGB(255, 225, 120) or (hurt and Color3.fromRGB(255, 90, 80) or Color3.new(1, 1, 1)), data.heavy and 0.16 or 0.11)
+		end
 		if data.broken then
 			Fx.text(pos + Vector3.new(0, 5, 0), "파훼!", Color3.fromRGB(255, 200, 80), 40)
 			Fx.ring(pos, Color3.fromRGB(255, 200, 80), 2, 18, 0.45)

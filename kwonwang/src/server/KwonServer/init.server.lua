@@ -2573,8 +2573,75 @@ function Trial.ended(player: Player, won: boolean)
 	end
 end
 
-Skills.init(Push)
-Combat.init(Push, {
+-- 3.99.58판 성능: 전투 연출 알림 (기술 연출 · 맞힘 · 동작 시작 등) 은 그 자리 근처의 사람에게만 보낸다.
+--   예전엔 맵 어디서 적 하나가 주먹을 휘둘러도 서버의 모든 사람에게 갔다 (사람이 많을수록 통신이 무거워졌다)
+--   자리를 알 수 없는 알림이나 목록에 없는 알림은 예전처럼 모두에게
+local NEAR_KINDS = { skillfx = true, hit = true, act = true, afterimage = true, blink = true, pdodge = true, proj = true, chain = true, interrupt = true, poise = true, broken = true, star = true }
+local NEAR_R = 450
+local function posOfArg(v: any): Vector3?
+	local tv = typeof(v)
+	if tv == "Vector3" then
+		return v
+	elseif tv == "Instance" then
+		if v:IsA("Model") then
+			local r = v:FindFirstChild("HumanoidRootPart")
+			if r and r:IsA("BasePart") then
+				return r.Position
+			end
+			local pp = v.PrimaryPart
+			return pp and pp.Position or nil
+		elseif v:IsA("BasePart") then
+			return v.Position
+		end
+	elseif tv == "table" then
+		for _, k in ipairs({ "at", "pos", "from" }) do
+			if typeof(v[k]) == "Vector3" then
+				return v[k]
+			end
+		end
+		for _, k in ipairs({ "m", "a", "t" }) do
+			if typeof(v[k]) == "Instance" then
+				local q = posOfArg(v[k])
+				if q then
+					return q
+				end
+			end
+		end
+	end
+	return nil
+end
+local PushNear: any = {
+	FireClient = function(_self: any, player: Player, ...: any)
+		Push:FireClient(player, ...)
+	end,
+	FireAllClients = function(_self: any, kind: any, ...: any)
+		if not NEAR_KINDS[kind] then
+			Push:FireAllClients(kind, ...)
+			return
+		end
+		local at: Vector3? = nil
+		for i = 1, select("#", ...) do
+			at = posOfArg((select(i, ...)))
+			if at then
+				break
+			end
+		end
+		if not at then
+			Push:FireAllClients(kind, ...)
+			return
+		end
+		for _, pl in ipairs(Players:GetPlayers()) do
+			local ch = pl.Character
+			local r = ch and ch:FindFirstChild("HumanoidRootPart")
+			-- 몸이 없거나 (막 들어온 사람) 가까운 사람에게만
+			if not r or not r:IsA("BasePart") or (r.Position - at).Magnitude <= NEAR_R then
+				Push:FireClient(pl, kind, ...)
+			end
+		end
+	end,
+}
+Skills.init(PushNear)
+Combat.init(PushNear, {
 	onKill = function(f: any, by: any)
 		if f.npc then
 			Npc.onDeath(f)
@@ -2885,7 +2952,7 @@ if not okWorld then
 	warn("[권왕] 맵 만들기 오류:", builtWorld)
 end
 local W: any = okWorld and builtWorld or { train = {}, rings = {} }
-Npc.init(Push)
+Npc.init(PushNear)
 
 task.spawn(function()
 	local dt = 0.05

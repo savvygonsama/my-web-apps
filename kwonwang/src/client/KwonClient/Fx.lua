@@ -207,7 +207,8 @@ function Fx.text(pos: Vector3, text: string, color: Color3, size: number, rise: 
 	sc.Scale = 1.8
 	sc.Parent = l
 	tween(sc, 0.14, { Scale = 1 }, Enum.EasingStyle.Back)
-	tween(anchor, 0.8, { Position = pos + Vector3.new(math.random() * 2 - 1, rise or 3.5, 0) })
+	-- 3.99.58판: 여러 숫자가 한자리에 겹치지 않게 옆으로 조금씩 흩는다
+	tween(anchor, 0.8, { Position = pos + Vector3.new(math.random() * 3 - 1.5, (rise or 3.5) + math.random() * 1.2, math.random() * 2 - 1) })
 	task.delay(0.45, function()
 		tween(l, 0.35, { TextTransparency = 1 })
 		tween(st, 0.35, { Transparency = 1 })
@@ -2189,6 +2190,40 @@ end
 local Anim: any = nil
 function Fx.bindAnim(a: any)
 	Anim = a
+end
+
+-- 3.99.58판 맞는 순간 몸이 하얗게 번쩍인다 (모델마다 Highlight 하나를 두고 다시 쓴다. 켜져 있는 것은 잠깐뿐이라 31개 한도에 닿지 않는다)
+local flashHL: { [Model]: Highlight } = setmetatable({}, { __mode = "k" }) :: any
+local flashSeq: { [Model]: number } = setmetatable({}, { __mode = "k" }) :: any
+function Fx.hitFlash(m: Model?, color: Color3?, secs: number?)
+	if not m or not m.Parent then
+		return
+	end
+	local h = flashHL[m]
+	if not h or h.Parent ~= m then
+		h = Instance.new("Highlight")
+		h.Name = "KwonHitFlash"
+		h.DepthMode = Enum.HighlightDepthMode.Occluded
+		h.OutlineTransparency = 1
+		h.FillTransparency = 1
+		h.Enabled = false
+		h.Adornee = m
+		h.Parent = m
+		flashHL[m] = h
+	end
+	local hl = h :: Highlight
+	local seq = (flashSeq[m] or 0) + 1
+	flashSeq[m] = seq
+	hl.FillColor = color or Color3.new(1, 1, 1)
+	hl.FillTransparency = 0.25
+	hl.Enabled = true
+	local t = secs or 0.12
+	TweenService:Create(hl, TweenInfo.new(t, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { FillTransparency = 1 }):Play()
+	task.delay(t + 0.02, function()
+		if flashSeq[m] == seq and hl.Parent then
+			hl.Enabled = false
+		end
+	end)
 end
 
 function Fx.hitstop(models: { Model }, secs: number)
