@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.53" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.54" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -42616,7 +42616,7 @@ startMove = function(slot: any, charge: number?)
 		Fx.skillAura(char, style.color, style.color2, dur, true)
 	elseif slot == "G" or slot == "X" then
 		if not PassArts.ownsUlt(style.id, slot) then
-			UI.cinematic((slot == "X" and "초 오의 · " or "") .. move.name, style.color, dur)
+			UI.ultTitle(slot == "X" and "초 오의" or "오의", move.name, style.color, dur)
 		end
 		if slot == "X" and style.fans then
 			Sakura.superIntro(char)
@@ -42633,7 +42633,7 @@ startMove = function(slot: any, charge: number?)
 			Fx.ult(style.id, char, dur)
 		end
 		shake(1.2)
-		tint(style.color, 0.25, dur)
+		tint(style.color, 0.1, dur) -- 3.99.54판: 0.25 → 0.1 (화면 전체가 권법 빛깔로 물들던 것을 옅게)
 		-- 오의: 화면이 확 좁아졌다가 (집중) 넓게 풀린다
 		local cam = workspace.CurrentCamera
 		if cam then
@@ -69551,6 +69551,8 @@ return {
 	["♻ 환생 8번으로"] = "♻ Rebirth to 8",
 	["♻ 환생 %d번 (끝 %d번)"] = "♻ Rebirth %d (max %d)",
 	["하늘과 땅이 나뉘기 전"] = "Before heaven and earth were parted",
+	["오의"] = "Secret Art",
+	["초 오의"] = "Super Secret Art",
 }
 ]]></string>
           </Properties>
@@ -88126,40 +88128,55 @@ end
 
 -- 오의: 위아래 검은 띠와 기술 이름
 local bars: { Frame } = {}
--- 오의 화면 연출: 검은 섬광 한 번, 가운데로 몰려드는 집중선, 권법 빛깔의 테두리
+-- 오의 화면 연출 (3.99.54판 다시): 화면 전체 색 번쩍임 · 두꺼운 테두리 · 집중선을 걷어 냈다.
+--   한순간 어둡게 가라앉았다가, 권법 빛깔의 가는 빛줄기 하나가 화면을 가로로 베고 지나간다
 function UI.ultFrame(color: Color3, color2: Color3)
 	local layer = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 35, Active = false, Parent = gui })
-	local inv = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.15, ZIndex = 35, Parent = layer })
-	task.delay(0.05, function()
-		inv.BackgroundColor3 = color2
-		TweenService:Create(inv, TweenInfo.new(0.25), { BackgroundTransparency = 1 }):Play()
+	local dip = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.45, BorderSizePixel = 0, ZIndex = 35, Parent = layer })
+	TweenService:Create(dip, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundTransparency = 1 }):Play()
+	-- 가로 빛줄기: 가운데가 밝고 양끝이 사라진다. 왼쪽에서 오른쪽으로 빠르게 그어진다
+	local slash = new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.fromScale(-0.1, 0.5), Size = UDim2.new(0, 0, 0, 2), Rotation = -3, BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, ZIndex = 36, Parent = layer })
+	new("UIGradient", { Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, color), ColorSequenceKeypoint.new(0.5, Color3.new(1, 1, 1)), ColorSequenceKeypoint.new(1, color2) }),
+		Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.35, 0.1), NumberSequenceKeypoint.new(0.65, 0.1), NumberSequenceKeypoint.new(1, 1) }), Parent = slash })
+	TweenService:Create(slash, TweenInfo.new(0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), { Size = UDim2.new(1.2, 0, 0, 2) }):Play()
+	task.delay(0.22, function()
+		TweenService:Create(slash, TweenInfo.new(0.35), { Size = UDim2.new(1.2, 0, 0, 0), BackgroundTransparency = 1 }):Play()
 	end)
-	-- 줄마다 가운데를 향하게 놓는다 (프레임은 제 가운데를 축으로 돌므로 자리는 각도로 따로 잡는다)
-	local cam = workspace.CurrentCamera
-	local vp = cam and cam.ViewportSize or Vector2.new(1280, 720)
-	local reach = vp.Magnitude * 0.5
-	for i = 1, 30 do
-		local a = i / 30 * 360 + math.random() * 8
-		local dir = Vector2.new(math.cos(math.rad(a)), math.sin(math.rad(a)))
-		local len = reach * (0.45 + math.random() * 0.2)
-		local function at(r: number): UDim2
-			return UDim2.new(0.5, dir.X * r, 0.5, dir.Y * r)
-		end
-		local line = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = at(reach * 0.95), Size = UDim2.fromOffset(len, math.random(2, 6)), Rotation = a,
-			BackgroundColor3 = i % 3 == 0 and color or Color3.new(1, 1, 1), BackgroundTransparency = 0.2, BorderSizePixel = 0, ZIndex = 36, Parent = layer })
-		-- 가운데 쪽 끝은 흐리게
-		new("UIGradient", { Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.6), NumberSequenceKeypoint.new(1, 0) }), Parent = line })
-		-- 바깥에서 가운데로 몰려든다
-		TweenService:Create(line, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Position = at(reach * 0.55), Size = UDim2.fromOffset(len * 0.6, 1), BackgroundTransparency = 1 }):Play()
-	end
-	-- 테두리는 프레임 바깥으로 그려지므로 안쪽으로 당겨 둔다
-	local rim = new("Frame", { Position = UDim2.fromOffset(24, 24), Size = UDim2.new(1, -48, 1, -48), BackgroundTransparency = 1, ZIndex = 36, Parent = layer }, { new("UIStroke", { Color = color, Thickness = 40, Transparency = 0.2 }) })
-	local st = rim:FindFirstChildOfClass("UIStroke")
-	if st then
-		TweenService:Create(st, TweenInfo.new(0.7), { Transparency = 1, Thickness = 8 }):Play()
-	end
-	task.delay(0.75, function()
+	task.delay(0.65, function()
 		layer:Destroy()
+	end)
+end
+
+-- 3.99.54판 오의 이름: 튀어 오르는 굵은 배너 대신, 화면 아래쪽 3분의 1에 영화 자막처럼.
+--   작은 글자 ('오의' · '초 오의') 위에 큰 붓글씨체 이름이 옆으로 살짝 밀려 들어오고, 그 아래 가는 빛줄 하나
+function UI.ultTitle(label: string, name: string, color: Color3, dur: number)
+	for _, b in ipairs(bars) do
+		TweenService:Create(b, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.new(1, 0, 0.07, 0) }):Play()
+	end
+	local holder = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.7), Size = UDim2.fromScale(0.6, 0.16), BackgroundTransparency = 1, ZIndex = 37, Parent = gui })
+	local small = new("TextLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.fromScale(1, 0.22), Font = Enum.Font.GothamMedium, TextScaled = true, Text = label,
+		TextColor3 = color:Lerp(Color3.new(1, 1, 1), 0.45), TextTransparency = 1, ZIndex = 37, Parent = holder })
+	local big = new("TextLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, -40, 0.24, 0), Size = UDim2.fromScale(1, 0.62), Font = Enum.Font.Antique, TextScaled = true, Text = name,
+		TextColor3 = Color3.new(1, 1, 1), TextStrokeColor3 = Color3.new(0, 0, 0), TextStrokeTransparency = 1, TextTransparency = 1, ZIndex = 37, Parent = holder })
+	new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), color:Lerp(Color3.new(1, 1, 1), 0.35)), Parent = big })
+	local line = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.92), Size = UDim2.new(0, 0, 0, 1), BackgroundColor3 = color, BorderSizePixel = 0, ZIndex = 37, Parent = holder })
+	new("UIGradient", { Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0), NumberSequenceKeypoint.new(1, 1) }), Parent = line })
+	local ease = TweenInfo.new(0.45, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+	TweenService:Create(small, ease, { TextTransparency = 0.1 }):Play()
+	TweenService:Create(big, ease, { Position = UDim2.new(0.5, 0, 0.24, 0), TextTransparency = 0, TextStrokeTransparency = 0.6 }):Play()
+	TweenService:Create(line, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), { Size = UDim2.new(0.7, 0, 0, 1) }):Play()
+	local hold = math.max(1.2, math.min(dur, 2.4))
+	task.delay(hold, function()
+		local out = TweenInfo.new(0.4)
+		TweenService:Create(small, out, { TextTransparency = 1 }):Play()
+		TweenService:Create(big, out, { Position = UDim2.new(0.5, 30, 0.24, 0), TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+		TweenService:Create(line, out, { BackgroundTransparency = 1 }):Play()
+		for _, b in ipairs(bars) do
+			TweenService:Create(b, TweenInfo.new(0.35), { Size = UDim2.new(1, 0, 0, 0) }):Play()
+		end
+		task.delay(0.45, function()
+			holder:Destroy()
+		end)
 	end)
 end
 

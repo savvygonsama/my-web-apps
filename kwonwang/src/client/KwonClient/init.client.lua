@@ -839,7 +839,7 @@ startMove = function(slot: any, charge: number?)
 		Fx.skillAura(char, style.color, style.color2, dur, true)
 	elseif slot == "G" or slot == "X" then
 		if not PassArts.ownsUlt(style.id, slot) then
-			UI.cinematic((slot == "X" and "초 오의 · " or "") .. move.name, style.color, dur)
+			UI.ultTitle(slot == "X" and "초 오의" or "오의", move.name, style.color, dur)
 		end
 		if slot == "X" and style.fans then
 			Sakura.superIntro(char)
@@ -856,7 +856,7 @@ startMove = function(slot: any, charge: number?)
 			Fx.ult(style.id, char, dur)
 		end
 		shake(1.2)
-		tint(style.color, 0.25, dur)
+		tint(style.color, 0.1, dur) -- 3.99.54판: 0.25 → 0.1 (화면 전체가 권법 빛깔로 물들던 것을 옅게)
 		-- 오의: 화면이 확 좁아졌다가 (집중) 넓게 풀린다
 		local cam = workspace.CurrentCamera
 		if cam then
