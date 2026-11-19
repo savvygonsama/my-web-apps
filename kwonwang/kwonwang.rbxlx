@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.50" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.51" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -6013,6 +6013,8 @@ for _, id in ipairs({ "bingma", "hyeolma", "cheonma", "yeomje", "sawang", "cheon
 		b.late = true
 	end
 end
+-- 3.99.51판 후반 보스만 더: 범위 · 길이 · 폭 · 손 닿는 거리 배율, 걸음 · 공격 빠르기, 패턴 경고 · 대기 배율 (작을수록 빠르다)
+Config.LATE_BOSS_EDGE = { area = 1.3, length = 1.25, width = 1.2, reach = 1.25, walk = 1.12, atk = 1.12, warn = 0.9, cd = 0.88 }
 Config.BOSS_SPEED = 0.65 -- 모든 보스의 걸음 배율 (순간이동하듯 붙지 않게)
 Config.BOSS_PHASE_SPEED = 0.05 -- 단계마다 걸음이 빨라지는 양
 -- 3.41.4판: 흑호가 너무 오래 걸렸다 (그 땅 권장 경지로 약 1분 반) → ×0.6 (빙마 · 염제 같은 보스는 아래 전투력 맞춤 뒤 BOSS_HP_ADJ에서)
@@ -6449,6 +6451,38 @@ do
 						pt.hit.posture = (pt.hit.posture or 0) * K.hit
 					end
 				end
+			end
+		end
+	end
+	-- 3.99.51판 후반 보스 (late): 공격 범위를 더 넓게, 걸음과 손을 조금 더 빠르게.
+	--   패턴 표는 여러 보스가 나눠 쓰니 후반 보스 몫은 따로 떠서 키운다. 경고가 너무 짧아지면 바로 아래 '피할 수 있나 보장'이 늘려 준다
+	do
+		local L = Config.LATE_BOSS_EDGE
+		for _, b in pairs(Config.Bosses) do
+			if b.late and not b.lateEdged then
+				b.lateEdged = true
+				b.reach = (b.reach or 1) * L.reach
+				b.speed = (b.speed or 16) * L.walk
+				b.atkSpeed = L.atk
+				local list = {}
+				for _, pt in ipairs(b.patterns or {}) do
+					local c = table.clone(pt)
+					for _, key in ipairs({ "radius", "inner", "outer", "range" }) do
+						if c[key] then
+							c[key] = c[key] * L.area
+						end
+					end
+					if c.length then
+						c.length = c.length * L.length
+					end
+					if c.width then
+						c.width = c.width * L.width
+					end
+					c.warn = (c.warn or 1) * L.warn
+					c.cd = (c.cd or 7) * L.cd
+					table.insert(list, c)
+				end
+				b.patterns = list
 			end
 		end
 	end
@@ -26076,7 +26110,7 @@ local function attack(e: Enemy, move: any)
 		return
 	end
 	e.seq += 1
-	local speed = (e.phase2 and e.def.phase2 and e.def.phase2.speed) or 1
+	local speed = ((e.phase2 and e.def.phase2 and e.def.phase2.speed) or 1) * (e.def.atkSpeed or 1)
 	faceTo(e, tgt.root.Position)
 	local act = Combat.begin(f, move, move.id, e.seq, { enemy = true, speed = speed, align = move.windup / speed })
 	f.hum:MoveTo(f.root.Position)

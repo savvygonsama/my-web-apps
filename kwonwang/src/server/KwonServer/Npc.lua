@@ -1314,7 +1314,7 @@ local function attack(e: Enemy, move: any)
 		return
 	end
 	e.seq += 1
-	local speed = (e.phase2 and e.def.phase2 and e.def.phase2.speed) or 1
+	local speed = ((e.phase2 and e.def.phase2 and e.def.phase2.speed) or 1) * (e.def.atkSpeed or 1)
 	faceTo(e, tgt.root.Position)
 	local act = Combat.begin(f, move, move.id, e.seq, { enemy = true, speed = speed, align = move.windup / speed })
 	f.hum:MoveTo(f.root.Position)
