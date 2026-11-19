@@ -8406,6 +8406,133 @@ local function lighten()
 	print(string.format("[권왕] 맵 가볍게: 부품 %d · 그림자 끔 %d · 닿음 끔 %d", n, shadowOff, touchOff))
 end
 
+-- 3.99.49판 먹물 굴 (혼돈개천권을 벼리는 곳): 남서쪽 끝 빈 들판, 풀밭에 박힌 검은 돌 하나가 입구.
+--   땅 밑 120칸에 흰 종이 바닥과 먹물 절벽으로 둘러싸인 굴, 천장까지 뒤엉켜 오르는 먹물 기둥, 가운데 먹 벼루 단로
+local function inkShrine(out: any)
+	local IS = Config.INK_SHRINE
+	local f = Instance.new("Folder")
+	f.Name = "InkShrine"
+	f.Parent = folder
+	local INKC = Color3.fromRGB(14, 12, 16)
+	local PAPERC = Color3.fromRGB(236, 230, 214)
+	local VIOLET = Color3.fromRGB(150, 110, 255)
+	local function P(name: string, size: Vector3, cf: CFrame, color: Color3, mat: Enum.Material, collide: boolean?): Part
+		return part({ Name = name, Size = size, CFrame = cf, Color = color, Material = mat, CanCollide = collide ~= false, Parent = f })
+	end
+	-- 땅 위: 손바닥만 한 검은 돌과 주변에 떨어진 먹 몇 방울. 멀리서는 그냥 돌이다
+	local e = IS.entry
+	local stone = P("OddStone", Vector3.new(2.6, 0.5, 1.9), CFrame.new(e + Vector3.new(0, 0.15, 0)) * CFrame.Angles(0.06, 0.7, -0.04), Color3.fromRGB(32, 30, 34), Enum.Material.Slate)
+	for k = 1, 4 do
+		local a = k * 1.7
+		disc("InkDrop", e + Vector3.new(math.cos(a) * (1.8 + k * 0.4), 0.03, math.sin(a) * (1.8 + k * 0.4)), 0.25 + k * 0.06, 0.05, INKC, Enum.Material.SmoothPlastic, f, false)
+	end
+	local wisp = Instance.new("ParticleEmitter")
+	wisp.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	wisp.Color = ColorSequence.new(INKC)
+	wisp.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.7), NumberSequenceKeypoint.new(1, 1) })
+	wisp.Size = NumberSequence.new(0.4, 1.4)
+	wisp.Lifetime = NumberRange.new(1.5, 2.5)
+	wisp.Rate = 1.2
+	wisp.Speed = NumberRange.new(0.6, 1.2)
+	wisp.SpreadAngle = Vector2.new(15, 15)
+	wisp.Parent = stone
+	local pin = prompt(stone, "손을 댄다", "", "InkStone")
+	pin.MaxActivationDistance = 7
+	pin.HoldDuration = 1
+	out.inkIn = pin
+	-- 스무 걸음 떨어진 마른 나무 한 그루 (잎이 하나도 없다)
+	local tr = e + Vector3.new(22, 0, -14)
+	P("DeadTrunk", Vector3.new(1.4, 11, 1.4), CFrame.new(tr + Vector3.new(0, 5.5, 0)) * CFrame.Angles(0, 0, 0.08), Color3.fromRGB(45, 40, 38), Enum.Material.Wood)
+	for k = 1, 4 do
+		P("DeadBranch", Vector3.new(0.5, 5, 0.5), CFrame.new(tr + Vector3.new(0, 7 + k * 0.9, 0)) * CFrame.Angles(0, k * 1.6, 0.9) * CFrame.new(0, 2.4, 0), Color3.fromRGB(45, 40, 38), Enum.Material.Wood, false)
+	end
+
+	-- 땅 밑의 굴
+	local h = IS.hall
+	local R = IS.radius
+	local H = 64
+	disc("InkFloor", h - Vector3.new(0, 1, 0), R + 4, 2, PAPERC, Enum.Material.Fabric, f, true)
+	disc("InkCeiling", h + Vector3.new(0, H, 0), R + 8, 2, INKC, Enum.Material.SmoothPlastic, f, true)
+	-- 먹물 절벽 (높이와 기울기가 제각각)
+	local n = 36
+	for k = 0, n - 1 do
+		local a = k / n * math.pi * 2
+		local at = h + Vector3.new(math.cos(a) * (R + 2), 0, math.sin(a) * (R + 2))
+		local hh = H * rng:NextNumber(0.85, 1.05)
+		P("InkCliff", Vector3.new(10, hh, 5), CFrame.lookAt(at + Vector3.new(0, hh / 2, 0), h + Vector3.new(0, hh / 2, 0)) * CFrame.Angles(rng:NextNumber(-0.12, 0.05), 0, rng:NextNumber(-0.08, 0.08)), INKC:Lerp(Color3.fromRGB(40, 34, 50), rng:NextNumber()), Enum.Material.SmoothPlastic)
+	end
+	-- 바닥에 그은 먹 획 (가운데에서 바깥으로, 굵기가 줄어든다)
+	for k = 0, 13 do
+		local a = k / 14 * math.pi * 2 + rng:NextNumber(-0.15, 0.15)
+		local dir = Vector3.new(math.cos(a), 0, math.sin(a))
+		local L = rng:NextNumber(18, 34)
+		for i = 0, 3 do
+			local u0 = 9 + i * L / 4
+			P("FloorStroke", Vector3.new(2.6 * (1 - i * 0.22), 0.08, L / 4 + 0.5), CFrame.lookAt(h + dir * (u0 + L / 8) + Vector3.new(0, 0.05, 0), h + dir * (u0 + L) + Vector3.new(0, 0.05, 0)) * CFrame.Angles(0, (i - 1.5) * 0.06, 0), INKC, Enum.Material.SmoothPlastic, false)
+		end
+	end
+	-- 천장까지 뒤엉켜 오르는 먹물 기둥 여덟 (두 가닥이 서로 감긴다)
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2 + 0.2
+		local base = h + Vector3.new(math.cos(a) * (R - 10), 0, math.sin(a) * (R - 10))
+		for strand = 0, 1 do
+			local prev: Vector3? = nil
+			for i = 0, 16 do
+				local t = i / 16
+				local ang = t * math.pi * 3 + strand * math.pi + k
+				local rr = 2.2 + math.sin(t * math.pi) * 1.6
+				local p0 = base + Vector3.new(math.cos(ang) * rr, t * H, math.sin(ang) * rr)
+				if prev then
+					local len = (p0 - prev).Magnitude
+					P("InkTendril", Vector3.new(1.6 - t * 0.6, 1.6 - t * 0.6, len + 0.6), CFrame.lookAt((p0 + prev) / 2, p0), INKC, Enum.Material.SmoothPlastic, false)
+				end
+				prev = p0
+			end
+		end
+		local glow = P("TendrilGlow", Vector3.new(1, 1, 1), CFrame.new(base + Vector3.new(0, 2, 0)), VIOLET, Enum.Material.Neon, false)
+		glow.Transparency = 0.4
+		light(glow, VIOLET, 22, 0.9)
+	end
+	-- 가운데 먹 벼루 단로: 둥근 돌 벼루, 고인 먹물, 그 위에 떠 있는 큰 붓
+	disc("InkstoneBase", h + Vector3.new(0, 0.8, 0), 7, 1.6, Color3.fromRGB(50, 48, 54), Enum.Material.Slate, f, true)
+	local well = disc("InkstoneWell", h + Vector3.new(0, 1.65, 0), 5.4, 0.2, Color3.fromRGB(20, 16, 30), Enum.Material.Glass, f, false)
+	well.Reflectance = 0.4
+	local core = disc("InkstoneGlow", h + Vector3.new(0, 1.7, 0), 2.4, 0.1, VIOLET, Enum.Material.Neon, f, false)
+	core.Transparency = 0.45
+	light(core, VIOLET, 30, 1.6)
+	local brushAt = h + Vector3.new(0, 11, 0)
+	P("GiantBrushHandle", Vector3.new(1.4, 12, 1.4), CFrame.new(brushAt + Vector3.new(0, 6, 0)) * CFrame.Angles(0.12, 0, 0.1), Color3.fromRGB(110, 70, 40), Enum.Material.Wood, false)
+	P("GiantBrushBand", Vector3.new(1.9, 1, 1.9), CFrame.new(brushAt + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0.12, 0, 0.1), Color3.fromRGB(200, 160, 80), Enum.Material.Metal, false)
+	for i = 0, 3 do
+		P("GiantBrushTip", Vector3.new(2.6 - i * 0.6, 1.4, 2.6 - i * 0.6), CFrame.new(brushAt - Vector3.new(0, 0.9 + i * 1.3, 0)) * CFrame.Angles(0.12, 0, 0.1), INKC, Enum.Material.Fabric, false)
+	end
+	local fp = prompt(well, "먹을 갈아 벼린다", "🖌 먹물 굴", "InkForge")
+	fp.MaxActivationDistance = 14
+	out.inkForge = fp
+	-- 뒤 벽의 큰 글씨
+	local board = P("InkTitle", Vector3.new(30, 12, 0.3), CFrame.lookAt(h + Vector3.new(0, 30, -R + 1), h + Vector3.new(0, 30, 0)), PAPERC, Enum.Material.Fabric, false)
+	board.Transparency = 1
+	sign(board, Enum.NormalId.Front, { { "혼돈개천", Color3.fromRGB(230, 225, 240), 1 } })
+	-- 나가는 곳: 앞쪽 먹물 소용돌이 기둥
+	local exitAt = h + Vector3.new(0, 0, R - 8)
+	local ex = disc("InkExit", exitAt + Vector3.new(0, 0.1, 0), 3.4, 0.2, VIOLET, Enum.Material.Neon, f, false)
+	ex.Transparency = 0.3
+	light(ex, VIOLET, 18, 1.2)
+	for i = 0, 9 do
+		P("ExitSwirl", Vector3.new(0.5, 0.5, 4), CFrame.new(exitAt + Vector3.new(0, 1 + i * 1.3, 0)) * CFrame.Angles(0, i * 0.9, 0) * CFrame.new(0, 0, 2.4), INKC, Enum.Material.SmoothPlastic, false)
+	end
+	local op = prompt(ex, "땅 위로 올라간다", "🖌 먹물 굴", "InkExit")
+	op.MaxActivationDistance = 10
+	out.inkOut = op
+	-- 굴을 밝히는 흰 빛 (종이 바닥이 은은하게 보이도록)
+	for k = 0, 3 do
+		local a = k / 4 * math.pi * 2
+		local lamp = P("InkLamp", Vector3.new(1, 1, 1), CFrame.new(h + Vector3.new(math.cos(a) * 20, H - 6, math.sin(a) * 20)), Color3.fromRGB(240, 235, 255), Enum.Material.Neon, false)
+		lamp.Transparency = 1
+		light(lamp, Color3.fromRGB(235, 230, 255), 60, 1.1)
+	end
+end
+
 function World.build(): any
 	folder = Instance.new("Folder")
 	folder.Name = "Gangho"
@@ -8477,6 +8604,9 @@ function World.build(): any
 			awakenAltar(out)
 		end },
 		{ "새 사부의 자리", artSites },
+		{ "먹물 굴", function()
+			inkShrine(out)
+		end },
 		{ "천상계", function()
 			skyWorld(out)
 		end },

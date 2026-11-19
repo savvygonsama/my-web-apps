@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.48" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.49" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7498,7 +7498,7 @@ do
 		palette = { Color3.fromRGB(16, 16, 20), Color3.fromRGB(248, 248, 252), Color3.fromRGB(255, 210, 110) },
 		desc = "무극신권이 끝에 닿은 자리. 하늘과 땅이 나뉘기 전, 먹이 쉬지 않고 엉키던 혼돈을 주먹에 담았다. 손이 닿는 곳마다 먹 줄기가 휘몰아쳐 감기고, 엉킨 먹이 천마가 되고 용이 된다.",
 		gimmick = "혼돈체: 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 20% 짧음. 맞힐 때마다 먹이 튄다. R은 엉킨 먹 줄기로 그린 천마를 타고 내달린다 (그동안 무적). 초 오의(X)가 있다",
-		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (무극신권을 익히고 일곱 번 환생한 몸으로)",
+		unlockHint = "🖌 마을 단로로는 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아 재료를 녹여라 (무극신권을 익히고 일곱 번 환생한 몸으로)",
 		deflect = 0.34, postureMult = 1.5, speed = 1.2, cdMult = 0.8, dashCd = 0.55, stance = "stance_mugeuk",
 		combo = {
 			{ id = "hd1", name = "혼원수", pose = "void_palm_r", dur = 0.32, lunge = 4, hits = { hit(0.14, 6, 5, 34, 24, 0.4, 14, nil, true) } },
@@ -7707,8 +7707,14 @@ end
 Config.FORGE = {
 	{ style = "samwon", rebirth = 1, shards = 40, gems = 1500, coinShares = 20, mats = { bloodmoon = 12, thunderstone = 10, tidepearl = 12 } },
 	{ style = "guryong", rebirth = 3, shards = 150, gems = 4000, coinShares = 40, mats = { thunderstone = 25, stardust = 20, petal = 30, bloodmoon = 20 } },
-	{ style = "hondon", rebirth = 7, needStyles = { "mugeuk" }, shards = 400, gems = 10000, coinShares = 60, mats = { petal = 40, wine = 10, bloodmoon = 40, thunderstone = 40, tidepearl = 40, stardust = 40 } },
+	{ style = "hondon", hidden = "ink", rebirth = 7, needStyles = { "mugeuk" }, shards = 400, gems = 10000, coinShares = 60, mats = { petal = 40, wine = 10, bloodmoon = 40, thunderstone = 40, tidepearl = 40, stardust = 40 } },
 }
+-- 3.99.49판 먹물 굴: 혼돈개천권은 마을 단로가 아니라 남서쪽 끝 빈 들판 땅 밑의 먹물 굴에서만 벼린다
+--   들어가는 곳은 풀밭에 박힌 손바닥만 한 검은 돌 하나 (가까이 가야 손을 댈 수 있다). 지도에도 나오지 않는다
+Config.INK_SHRINE = { entry = Vector3.new(-2400, 0, 4550), hall = Vector3.new(-2400, -120, 4550), radius = 44 }
+function Config.forgeSite(r: any): Vector3
+	return r.hidden == "ink" and Config.INK_SHRINE.hall or Config.FORGE_AT
+end
 Config.FORGE_BY_STYLE = {}
 for _, r in ipairs(Config.FORGE) do
 	Config.FORGE_BY_STYLE[r.style] = r

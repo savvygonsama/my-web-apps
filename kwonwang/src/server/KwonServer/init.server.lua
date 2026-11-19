@@ -3313,8 +3313,13 @@ function Actions.forge(player: Player, id: any)
 	end
 	local f0 = Combat.fighterOfPlayer(player)
 	local pos = f0 and f0.root.Position
-	if not pos or Vector3.new(pos.X - Config.FORGE_AT.X, 0, pos.Z - Config.FORGE_AT.Z).Magnitude > 40 then
-		toast(player, "⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요")
+	local site = Config.forgeSite(r)
+	if not pos or (pos - site).Magnitude > 40 then
+		if r.hidden == "ink" then
+			toast(player, "🖌 " .. style.name .. "은(는) 이 단로에서 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라")
+		else
+			toast(player, "⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요")
+		end
 		return
 	end
 	if (p.rebirth or 0) < r.rebirth then
@@ -3357,7 +3362,7 @@ function Actions.forge(player: Player, id: any)
 	end
 	p.coins -= coins
 	grantStyle(player, style.id, true)
-	Push:FireClient(player, "forged", { style = style.id })
+	Push:FireClient(player, "forged", { style = style.id, at = Config.forgeSite(r) })
 	pushState(player)
 end
 
@@ -3371,8 +3376,13 @@ function Actions.refine(player: Player, id: any)
 	end
 	local f0 = Combat.fighterOfPlayer(player)
 	local pos = f0 and f0.root.Position
-	if not pos or Vector3.new(pos.X - Config.FORGE_AT.X, 0, pos.Z - Config.FORGE_AT.Z).Magnitude > 40 then
-		toast(player, "⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요")
+	local site = Config.forgeSite(r)
+	if not pos or (pos - site).Magnitude > 40 then
+		if r.hidden == "ink" then
+			toast(player, "🖌 " .. style.name .. "은(는) 이 단로에서 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라")
+		else
+			toast(player, "⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요")
+		end
 		return
 	end
 	p.refine = p.refine or {}
@@ -3416,7 +3426,7 @@ function Actions.refine(player: Player, id: any)
 		st.dirty = true
 	end
 	refreshFighter(player)
-	Push:FireClient(player, "forged", { style = style.id })
+	Push:FireClient(player, "forged", { style = style.id, at = Config.forgeSite(r) })
 	toast(player, string.format("🔨 %s %s +%d · 피해 +%d%%", style.icon, style.name, lv + 1, math.floor((lv + 1) * Config.REFINE.dmg * 100 + 0.5)))
 	pushState(player)
 end
@@ -6589,6 +6599,29 @@ if W.disciple then
 end
 if W.forge then
 	W.forge.Triggered:Connect(function(player: Player)
+		Push:FireClient(player, "open", { page = "forge" })
+	end)
+end
+-- 3.99.49판 먹물 굴: 검은 돌에 손을 대면 땅 밑으로, 굴의 먹물 기둥을 만지면 다시 땅 위로
+if W.inkIn then
+	W.inkIn.Triggered:Connect(function(player: Player)
+		local char = player.Character
+		if char then
+			char:PivotTo(CFrame.new(Config.INK_SHRINE.hall + Vector3.new(0, 4, 30), Config.INK_SHRINE.hall + Vector3.new(0, 4, 0)))
+			toast(player, "🖌 손끝에서 먹물이 번지더니, 땅이 꺼지듯 아래로 빨려 들어갔다")
+		end
+	end)
+end
+if W.inkOut then
+	W.inkOut.Triggered:Connect(function(player: Player)
+		local char = player.Character
+		if char then
+			char:PivotTo(CFrame.new(Config.INK_SHRINE.entry + Vector3.new(0, 4, 6)))
+		end
+	end)
+end
+if W.inkForge then
+	W.inkForge.Triggered:Connect(function(player: Player)
 		Push:FireClient(player, "open", { page = "forge" })
 	end)
 end

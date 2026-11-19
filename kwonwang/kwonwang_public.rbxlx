@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.48" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.49" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7518,7 +7518,7 @@ do
 		palette = { Color3.fromRGB(16, 16, 20), Color3.fromRGB(248, 248, 252), Color3.fromRGB(255, 210, 110) },
 		desc = "무극신권이 끝에 닿은 자리. 하늘과 땅이 나뉘기 전, 먹이 쉬지 않고 엉키던 혼돈을 주먹에 담았다. 손이 닿는 곳마다 먹 줄기가 휘몰아쳐 감기고, 엉킨 먹이 천마가 되고 용이 된다.",
 		gimmick = "혼돈체: 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 20% 짧음. 맞힐 때마다 먹이 튄다. R은 엉킨 먹 줄기로 그린 천마를 타고 내달린다 (그동안 무적). 초 오의(X)가 있다",
-		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (무극신권을 익히고 일곱 번 환생한 몸으로)",
+		unlockHint = "🖌 마을 단로로는 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아 재료를 녹여라 (무극신권을 익히고 일곱 번 환생한 몸으로)",
 		deflect = 0.34, postureMult = 1.5, speed = 1.2, cdMult = 0.8, dashCd = 0.55, stance = "stance_mugeuk",
 		combo = {
 			{ id = "hd1", name = "혼원수", pose = "void_palm_r", dur = 0.32, lunge = 4, hits = { hit(0.14, 6, 5, 34, 24, 0.4, 14, nil, true) } },
@@ -7727,8 +7727,14 @@ end
 Config.FORGE = {
 	{ style = "samwon", rebirth = 1, shards = 40, gems = 1500, coinShares = 20, mats = { bloodmoon = 12, thunderstone = 10, tidepearl = 12 } },
 	{ style = "guryong", rebirth = 3, shards = 150, gems = 4000, coinShares = 40, mats = { thunderstone = 25, stardust = 20, petal = 30, bloodmoon = 20 } },
-	{ style = "hondon", rebirth = 7, needStyles = { "mugeuk" }, shards = 400, gems = 10000, coinShares = 60, mats = { petal = 40, wine = 10, bloodmoon = 40, thunderstone = 40, tidepearl = 40, stardust = 40 } },
+	{ style = "hondon", hidden = "ink", rebirth = 7, needStyles = { "mugeuk" }, shards = 400, gems = 10000, coinShares = 60, mats = { petal = 40, wine = 10, bloodmoon = 40, thunderstone = 40, tidepearl = 40, stardust = 40 } },
 }
+-- 3.99.49판 먹물 굴: 혼돈개천권은 마을 단로가 아니라 남서쪽 끝 빈 들판 땅 밑의 먹물 굴에서만 벼린다
+--   들어가는 곳은 풀밭에 박힌 손바닥만 한 검은 돌 하나 (가까이 가야 손을 댈 수 있다). 지도에도 나오지 않는다
+Config.INK_SHRINE = { entry = Vector3.new(-2400, 0, 4550), hall = Vector3.new(-2400, -120, 4550), radius = 44 }
+function Config.forgeSite(r: any): Vector3
+	return r.hidden == "ink" and Config.INK_SHRINE.hall or Config.FORGE_AT
+end
 Config.FORGE_BY_STYLE = {}
 for _, r in ipairs(Config.FORGE) do
 	Config.FORGE_BY_STYLE[r.style] = r
@@ -14394,8 +14400,13 @@ function Actions.forge(player: Player, id: any)
 	end
 	local f0 = Combat.fighterOfPlayer(player)
 	local pos = f0 and f0.root.Position
-	if not pos or Vector3.new(pos.X - Config.FORGE_AT.X, 0, pos.Z - Config.FORGE_AT.Z).Magnitude > 40 then
-		toast(player, "⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요")
+	local site = Config.forgeSite(r)
+	if not pos or (pos - site).Magnitude > 40 then
+		if r.hidden == "ink" then
+			toast(player, "🖌 " .. style.name .. "은(는) 이 단로에서 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라")
+		else
+			toast(player, "⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요")
+		end
 		return
 	end
 	if (p.rebirth or 0) < r.rebirth then
@@ -14438,7 +14449,7 @@ function Actions.forge(player: Player, id: any)
 	end
 	p.coins -= coins
 	grantStyle(player, style.id, true)
-	Push:FireClient(player, "forged", { style = style.id })
+	Push:FireClient(player, "forged", { style = style.id, at = Config.forgeSite(r) })
 	pushState(player)
 end
 
@@ -14452,8 +14463,13 @@ function Actions.refine(player: Player, id: any)
 	end
 	local f0 = Combat.fighterOfPlayer(player)
 	local pos = f0 and f0.root.Position
-	if not pos or Vector3.new(pos.X - Config.FORGE_AT.X, 0, pos.Z - Config.FORGE_AT.Z).Magnitude > 40 then
-		toast(player, "⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요")
+	local site = Config.forgeSite(r)
+	if not pos or (pos - site).Magnitude > 40 then
+		if r.hidden == "ink" then
+			toast(player, "🖌 " .. style.name .. "은(는) 이 단로에서 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라")
+		else
+			toast(player, "⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요")
+		end
 		return
 	end
 	p.refine = p.refine or {}
@@ -14497,7 +14513,7 @@ function Actions.refine(player: Player, id: any)
 		st.dirty = true
 	end
 	refreshFighter(player)
-	Push:FireClient(player, "forged", { style = style.id })
+	Push:FireClient(player, "forged", { style = style.id, at = Config.forgeSite(r) })
 	toast(player, string.format("🔨 %s %s +%d · 피해 +%d%%", style.icon, style.name, lv + 1, math.floor((lv + 1) * Config.REFINE.dmg * 100 + 0.5)))
 	pushState(player)
 end
@@ -17670,6 +17686,29 @@ if W.disciple then
 end
 if W.forge then
 	W.forge.Triggered:Connect(function(player: Player)
+		Push:FireClient(player, "open", { page = "forge" })
+	end)
+end
+-- 3.99.49판 먹물 굴: 검은 돌에 손을 대면 땅 밑으로, 굴의 먹물 기둥을 만지면 다시 땅 위로
+if W.inkIn then
+	W.inkIn.Triggered:Connect(function(player: Player)
+		local char = player.Character
+		if char then
+			char:PivotTo(CFrame.new(Config.INK_SHRINE.hall + Vector3.new(0, 4, 30), Config.INK_SHRINE.hall + Vector3.new(0, 4, 0)))
+			toast(player, "🖌 손끝에서 먹물이 번지더니, 땅이 꺼지듯 아래로 빨려 들어갔다")
+		end
+	end)
+end
+if W.inkOut then
+	W.inkOut.Triggered:Connect(function(player: Player)
+		local char = player.Character
+		if char then
+			char:PivotTo(CFrame.new(Config.INK_SHRINE.entry + Vector3.new(0, 4, 6)))
+		end
+	end)
+end
+if W.inkForge then
+	W.inkForge.Triggered:Connect(function(player: Player)
 		Push:FireClient(player, "open", { page = "forge" })
 	end)
 end
@@ -41267,6 +41306,133 @@ local function lighten()
 	print(string.format("[권왕] 맵 가볍게: 부품 %d · 그림자 끔 %d · 닿음 끔 %d", n, shadowOff, touchOff))
 end
 
+-- 3.99.49판 먹물 굴 (혼돈개천권을 벼리는 곳): 남서쪽 끝 빈 들판, 풀밭에 박힌 검은 돌 하나가 입구.
+--   땅 밑 120칸에 흰 종이 바닥과 먹물 절벽으로 둘러싸인 굴, 천장까지 뒤엉켜 오르는 먹물 기둥, 가운데 먹 벼루 단로
+local function inkShrine(out: any)
+	local IS = Config.INK_SHRINE
+	local f = Instance.new("Folder")
+	f.Name = "InkShrine"
+	f.Parent = folder
+	local INKC = Color3.fromRGB(14, 12, 16)
+	local PAPERC = Color3.fromRGB(236, 230, 214)
+	local VIOLET = Color3.fromRGB(150, 110, 255)
+	local function P(name: string, size: Vector3, cf: CFrame, color: Color3, mat: Enum.Material, collide: boolean?): Part
+		return part({ Name = name, Size = size, CFrame = cf, Color = color, Material = mat, CanCollide = collide ~= false, Parent = f })
+	end
+	-- 땅 위: 손바닥만 한 검은 돌과 주변에 떨어진 먹 몇 방울. 멀리서는 그냥 돌이다
+	local e = IS.entry
+	local stone = P("OddStone", Vector3.new(2.6, 0.5, 1.9), CFrame.new(e + Vector3.new(0, 0.15, 0)) * CFrame.Angles(0.06, 0.7, -0.04), Color3.fromRGB(32, 30, 34), Enum.Material.Slate)
+	for k = 1, 4 do
+		local a = k * 1.7
+		disc("InkDrop", e + Vector3.new(math.cos(a) * (1.8 + k * 0.4), 0.03, math.sin(a) * (1.8 + k * 0.4)), 0.25 + k * 0.06, 0.05, INKC, Enum.Material.SmoothPlastic, f, false)
+	end
+	local wisp = Instance.new("ParticleEmitter")
+	wisp.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	wisp.Color = ColorSequence.new(INKC)
+	wisp.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.7), NumberSequenceKeypoint.new(1, 1) })
+	wisp.Size = NumberSequence.new(0.4, 1.4)
+	wisp.Lifetime = NumberRange.new(1.5, 2.5)
+	wisp.Rate = 1.2
+	wisp.Speed = NumberRange.new(0.6, 1.2)
+	wisp.SpreadAngle = Vector2.new(15, 15)
+	wisp.Parent = stone
+	local pin = prompt(stone, "손을 댄다", "", "InkStone")
+	pin.MaxActivationDistance = 7
+	pin.HoldDuration = 1
+	out.inkIn = pin
+	-- 스무 걸음 떨어진 마른 나무 한 그루 (잎이 하나도 없다)
+	local tr = e + Vector3.new(22, 0, -14)
+	P("DeadTrunk", Vector3.new(1.4, 11, 1.4), CFrame.new(tr + Vector3.new(0, 5.5, 0)) * CFrame.Angles(0, 0, 0.08), Color3.fromRGB(45, 40, 38), Enum.Material.Wood)
+	for k = 1, 4 do
+		P("DeadBranch", Vector3.new(0.5, 5, 0.5), CFrame.new(tr + Vector3.new(0, 7 + k * 0.9, 0)) * CFrame.Angles(0, k * 1.6, 0.9) * CFrame.new(0, 2.4, 0), Color3.fromRGB(45, 40, 38), Enum.Material.Wood, false)
+	end
+
+	-- 땅 밑의 굴
+	local h = IS.hall
+	local R = IS.radius
+	local H = 64
+	disc("InkFloor", h - Vector3.new(0, 1, 0), R + 4, 2, PAPERC, Enum.Material.Fabric, f, true)
+	disc("InkCeiling", h + Vector3.new(0, H, 0), R + 8, 2, INKC, Enum.Material.SmoothPlastic, f, true)
+	-- 먹물 절벽 (높이와 기울기가 제각각)
+	local n = 36
+	for k = 0, n - 1 do
+		local a = k / n * math.pi * 2
+		local at = h + Vector3.new(math.cos(a) * (R + 2), 0, math.sin(a) * (R + 2))
+		local hh = H * rng:NextNumber(0.85, 1.05)
+		P("InkCliff", Vector3.new(10, hh, 5), CFrame.lookAt(at + Vector3.new(0, hh / 2, 0), h + Vector3.new(0, hh / 2, 0)) * CFrame.Angles(rng:NextNumber(-0.12, 0.05), 0, rng:NextNumber(-0.08, 0.08)), INKC:Lerp(Color3.fromRGB(40, 34, 50), rng:NextNumber()), Enum.Material.SmoothPlastic)
+	end
+	-- 바닥에 그은 먹 획 (가운데에서 바깥으로, 굵기가 줄어든다)
+	for k = 0, 13 do
+		local a = k / 14 * math.pi * 2 + rng:NextNumber(-0.15, 0.15)
+		local dir = Vector3.new(math.cos(a), 0, math.sin(a))
+		local L = rng:NextNumber(18, 34)
+		for i = 0, 3 do
+			local u0 = 9 + i * L / 4
+			P("FloorStroke", Vector3.new(2.6 * (1 - i * 0.22), 0.08, L / 4 + 0.5), CFrame.lookAt(h + dir * (u0 + L / 8) + Vector3.new(0, 0.05, 0), h + dir * (u0 + L) + Vector3.new(0, 0.05, 0)) * CFrame.Angles(0, (i - 1.5) * 0.06, 0), INKC, Enum.Material.SmoothPlastic, false)
+		end
+	end
+	-- 천장까지 뒤엉켜 오르는 먹물 기둥 여덟 (두 가닥이 서로 감긴다)
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2 + 0.2
+		local base = h + Vector3.new(math.cos(a) * (R - 10), 0, math.sin(a) * (R - 10))
+		for strand = 0, 1 do
+			local prev: Vector3? = nil
+			for i = 0, 16 do
+				local t = i / 16
+				local ang = t * math.pi * 3 + strand * math.pi + k
+				local rr = 2.2 + math.sin(t * math.pi) * 1.6
+				local p0 = base + Vector3.new(math.cos(ang) * rr, t * H, math.sin(ang) * rr)
+				if prev then
+					local len = (p0 - prev).Magnitude
+					P("InkTendril", Vector3.new(1.6 - t * 0.6, 1.6 - t * 0.6, len + 0.6), CFrame.lookAt((p0 + prev) / 2, p0), INKC, Enum.Material.SmoothPlastic, false)
+				end
+				prev = p0
+			end
+		end
+		local glow = P("TendrilGlow", Vector3.new(1, 1, 1), CFrame.new(base + Vector3.new(0, 2, 0)), VIOLET, Enum.Material.Neon, false)
+		glow.Transparency = 0.4
+		light(glow, VIOLET, 22, 0.9)
+	end
+	-- 가운데 먹 벼루 단로: 둥근 돌 벼루, 고인 먹물, 그 위에 떠 있는 큰 붓
+	disc("InkstoneBase", h + Vector3.new(0, 0.8, 0), 7, 1.6, Color3.fromRGB(50, 48, 54), Enum.Material.Slate, f, true)
+	local well = disc("InkstoneWell", h + Vector3.new(0, 1.65, 0), 5.4, 0.2, Color3.fromRGB(20, 16, 30), Enum.Material.Glass, f, false)
+	well.Reflectance = 0.4
+	local core = disc("InkstoneGlow", h + Vector3.new(0, 1.7, 0), 2.4, 0.1, VIOLET, Enum.Material.Neon, f, false)
+	core.Transparency = 0.45
+	light(core, VIOLET, 30, 1.6)
+	local brushAt = h + Vector3.new(0, 11, 0)
+	P("GiantBrushHandle", Vector3.new(1.4, 12, 1.4), CFrame.new(brushAt + Vector3.new(0, 6, 0)) * CFrame.Angles(0.12, 0, 0.1), Color3.fromRGB(110, 70, 40), Enum.Material.Wood, false)
+	P("GiantBrushBand", Vector3.new(1.9, 1, 1.9), CFrame.new(brushAt + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0.12, 0, 0.1), Color3.fromRGB(200, 160, 80), Enum.Material.Metal, false)
+	for i = 0, 3 do
+		P("GiantBrushTip", Vector3.new(2.6 - i * 0.6, 1.4, 2.6 - i * 0.6), CFrame.new(brushAt - Vector3.new(0, 0.9 + i * 1.3, 0)) * CFrame.Angles(0.12, 0, 0.1), INKC, Enum.Material.Fabric, false)
+	end
+	local fp = prompt(well, "먹을 갈아 벼린다", "🖌 먹물 굴", "InkForge")
+	fp.MaxActivationDistance = 14
+	out.inkForge = fp
+	-- 뒤 벽의 큰 글씨
+	local board = P("InkTitle", Vector3.new(30, 12, 0.3), CFrame.lookAt(h + Vector3.new(0, 30, -R + 1), h + Vector3.new(0, 30, 0)), PAPERC, Enum.Material.Fabric, false)
+	board.Transparency = 1
+	sign(board, Enum.NormalId.Front, { { "혼돈개천", Color3.fromRGB(230, 225, 240), 1 } })
+	-- 나가는 곳: 앞쪽 먹물 소용돌이 기둥
+	local exitAt = h + Vector3.new(0, 0, R - 8)
+	local ex = disc("InkExit", exitAt + Vector3.new(0, 0.1, 0), 3.4, 0.2, VIOLET, Enum.Material.Neon, f, false)
+	ex.Transparency = 0.3
+	light(ex, VIOLET, 18, 1.2)
+	for i = 0, 9 do
+		P("ExitSwirl", Vector3.new(0.5, 0.5, 4), CFrame.new(exitAt + Vector3.new(0, 1 + i * 1.3, 0)) * CFrame.Angles(0, i * 0.9, 0) * CFrame.new(0, 0, 2.4), INKC, Enum.Material.SmoothPlastic, false)
+	end
+	local op = prompt(ex, "땅 위로 올라간다", "🖌 먹물 굴", "InkExit")
+	op.MaxActivationDistance = 10
+	out.inkOut = op
+	-- 굴을 밝히는 흰 빛 (종이 바닥이 은은하게 보이도록)
+	for k = 0, 3 do
+		local a = k / 4 * math.pi * 2
+		local lamp = P("InkLamp", Vector3.new(1, 1, 1), CFrame.new(h + Vector3.new(math.cos(a) * 20, H - 6, math.sin(a) * 20)), Color3.fromRGB(240, 235, 255), Enum.Material.Neon, false)
+		lamp.Transparency = 1
+		light(lamp, Color3.fromRGB(235, 230, 255), 60, 1.1)
+	end
+end
+
 function World.build(): any
 	folder = Instance.new("Folder")
 	folder.Name = "Gangho"
@@ -41338,6 +41504,9 @@ function World.build(): any
 			awakenAltar(out)
 		end },
 		{ "새 사부의 자리", artSites },
+		{ "먹물 굴", function()
+			inkShrine(out)
+		end },
 		{ "천상계", function()
 			skyWorld(out)
 		end },
@@ -43914,7 +44083,7 @@ function handlers.forged(data: any)
 	if not st then
 		return
 	end
-	local at = Config.FORGE_AT + Vector3.new(0, 11, 0)
+	local at = (typeof(data.at) == "Vector3" and data.at or Config.FORGE_AT) + Vector3.new(0, 11, 0)
 	pcall(Fx.blast, at, st.color, st.color2, 1.6)
 	pcall(Fx.lightning, at + Vector3.new(0, 60, 0), at, st.color2, 0.8)
 	pcall(Fx.burst, "spark", at, Color3.fromRGB(255, 200, 90), 30, 1.6)
@@ -68974,7 +69143,7 @@ return {
 	["혼돈구"] = "Chaos Orb",
 	["앞에 검은 혼돈의 구슬을 띄운다. 구슬이 둘레의 적을 빨아들인 뒤 안으로 무너지며 터진다"] = "Raises a black orb of chaos ahead. It draws in nearby enemies, then collapses inward and explodes",
 	["손끝으로 땅을 가리키면 발밑에 별 모양 금이 가고, 앞으로 공간이 찢어지며, 가까운 적 셋의 둘레 공간이 유리처럼 깨진다"] = "Point at the ground and star-shaped cracks spread underfoot, space tears open ahead, and the space around the three nearest enemies shatters like glass",
-	["혼돈개천"] = "Chaos Opens the Sky",
+	["혼돈개천"] = "Chaos Splits Heaven",
 	["하늘에 검은 구멍이 열려 둘레의 적을 세 번 빨아들이며 짓누른다. 마지막에 구멍이 뒤집혀 흰 빛으로 터지며 새 하늘이 열린다"] = "A black hole opens in the sky, pulling in and crushing nearby enemies three times. Finally it turns inside out, bursting into white light as a new sky opens",
 	["태초이전"] = "Before the Beginning",
 	["초 오의 (그동안 무적). 세상이 어두워지고 가까운 적 여덟의 둘레 공간이 네 번 거듭 깨진다. 마지막에 모든 것이 한 점으로 삼켜졌다가 둘레 40칸이 흰 빛으로 다시 태어난다"] = "Super ultimate (invincible meanwhile). The world darkens and the space around the eight nearest enemies shatters four times over. Finally everything is swallowed into one point, and 40 studs around you are reborn in white light",
@@ -69232,6 +69401,14 @@ return {
 	["구름이 둘레 22칸에 소용돌이치며 적을 끌어당긴다. 구름 기둥이 세 번 적 여섯의 발밑에서 솟구치고, 마지막에 모든 구름이 한꺼번에 터져 흩어진다"] = "Clouds swirl within 22 studs and pull foes in. Cloud pillars burst up under six foes three times, then every cloud explodes at once",
 	["쇠사슬 여섯 줄을 둘레로 던져 적을 한가운데로 끌어온다. 끌려온 적을 사슬로 두 번 휘감아 조이고, 마지막에 사슬째 땅에 내리꽂는다"] = "Hurl six chains around you and reel foes to the center. Bind them tight twice, then slam them into the ground, chains and all",
 	["바람이 되어 사라진다 (무적). 둘레의 적 여섯을 바람의 칼날이 세 번 가로지르고, 마지막에 한가운데서 회오리가 솟아 모두 띄운다"] = "Vanish into the wind (invincible). Wind blades slash through six nearby foes three times, then a tornado rises in the middle and lifts them all",
+	["🖌 %s은(는) 이 단로에서 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라"] = "🖌 %s cannot be forged at this furnace. Find the place where ink seeps under the earth",
+	["🖌 손끝에서 먹물이 번지더니, 땅이 꺼지듯 아래로 빨려 들어갔다"] = "🖌 Ink bleeds from your fingertips, and the ground gives way as you are pulled under",
+	["🖌 이 단로에서는 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라"] = "🖌 It cannot be forged at this furnace. Find the place where ink seeps under the earth",
+	["손을 댄다"] = "Touch",
+	["먹을 갈아 벼린다"] = "Grind the ink and forge",
+	["🖌 먹물 굴"] = "🖌 Ink Grotto",
+	["땅 위로 올라간다"] = "Climb back up",
+	["🖌 마을 단로로는 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아 재료를 녹여라 (무극신권을 익히고 일곱 번 환생한 몸으로)"] = "🖌 The village furnace cannot forge it. Find the place where ink seeps under the earth and melt the materials there (after learning Limitless Fist and being reborn seven times)",
 }
 ]]></string>
           </Properties>
@@ -89984,6 +90161,9 @@ function UIB.buildForge()
 				end
 			end
 			req("💰 은자", s.coins or 0, Config.forgeCoins(r, realm), true)
+			if r.hidden == "ink" then
+				table.insert(parts, '<font color="#B9A8FF">🖌 이 단로에서는 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라</font>')
+			end
 			it.need.Text = table.concat(parts, "   ")
 			if owned then
 				it.btn.Text = "✔ 익힘"

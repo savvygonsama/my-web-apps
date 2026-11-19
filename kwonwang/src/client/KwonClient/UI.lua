@@ -2545,6 +2545,9 @@ function UIB.buildForge()
 				end
 			end
 			req("💰 은자", s.coins or 0, Config.forgeCoins(r, realm), true)
+			if r.hidden == "ink" then
+				table.insert(parts, '<font color="#B9A8FF">🖌 이 단로에서는 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라</font>')
+			end
 			it.need.Text = table.concat(parts, "   ")
 			if owned then
 				it.btn.Text = "✔ 익힘"
