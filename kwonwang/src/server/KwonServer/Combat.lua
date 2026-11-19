@@ -1107,7 +1107,9 @@ function Combat.query(att: Fighter, hit: any, from: Vector3?): { Fighter }
 			local dist = Vector3.new(f.root.Position.X - center.X, 0, f.root.Position.Z - center.Z).Magnitude
 			local reach = hit.aoe and hit.radius or (hit.range * 0.55 + hit.radius)
 			local padR, padY = bodyPad(f)
-			if dist <= reach + 1.5 + padR and math.abs(f.root.Position.Y - origin.Y) < 9 + padY then
+			-- 3.99.53판: 치는 쪽도 크면 몸 중심이 높다 (큰 보스의 평타가 높이 차이로 빗나가던 것)
+			local _, attY = bodyPad(att)
+			if dist <= reach + 1.5 + padR and math.abs(f.root.Position.Y - origin.Y) < 9 + padY + attY then
 				table.insert(list, f)
 			end
 		end
@@ -1120,7 +1122,8 @@ function Combat.plausible(att: Fighter, tgt: Fighter, hit: any): boolean
 	local d = Vector3.new(tgt.root.Position.X - att.root.Position.X, 0, tgt.root.Position.Z - att.root.Position.Z).Magnitude
 	local reach = hit.aoe and hit.radius or (hit.range + hit.radius)
 	local padR, padY = bodyPad(tgt)
-	return d <= reach + Config.HIT_TOLERANCE + 3 + padR and math.abs(tgt.root.Position.Y - att.root.Position.Y) < 14 + padY
+	local _, attY = bodyPad(att)
+	return d <= reach + Config.HIT_TOLERANCE + 3 + padR and math.abs(tgt.root.Position.Y - att.root.Position.Y) < 14 + padY + attY
 end
 
 ------------------------------------------------------------------------

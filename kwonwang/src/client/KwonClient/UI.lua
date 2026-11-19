@@ -3530,6 +3530,11 @@ local mapMe: TextLabel
 local mapGuide: Frame
 local mapDots: { Frame } = {}
 local mapBig = false
+-- 3.99.53판: 작은 지도 숨기기 (퀘스트 칸처럼 X로 숨기고 🗺 단추로 다시). nil 이면 기기대로 (휴대폰은 숨김)
+local mapHiddenPref: boolean? = nil
+local placeMapRef: () -> () = function() end
+local mapHideBtn: GuiObject? = nil
+local mapChip: GuiObject? = nil
 local guideStyle: string? = nil
 local guidePart: Part? = nil
 local guideLabel: TextLabel? = nil
@@ -3769,11 +3774,27 @@ local function placeMap()
 		mapFrame.Size = UDim2.new(0, bigW, 0, bigH)
 	else
 		mapFrame.AnchorPoint = Vector2.new(1, 0)
-		mapFrame.Position = UDim2.new(1, -16, 0, 160)
+		-- 3.99.53판: 터치 기기는 오른쪽 맨 위 구석에 조금 작게 (터치 단추 · 퀘스트 칸과 멀리)
+		local touch = V.device ~= "pc"
+		mapFrame.Position = touch and UDim2.new(1, -6, 0, 52) or UDim2.new(1, -16, 0, 160)
 		mapFrame.Size = UDim2.new(0, MAP_SMALL, 0, MAP_SMALL)
+		if touch and mapScaleObj then
+			mapScaleObj.Scale = math.max(0.3, mapScaleObj.Scale * 0.8)
+		end
 	end
-	-- 휴대폰은 단추와 겹치지 않게 작은 지도를 숨기고 메뉴로 크게만 본다 (태블릿은 자리가 넉넉해 보인다)
-	mapFrame.Visible = (mapBig or V.device ~= "phone") and not Config.BATTLE_MODE
+	-- 휴대폰은 처음엔 작은 지도를 숨긴다 (🗺 단추로 꺼낼 수 있다). 어느 기기든 X로 숨길 수 있다
+	local hidden = mapHiddenPref
+	if hidden == nil then
+		hidden = V.device == "phone"
+	end
+	mapFrame.Visible = (mapBig or not hidden) and not Config.BATTLE_MODE
+	if mapHideBtn then
+		mapHideBtn.Visible = not mapBig
+	end
+	if mapChip then
+		mapChip.Visible = hidden and not mapBig and not Config.BATTLE_MODE
+		mapChip.Position = V.device ~= "pc" and UDim2.new(1, -6, 0, 52) or UDim2.new(1, -16, 0, 160)
+	end
 	for _, list in ipairs({ mapTexts, skyTexts, hellTexts }) do
 		for _, t in ipairs(list) do
 			t.label.TextSize = mapBig and t.big or t.small
@@ -3786,6 +3807,7 @@ local function placeMap()
 	applyView(myPos())
 	task.defer(declutter)
 end
+placeMapRef = placeMap
 -- 3.86판: 화면 크기가 바뀌면 (measure 가 크기를 다시 정한 뒤) 지도도 다시 맞춘다
 table.insert(V.hooks, function()
 	if mapFrame then
@@ -4131,6 +4153,15 @@ function UIB.buildMap()
 		end
 	end)
 	table.insert(zoomBtns, closeBtn)
+	-- 3.99.53판: 작은 지도 숨기기 X (오른쪽 위) 와 다시 꺼내는 🗺 단추
+	mapHideBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -6, 0, 6), Size = UDim2.new(0, 30, 0, 30), Text = "X", TextSize = 16, BackgroundColor3 = C.panel2, ZIndex = 14, Parent = mapFrame }, function()
+		mapHiddenPref = true
+		pcall(placeMapRef)
+	end)
+	mapChip = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 160), Size = UDim2.new(0, 96, 0, 40), Text = "🗺 지도", TextSize = 16, BackgroundColor3 = C.bg, ZIndex = 6, Visible = false, Parent = gui }, function()
+		mapHiddenPref = false
+		pcall(placeMapRef)
+	end)
 	local dragging = false
 	local dragLast = Vector3.zero
 	-- (입력 연결이 실패해도 지도는 그대로 쓰이게)
@@ -5457,6 +5488,11 @@ function UI.init(req: RemoteEvent)
 		end
 		if trackerChip then
 			trackerChip.Position = touch and UDim2.new(0, 170, 0, 40) or UDim2.new(0, 280, 0, 40)
+		end
+		-- 3.99.53판: 터치 기기는 대화 창을 화면 가운데에 (아래쪽은 터치 단추가 덮어 '받기'가 눌리지 않았다)
+		if dialogFrame then
+			dialogFrame.AnchorPoint = touch and Vector2.new(0.5, 0.5) or Vector2.new(0.5, 1)
+			dialogFrame.Position = touch and UDim2.new(0.5, 0, 0.42, 0) or UDim2.new(0.5, 0, 1, -150)
 		end
 		-- 배틀그라운드 순위: 휴대폰은 맨 위 오른쪽 (터치 단추 고리 위)
 		if BH.board then
