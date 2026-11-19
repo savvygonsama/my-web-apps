@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.46" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.47" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7836,6 +7836,76 @@ do
 		}
 		st.gimmick = "혼돈 채우기: 싸우며 혼돈 (100) 을 채우면 25초 동안 「혼돈화신」. 몸에 먹 줄기가 휘감기고 연타 피해 ×1.3, 기술 넷이 화신의 기술로 바뀐다 (더 세고 크고 대기가 짧다). 먹 매듭: 세 번 맞힐 때마다 상대 자리에서 먹이 엉켜 조였다 터진다 (화신이면 두 번마다 더 크게). 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 20% 짧음. 초 오의(X)가 있다"
 	end
+end
+
+------------------------------------------------------------------------
+-- 3.99.47판 기술 겹침 손보기: 초 오의가 다른 기술 (R · 오의) 과 같은 장치였던 것을 모두 새 기술로
+--   명경권 초 오의 (R 경중분신과 같았다) · 신 삼재권 초 오의 (오의 · E와 같은 붙잡기) · 운류장 오의 (R과 같은 장판)
+--   철쇄금나수 오의 (E · R과 같은 붙잡기) · 질풍연권 오의 (E · R과 같은 돌진)
+------------------------------------------------------------------------
+do
+	local function seq(steps: { any }, iframes: boolean?): any
+		return { kind = "forgeSeq", iframes = iframes, steps = steps }
+	end
+	local function setSkill(id: string, slot: string, over: any)
+		local st = Config.STYLE_BY_ID[id]
+		local mv = st and st.skills[slot]
+		if not mv then
+			return
+		end
+		for k, v in pairs(over) do
+			mv[k] = v
+		end
+	end
+	setSkill("myeonggyeong", "X", {
+		desc = "초 오의 (그동안 무적). 둘레에 하늘까지 닿는 거울 벽이 둥글게 선다. 거울과 거울 사이를 빛이 세 번 튕겨 다니며 적 여덟을 꿰뚫고, 마지막에 거울이 모두 깨지며 조각이 사방으로 쏟아진다",
+		pose = "mg_shatter", dur = 3.0,
+		mech = seq({
+			{ t = 0.3, shape = "circle", at = "self", radius = 28, life = 2.4, vfx = "mirrorDome" },
+			{ t = 0.9, at = "each", n = 8, range = 32, radius = 6, vfx = "mirrorBeam", hit = hit(0, 0, 0, 40, 46, 0.5, 6, 6) },
+			{ t = 1.3, at = "each", n = 8, range = 32, radius = 6, vfx = "mirrorBeam", hit = hit(0, 0, 0, 40, 46, 0.5, 6, 6) },
+			{ t = 1.7, at = "each", n = 8, range = 32, radius = 6, vfx = "mirrorBeam", hit = hit(0, 0, 0, 40, 46, 0.5, 6, 6) },
+			{ t = 2.5, shape = "circle", at = "self", radius = 28, vfx = "mirrorShatter", big = true, hit = hit(0, 0, 0, 60, 80, 1.2, 40, 16) },
+		}, true),
+	})
+	setSkill("sinsamjae", "X", {
+		desc = "초 오의 (그동안 무적). 하늘 · 땅 · 사람이 차례로 친다. 하늘에서 빛기둥이 적 여섯에게 꽂히고, 땅이 내 둘레로 갈라져 솟구치고, 거대한 신의 주먹이 적 여섯을 내리친다. 마지막에 셋이 하나로 모여 천지가 다시 열린다",
+		pose = "sn_get", dur = 3.8,
+		mech = seq({
+			{ t = 0.6, at = "each", n = 6, range = 34, radius = 10, vfx = "heavenStrike", hit = hit(0, 0, 0, 200, 220, 1.0, 20, 14) },
+			{ t = 1.5, shape = "circle", at = "self", radius = 30, vfx = "earthSplit", hit = hit(0, 0, 0, 200, 240, 1.2, 40, 24) },
+			{ t = 2.4, at = "each", n = 6, range = 34, radius = 10, vfx = "manFist", hit = hit(0, 0, 0, 260, 300, 1.2, 60, 10) },
+			{ t = 3.3, shape = "circle", at = "self", radius = 34, vfx = "sinGenesis", big = true, hit = hit(0, 0, 0, 240, 260, 1.6, 80, 30) },
+		}, true),
+	})
+	setSkill("unryu", "G", {
+		desc = "구름이 둘레 22칸에 소용돌이치며 적을 끌어당긴다. 구름 기둥이 세 번 적 여섯의 발밑에서 솟구치고, 마지막에 모든 구름이 한꺼번에 터져 흩어진다",
+		mech = seq({
+			{ t = 0.2, shape = "circle", at = "self", radius = 22, pull = 20, life = 1.7, vfx = "cloudVortex", hit = hit(0, 0, 0, 12, 12, 0.35, 0) },
+			{ t = 0.6, at = "each", n = 6, range = 24, radius = 6, vfx = "cloudPillar", hit = hit(0, 0, 0, 22, 22, 0.4, 6, 12) },
+			{ t = 1.0, at = "each", n = 6, range = 24, radius = 6, vfx = "cloudPillar", hit = hit(0, 0, 0, 22, 22, 0.4, 6, 12) },
+			{ t = 1.4, at = "each", n = 6, range = 24, radius = 6, vfx = "cloudPillar", hit = hit(0, 0, 0, 22, 22, 0.4, 6, 12) },
+			{ t = 1.9, shape = "circle", at = "self", radius = 22, vfx = "cloudBurst", big = true, hit = hit(0, 0, 0, 40, 46, 0.8, 30, 10) },
+		}),
+	})
+	setSkill("cheolsae", "G", {
+		desc = "쇠사슬 여섯 줄을 둘레로 던져 적을 한가운데로 끌어온다. 끌려온 적을 사슬로 두 번 휘감아 조이고, 마지막에 사슬째 땅에 내리꽂는다",
+		mech = seq({
+			{ t = 0.3, shape = "circle", at = "self", radius = 20, pull = 40, vfx = "chainReel", hit = hit(0, 0, 0, 20, 30, 0.6, 0) },
+			{ t = 0.9, shape = "circle", at = "self", radius = 10, vfx = "chainSpin", hit = hit(0, 0, 0, 30, 40, 0.6, 4) },
+			{ t = 1.4, shape = "circle", at = "self", radius = 10, vfx = "chainSpin", hit = hit(0, 0, 0, 30, 40, 0.6, 4) },
+			{ t = 1.9, shape = "circle", at = "self", radius = 14, vfx = "chainSlam", big = true, hit = hit(0, 0, 0, 50, 70, 1.0, 30, 16) },
+		}, true),
+	})
+	setSkill("jilpung", "G", {
+		desc = "바람이 되어 사라진다 (무적). 둘레의 적 여섯을 바람의 칼날이 세 번 가로지르고, 마지막에 한가운데서 회오리가 솟아 모두 띄운다",
+		mech = seq({
+			{ t = 0.15, at = "each", n = 6, range = 30, radius = 5, vfx = "galeSlash", hit = hit(0, 0, 0, 9, 12, 0.4, 4, 6) },
+			{ t = 0.45, at = "each", n = 6, range = 30, radius = 5, vfx = "galeSlash", hit = hit(0, 0, 0, 9, 12, 0.4, 4, 6) },
+			{ t = 0.75, at = "each", n = 6, range = 30, radius = 5, vfx = "galeSlash", hit = hit(0, 0, 0, 9, 12, 0.4, 4, 6) },
+			{ t = 1.15, shape = "circle", at = "self", radius = 14, pull = 16, vfx = "galeTornado", big = true, hit = hit(0, 0, 0, 34, 44, 0.9, 10, 18) },
+		}, true),
+	})
 end
 
 return Config

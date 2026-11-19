@@ -2378,6 +2378,235 @@ VFX.soulReap = function(d)
 	shake(0.6)
 end
 
+------------------------------------------------------------------------
+-- 3.99.47판 겹치던 기술 다섯을 새로: 명경권 · 신 삼재권 초 오의, 운류장 · 철쇄금나수 · 질풍연권 오의
+------------------------------------------------------------------------
+-- 명경권 천경파쇄: 하늘까지 닿는 거울 벽 → 거울 사이를 튕기는 빛 → 깨지는 거울
+VFX.mirrorDome = function(d, c, c2)
+	local g = ground(d.at)
+	local R = d.radius or 28
+	local life = d.life or 2.4
+	for i = 1, 12 do
+		local a = i / 12 * math.pi * 2
+		local at = g + V(math.cos(a) * R, 0, math.sin(a) * R)
+		local p0 = piece(V(10, 0.5, 0.6), CFrame.lookAt(at, g) * CF(0, 0.25, 0), WHITE, 0.15)
+		p0.Material = Enum.Material.Glass
+		p0.Reflectance = 0.9
+		tween(p0, 0.35, { Size = V(10, 26, 0.6), CFrame = CFrame.lookAt(at + V(0, 13, 0), g + V(0, 13, 0)) })
+		local edge = piece(V(10.4, 0.3, 0.7), CFrame.lookAt(at + V(0, 26, 0), g + V(0, 26, 0)), c2, 0.1)
+		task.delay(life, function()
+			p0:Destroy()
+			fadeOut(edge, 0.2)
+		end)
+	end
+	gSwirl(function()
+		return g + V(0, 12, 0)
+	end, 14, R * 0.9, 20, life, c, c2, { width = 0.3, trail = 0.6, speed = 0.8 })
+	shake(0.5)
+end
+VFX.mirrorBeam = function(d, c, c2)
+	local g = ground(d.from or d.at)
+	local at = d.at + V(0, 2, 0)
+	-- 거울 셋을 튕겨 날아드는 빛줄기
+	local pts = {}
+	for i = 1, 3 do
+		local a = math.random() * math.pi * 2
+		table.insert(pts, g + V(math.cos(a) * 26, 6 + math.random() * 16, math.sin(a) * 26))
+	end
+	table.insert(pts, at)
+	for i = 1, #pts - 1 do
+		task.delay((i - 1) * 0.06, function()
+			gStroke(pts[i], pts[i + 1], 0.06, 0.6, 0.1, c2, c, true, 0.3)
+		end)
+	end
+	task.delay(0.2, function()
+		gEmit(at, TEX_SPARK, c2, c, 14, 0.6, 10, 0.4)
+	end)
+end
+VFX.mirrorShatter = function(d, c, c2)
+	local g = ground(d.at)
+	local r = d.radius or 28
+	for _ = 1, 40 do
+		local a = math.random() * math.pi * 2
+		local h = math.random() * 24
+		local from = g + V(math.cos(a) * r, h, math.sin(a) * r)
+		local shard = piece(V(math.random() * 2 + 0.6, math.random() * 3 + 1, 0.15), CF(from) * CFrame.Angles(math.random() * 6, math.random() * 6, 0), WHITE, 0.1)
+		shard.Material = Enum.Material.Glass
+		shard.Reflectance = 0.8
+		tween(shard, 0.7, { Position = g + V(math.cos(a) * r * 0.3, 1, math.sin(a) * r * 0.3) + V((math.random() - 0.5) * 10, 0, (math.random() - 0.5) * 10), Transparency = 1 })
+		Debris:AddItem(shard, 0.75)
+	end
+	gEmit(g + V(0, 6, 0), TEX_SPARK, c2, c, 60, 1, 24, 0.8)
+	Fx.ring(g + V(0, 0.5, 0), c2, 4, r * 2.2, 0.5)
+	Fx.flash(g + V(0, 8, 0), WHITE, r * 2.4, 6, 0.35)
+	pcall(Fx.sound, "shatter", 1, 0.8, g)
+	shake(1.2)
+end
+-- 신 삼재권 천지개벽: 하늘 (빛기둥) → 땅 (갈라져 솟는 땅) → 사람 (거대한 신의 주먹) → 셋이 하나로
+VFX.heavenStrike = function(d, c, c2)
+	local g = ground(d.at)
+	local col: { { Vector3 } } = {}
+	for i = 1, 6 do
+		local a = i / 6 * math.pi * 2
+		table.insert(col, { V(math.cos(a) * 3, 0, math.sin(a) * 3), V(math.cos(a) * 1.5, 120, math.sin(a) * 1.5) })
+	end
+	beamBeast(col, function(t)
+		return t < 0.5 and CF(g) or nil
+	end, 0.5, 1, WHITE, c, { per = 1, w = 2.6, glow = true, amp = 0.4 })
+	gEmit(g + V(0, 2, 0), TEX_SPARK, WHITE, c, 30, 1, 14, 0.6)
+	Fx.ring(g + V(0, 0.5, 0), c, 2, 20, 0.4)
+	shake(0.35)
+end
+VFX.earthSplit = function(d, c, c2)
+	local g = ground(d.at)
+	local r = d.radius or 30
+	for i = 1, 8 do
+		local a = i / 8 * math.pi * 2 + math.random() * 0.3
+		local dir = V(math.cos(a), 0, math.sin(a))
+		gStroke(g + dir * 2 + V(0, 0.3, 0), g + dir * r + V(0, 0.3, 0), 0.25, 1.2, 0.5, c, c2, true, 0.9)
+		for j = 1, 4 do
+			task.delay(0.05 * j, function()
+				local at = g + dir * (r * j / 5)
+				local rock = piece(V(3, 1, 3), CF(at) * CFrame.Angles(0, math.random() * 6, 0), Color3.fromRGB(110, 96, 84), 0)
+				rock.Material = Enum.Material.Slate
+				tween(rock, 0.18, { Size = V(3, 6 + math.random() * 4, 3), CFrame = CF(at + V(0, 3, 0)) * CFrame.Angles(math.random() * 0.4, math.random() * 6, math.random() * 0.4) })
+				task.delay(0.9, function()
+					fadeOut(rock, 0.4)
+				end)
+			end)
+		end
+	end
+	Fx.debris(g, 14, 30, Color3.fromRGB(110, 96, 84))
+	shake(1)
+end
+VFX.manFist = function(d, c, c2)
+	local g = ground(d.at)
+	local top = g + V(0, 40, 0)
+	-- 빛 줄기로 그린 거대한 주먹 (손가락 넷 + 엄지) 이 위에서 내리꽂힌다
+	local fist: { { Vector3 } } = {}
+	for f = -1.5, 1.5, 1 do
+		table.insert(fist, { V(f * 2, 0, 0), V(f * 2, -3, -2) })
+	end
+	table.insert(fist, { V(-3.5, -1, 1), V(-2, -3, -1) })
+	table.insert(fist, { V(-4, 0, 3), V(4, 0, 3) })
+	table.insert(fist, { V(0, 0, 3), V(0, 16, 6) })
+	beamBeast(fist, function(t)
+		if t > 0.32 then
+			return nil
+		end
+		local k = t / 0.3
+		return CF(top:Lerp(g + V(0, 4, 0), math.min(1, k * k)))
+	end, 0.32, 1.6, c2, c, { per = 2, w = 1.8, glow = true, amp = 0.3 })
+	task.delay(0.3, function()
+		gEmit(g + V(0, 2, 0), TEX_SPARK, c, c2, 30, 1.2, 18, 0.6)
+		Fx.ring(g + V(0, 0.5, 0), c2, 3, 24, 0.4)
+		Fx.debris(g, 6, 20)
+		shake(0.6)
+	end)
+end
+VFX.sinGenesis = function(d, c, c2)
+	local g = ground(d.at)
+	local r = d.radius or 34
+	gSwirl(function()
+		return g + V(0, 6, 0)
+	end, 30, r, 10, 0.5, c, c2, { width = 1.6, trail = 0.5, converge = true, speed = 2.4, c3 = WHITE })
+	task.delay(0.48, function()
+		for i = 1, 3 do
+			Fx.ring(g + V(0, 0.5 + i * 3, 0), i == 2 and WHITE or c, 4, r * (1.8 + i * 0.3), 0.5 + i * 0.1)
+		end
+		gEmit(g + V(0, 6, 0), TEX_SPARK, WHITE, c, 80, 1.4, 34, 1)
+		Fx.flash(g + V(0, 10, 0), WHITE, r * 2.6, 7, 0.5)
+		shake(1.6)
+	end)
+end
+-- 운류장 만리운해: 구름 소용돌이 → 구름 기둥 → 구름이 한꺼번에 터진다
+local function cloudPuffs(at: Vector3, n: number, size: number, spread: number)
+	gEmit(at, TEX_SMOKE, WHITE, Color3.fromRGB(220, 230, 245), n, size, spread, 1.2, 0.3, V(0, 1, 0))
+end
+VFX.cloudVortex = function(d, c, c2)
+	local g = ground(d.at) + V(0, 1, 0)
+	local r = d.radius or 22
+	local life = d.life or 1.7
+	gSwirl(function()
+		return g
+	end, 22, r, 2, life, WHITE, c, { width = 1.6, trail = 0.9, speed = 1, flat = true })
+	for i = 1, 6 do
+		task.delay(i * life / 7, function()
+			local a = math.random() * math.pi * 2
+			cloudPuffs(g + V(math.cos(a) * r * 0.7, 1, math.sin(a) * r * 0.7), 6, 4, 3)
+		end)
+	end
+end
+VFX.cloudPillar = function(d, c, c2)
+	local g = ground(d.at)
+	gSerpent(function(u)
+		return g + V(math.sin(u * 8) * 1.5, u * 16, math.cos(u * 8) * 1.5)
+	end, 0.3, 10, 2.4, WHITE, c, 0.02)
+	cloudPuffs(g + V(0, 2, 0), 10, 5, 6)
+end
+VFX.cloudBurst = function(d, c, c2)
+	local g = ground(d.at) + V(0, 3, 0)
+	local r = d.radius or 22
+	cloudPuffs(g, 40, 7, r * 1.2)
+	for i = 1, 12 do
+		local a = i / 12 * math.pi * 2
+		gStroke(g, g + V(math.cos(a) * r, math.random() * 6, math.sin(a) * r), 0.25, 1.6, 2, WHITE, c, true, 0.6)
+	end
+	Fx.ring(ground(d.at) + V(0, 0.5, 0), WHITE, 3, r * 2.2, 0.5)
+	shake(0.8)
+end
+-- 철쇄금나수 천근쇄: 쇠사슬 (빔 고리) 이 날아가 끌어오고 → 휘감아 조이고 → 내리꽂는다
+local IRON2, IRONGLOW = Color3.fromRGB(150, 150, 160), Color3.fromRGB(255, 190, 110)
+VFX.chainReel = function(d, c, c2)
+	local g = ground(d.at) + V(0, 2.5, 0)
+	local r = d.radius or 20
+	for i = 1, 6 do
+		local a = i / 6 * math.pi * 2
+		local far = g + V(math.cos(a) * r, 0, math.sin(a) * r)
+		-- 던져 나갔다가 끌려온다
+		gStroke(g, far, 0.15, 0.5, 0.4, IRON2, IRONGLOW, true, 0.35)
+		task.delay(0.18, function()
+			gStroke(far, g, 0.25, 0.5, 0.6, IRON2, IRONGLOW, true, 0.35)
+		end)
+	end
+	pcall(Fx.sound, "block", 0.8, 0.7, g)
+end
+VFX.chainSpin = function(d, c, c2)
+	local g = ground(d.at) + V(0, 2.5, 0)
+	gSwirl(function()
+		return g
+	end, 10, (d.radius or 10) * 0.8, 3, 0.45, IRON2, IRONGLOW, { width = 0.5, trail = 0.3, speed = 4, converge = true })
+	gEmit(g, TEX_SPARK, IRONGLOW, WHITE, 10, 0.4, 10, 0.3)
+end
+VFX.chainSlam = function(d, c, c2)
+	local g = ground(d.at)
+	gStroke(g + V(0, 22, 0), g + V(0, 0.5, 0), 0.15, 1.2, 0.3, IRON2, IRONGLOW, true, 0.4)
+	task.delay(0.15, function()
+		Fx.ring(g + V(0, 0.5, 0), IRONGLOW, 3, (d.radius or 14) * 2.2, 0.45)
+		Fx.debris(g, 10, 24)
+		gEmit(g + V(0, 1, 0), TEX_SPARK, IRONGLOW, WHITE, 30, 0.8, 18, 0.5)
+		shake(1)
+	end)
+end
+-- 질풍연권 질풍만영: 바람의 칼날이 가로지르고 → 회오리
+VFX.galeSlash = function(d, c, c2)
+	local at = d.at + V(0, 2.5, 0)
+	local a = math.random() * math.pi * 2
+	local dir = V(math.cos(a), (math.random() - 0.5) * 0.4, math.sin(a))
+	gStroke(at - dir * 10, at + dir * 10, 0.08, 0.6, 0.6, WHITE, c, true, 0.3)
+	gStroke(at - dir * 8 + V(0, 1, 0), at + dir * 8 + V(0, 1, 0), 0.1, 0.3, 0.8, c, c2, true, 0.3)
+	gEmit(at, TEX_SPARK, WHITE, c, 6, 0.4, 8, 0.3)
+end
+VFX.galeTornado = function(d, c, c2)
+	local g = ground(d.at)
+	gSwirl(function()
+		return g
+	end, 22, (d.radius or 14) * 0.6, 4, 0.8, WHITE, c, { width = 0.9, trail = 0.5, speed = 3.5, rise = 16, c3 = c2 })
+	cloudPuffs(g + V(0, 2, 0), 16, 3, 8)
+	Fx.ring(g + V(0, 0.5, 0), c, 2, (d.radius or 14) * 2, 0.4)
+	shake(0.7)
+end
+
 function ForgeFx.handles(data: any): boolean
 	return data.kind == "forgeStart" or data.kind == "forgeStep" or (data.kind == "pulse" and OWN_PULSE[data.fx or ""] == true)
 end

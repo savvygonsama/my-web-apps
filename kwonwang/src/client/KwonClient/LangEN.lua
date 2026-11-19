@@ -5070,4 +5070,9 @@ return {
 	["混沌獄"] = "混沌獄",
 	["혼돈옥 · 먹의 영역"] = "Chaos Prison · Domain of Ink",
 	["혼돈옥"] = "Chaos Prison",
+	["초 오의 (그동안 무적). 둘레에 하늘까지 닿는 거울 벽이 둥글게 선다. 거울과 거울 사이를 빛이 세 번 튕겨 다니며 적 여덟을 꿰뚫고, 마지막에 거울이 모두 깨지며 조각이 사방으로 쏟아진다"] = "Super Ultimate (invincible meanwhile). Mirror walls rise around you, reaching the sky. Light bounces between them three times, piercing up to eight foes, then every mirror shatters and the shards rain down in all directions",
+	["초 오의 (그동안 무적). 하늘 · 땅 · 사람이 차례로 친다. 하늘에서 빛기둥이 적 여섯에게 꽂히고, 땅이 내 둘레로 갈라져 솟구치고, 거대한 신의 주먹이 적 여섯을 내리친다. 마지막에 셋이 하나로 모여 천지가 다시 열린다"] = "Super Ultimate (invincible meanwhile). Heaven, Earth and Man strike in turn. Pillars of light hit six foes, the ground splits and erupts around you, and a giant divine fist crushes six foes. Finally all three merge and the world is reborn",
+	["구름이 둘레 22칸에 소용돌이치며 적을 끌어당긴다. 구름 기둥이 세 번 적 여섯의 발밑에서 솟구치고, 마지막에 모든 구름이 한꺼번에 터져 흩어진다"] = "Clouds swirl within 22 studs and pull foes in. Cloud pillars burst up under six foes three times, then every cloud explodes at once",
+	["쇠사슬 여섯 줄을 둘레로 던져 적을 한가운데로 끌어온다. 끌려온 적을 사슬로 두 번 휘감아 조이고, 마지막에 사슬째 땅에 내리꽂는다"] = "Hurl six chains around you and reel foes to the center. Bind them tight twice, then slam them into the ground, chains and all",
+	["바람이 되어 사라진다 (무적). 둘레의 적 여섯을 바람의 칼날이 세 번 가로지르고, 마지막에 한가운데서 회오리가 솟아 모두 띄운다"] = "Vanish into the wind (invincible). Wind blades slash through six nearby foes three times, then a tornado rises in the middle and lifts them all",
 }
