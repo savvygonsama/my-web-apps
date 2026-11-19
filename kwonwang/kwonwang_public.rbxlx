@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.55" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.56" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4711,6 +4711,8 @@ Config.DISCIPLE = {
 	lvBonus = 0.15, -- 경지 하나마다 가져오는 양 +15%
 	gather = { mats = 0.8, shards = 0.4 }, -- 한 시간에 (경지 1)
 	errand = { shares = 0.5 }, -- 한 시간에 은자 몫 (경지 1)
+	-- 3.99.56판 지옥 원정: 셋 다 많이 가져오지만, 한 시간마다 다칠 수 있다 (다치면 그때까지 것만 가져오고 rest 초 동안 쉰다)
+	hell = { mats = 2.0, shares = 0.8, shards = 1.0, xp = 6, injury = 0.08, rest = 6 * 3600, minLv = 6, rebirth = 3 },
 	names = { "청아", "소운", "백린", "무진", "하랑", "설화", "도윤", "연비", "진혁", "운서", "단아", "효월", "강모", "초희", "석우", "한결" },
 	robes = { Color3.fromRGB(90, 120, 170), Color3.fromRGB(170, 70, 60), Color3.fromRGB(80, 140, 90), Color3.fromRGB(60, 60, 70), Color3.fromRGB(200, 190, 170), Color3.fromRGB(140, 90, 160) },
 	styles = { "samjae", "taeheo", "geumgang", "maehwa", "muyeong", "byeokryeok", "chwi" },
@@ -4728,6 +4730,11 @@ function Config.discipleYield(d: any, secs: number): any
 	if job == "gather" then
 		out.mats = D.gather.mats * h * k
 		out.shards = D.gather.shards * h * k
+	elseif job == "hell" then
+		out.xp = D.hell.xp * h
+		out.mats = D.hell.mats * h * k
+		out.shards = D.hell.shards * h * k
+		out.shares = D.hell.shares * h * k
 	elseif job == "errand" then
 		out.shares = D.errand.shares * h * k
 	end
@@ -7764,6 +7771,81 @@ Config.MANUSCRIPTS = {
 Config.MANUSCRIPT_BY_ID = {}
 for _, m in ipairs(Config.MANUSCRIPTS) do
 	Config.MANUSCRIPT_BY_ID[m.id] = m
+end
+
+-- 3.99.56판 지옥 권법 무간귀왕권 [지존]: 무간지옥 가장 깊은 곳, 생전에 권왕이었던 원혼 (귀왕) 에게서.
+--   지상에서는 지존 그대로, 지옥 안에서는 모든 피해 ×1.5 (hellBoost). 쇠사슬로 끌어오고, 땅에서 손이 솟고, 등 뒤에 귀왕의 혼이 선다
+do
+	local function seq(steps: { any }): any
+		return { kind = "forgeSeq", steps = steps }
+	end
+	local st: any = {
+		id = "mugan", name = "무간귀왕권", hanja = "無間鬼王拳", icon = "👻", grade = "지존", fx = "fire",
+		color = Color3.fromRGB(200, 40, 60), color2 = Color3.fromRGB(255, 225, 150),
+		palette = { Color3.fromRGB(190, 30, 50), Color3.fromRGB(255, 220, 140), Color3.fromRGB(150, 230, 255) },
+		desc = "생전에 권왕이었으나 끝없는 싸움 끝에 무간지옥에 떨어진 원혼의 주먹. 저승의 쇠사슬로 끌어오고, 땅 밑의 손들로 붙잡고, 등 뒤에 선 귀왕의 혼이 함께 내리친다.",
+		gimmick = "무간: 지옥 안에서는 모든 피해가 1.5배. 지상에서는 지존의 권법 그대로",
+		unlockHint = "세 번 환생해 지옥에 든 자만이, 무간지옥 가장 깊은 곳에서 떠도는 귀왕의 원혼을 꺾고 얻는다",
+		deflect = 0.26, speed = 1.04, stance = "stance_overlord",
+		hidden = true, keepGrade = true, secret = true, rebirthReq = 3, hellBoost = 1.5,
+		combo = {
+			{ id = "mg1", name = "귀수", pose = "ghost_palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 10, 0.35, 8) } },
+			{ id = "mg2", name = "쇄장", pose = "ghost_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 10, 0.35, 8) } },
+			{ id = "mg3", name = "왕권", pose = "king_jab_r", dur = 0.4, lunge = 2, hits = { hit(0.16, 5, 5.5, 10, 10, 0.4, 10, 10, true), hit(0.28, 5, 5.5, 8, 8, 0.3, 12) } },
+			{ id = "mg4", name = "무간타", pose = "king_cannon", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 5.5, 24, 28, 0.6, 38) } },
+		},
+		heavy = { id = "mgH", name = "귀왕추", pose = "king_hammer", dur = 0.7, lunge = 2, hits = { hit(0.34, 7, 7.5, 34, 46, 0.85, 46, 10, true) } },
+		finisher = { id = "mgF", name = "황천승", pose = "king_uppercut", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		skills = {
+			E = { id = "mgE", name = "무간쇄", desc = "저승의 쇠사슬 여섯 줄을 앞으로 던져 걸린 적을 발밑까지 끌어오고, 끌려온 적을 사슬째 움켜쥐어 터뜨린다", pose = "karma_chain", dur = 0.8, cd = 8, chi = 20,
+				mech = seq({
+					{ t = 0.15, shape = "line", at = "self", length = 28, width = 6, pull = 22, vfx = "mgChain", hit = hit(0, 0, 0, 18, 18, 0.5, 4) },
+					{ t = 0.5, shape = "circle", at = "self", radius = 8, vfx = "mgClench", hit = hit(0, 0, 0, 22, 24, 0.6, 24) },
+				}) },
+			R = { id = "mgR", name = "귀수천망", desc = "가까운 적 다섯의 발밑에서 원혼의 손이 솟아 붙잡는다. 이어서 둘레의 원혼들이 한꺼번에 울부짖어 밀쳐 낸다", pose = "bh_soul", dur = 1.0, cd = 11, chi = 25,
+				mech = seq({
+					{ t = 0.3, at = "each", n = 5, range = 24, radius = 6, vfx = "mgHands", hit = hit(0, 0, 0, 22, 26, 0.9, 2, 6) },
+					{ t = 0.85, shape = "circle", at = "self", radius = 15, vfx = "mgWail", hit = hit(0, 0, 0, 22, 22, 0.5, 30) },
+				}) },
+			G = { id = "mgG", name = "귀왕강림", desc = "발밑에 저승문이 열리고, 등 뒤로 산만 한 귀왕의 혼이 솟는다. 귀왕이 두 번 손바닥으로 적 여섯을 내리누르고, 마지막에 주먹으로 땅을 부순다", pose = "ult_star", dur = 2.4, cd = 30, chi = 100, armor = true,
+				mech = seq({
+					{ t = 0.15, shape = "circle", at = "self", radius = 30, life = 2.3, vfx = "mgGate" },
+					{ t = 0.4, shape = "circle", at = "self", radius = 1, life = 1.9, vfx = "mgKing" },
+					{ t = 0.95, at = "each", n = 6, range = 30, radius = 7, vfx = "mgKingPalm", hit = hit(0, 0, 0, 34, 34, 0.7, 6, 10) },
+					{ t = 1.45, at = "each", n = 6, range = 30, radius = 7, vfx = "mgKingPalm", hit = hit(0, 0, 0, 34, 34, 0.7, 6, 10) },
+					{ t = 2.05, shape = "circle", at = "self", radius = 22, vfx = "mgKingFist", big = true, hit = hit(0, 0, 0, 120, 140, 1.3, 50, 20) },
+				}) },
+		},
+	}
+	st.rank = OLD_RANK[st.grade] or 1
+	-- 시련: 귀왕의 원혼이 직접, 보스처럼 세 단계로 (사슬 → 손 → 강림)
+	local RED, PALE = Color3.fromRGB(200, 40, 60), Color3.fromRGB(150, 230, 255)
+	st.trialIntro = { title = "무간의 시련", text = "나도 한때는 권왕이라 불렸다. 끝없이 싸우다 끝없이 떨어졌지. 여기까지 내려온 너도 다르지 않을 것이다. 내 주먹을 끝까지 받아 내면, 이 끝없는 주먹을 너에게 넘겨주마." }
+	st.trialHp = 2
+	st.trialBoss = { hp = 5400, posture = 920, scale = 1.8, reach = 1.6, speed = 25, patterns = {
+		P("charge", "무간쇄", 1, { length = 56, width = 9, warn = 0.8, cd = 6, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 28, 50, 0.9, 50) }),
+		P("rain", "원혼의 손", 1, { count = 8, radius = 7, spread = 24, warn = 0.95, cd = 7, pose = "w_overhead", fx = "star", color = PALE, hit = hit(0, 0, 0, 24, 40, 0.8, 20) }),
+		P("donut", "저승문", 2, { inner = 8, outer = 28, warn = 1.1, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 32, 56, 1.0, 45) }),
+		P("leap", "귀왕추", 2, { radius = 18, warn = 0.9, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 36, 70, 1.1, 45, 20) }),
+		P("rain", "업화비", 3, { count = 12, radius = 6, spread = 30, warn = 0.85, cd = 6, pose = "w_overhead", fx = "star", color = RED, hit = hit(0, 0, 0, 22, 38, 0.7, 20) }),
+		P("quake", "귀왕강림", 3, { radius = 28, warn = 1.35, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 54, 108, 1.4, 60, 24) }),
+	} }
+	table.insert(Config.Styles, st)
+	st.index = #Config.Styles
+	Config.STYLE_BY_ID[st.id] = st
+	local HY0 = Config.HELL and Config.HELL.y or 8000
+	Config.MASTERS.mugan = { name = "귀왕", at = Vector3.new(-165, HY0 + 1.6, 1150), region = "무간지옥 가장 깊은 곳 (지옥)", regionId = "mugan", secret = true,
+		quote = "산 자의 발소리를 들은 지 천 년이 넘었구나.", rumor = "무간지옥 가장 깊은 곳, 무너진 왕좌에 생전에 권왕이었던 원혼이 앉아 있다더라" }
+	-- 3.99.56판 전생의 업경 (염라전): 비추면 내가 가장 많이 쓰러뜨린 적이 거대해져 나를 심판하러 나온다 (사람마다 다르다)
+	Config.KARMA_MIRROR = {
+		at = Vector3.new(0, HY0 + 12, -1120), -- 염라전 앞마당 업경대 (궁 단 위, 높이 12)
+		cd = 600, -- 한 사람이 다시 비추기까지 (초)
+		life = 300, -- 이 안에 못 꺾으면 거울로 돌아간다
+		minKills = 30, -- 이만큼은 쓰러뜨린 적이어야 비친다
+		scale = 3, -- 원래 몸집의 배
+		hpK = 0.8, -- 염라대왕 체력의 배
+		gems = 400, shards = 4, mats = 3, scrolls = 2,
+	}
 end
 
 -- 제작소 조리법: 환생 횟수 · 비급 조각 · 천상 재료 · 천정 · 은자 (은자는 지금 경지의 '은자 몫'으로 센다: Config.productCoins)
@@ -11441,8 +11523,9 @@ local function sanitize(data: any): Profile
 			style = (type(d.style) == "string" and Config.STYLE_BY_ID[d.style]) and d.style or "samjae",
 			lv = math.clamp(math.floor(num(d.lv, D.maxLv)), 1, D.maxLv),
 			xp = num(d.xp, 1e9),
-			job = (d.job == "gather" or d.job == "errand") and d.job or "train",
+			job = (d.job == "gather" or d.job == "errand" or d.job == "hell") and d.job or "train",
 			since = math.floor(num(d.since, 1e11)),
+			restUntil = math.floor(num(d.restUntil, 1e11)),
 			frac = num(d.frac, 10),
 		}
 	end
@@ -12456,6 +12539,7 @@ local function pushState(player: Player)
 			job = p.disciple.job,
 			style = p.disciple.style,
 			away = os.time() - p.disciple.since,
+			rest = math.max(0, (p.disciple.restUntil or 0) - os.time()),
 		} or nil,
 		scrolls = p.scrolls,
 		pity = p.pity,
@@ -13742,6 +13826,13 @@ Combat.init(Push, {
 				elseif f.typeId then
 					Story.event(killer, "kill", f.typeId)
 				end
+				-- 3.99.56판 업경의 업
+				if f.karmaOwner == killer then
+					local KK = (_G :: any).KwonKarma
+					if KK then
+						KK.killed(killer, f)
+					end
+				end
 				-- 심마를 이긴 주인: 모든 능력치가 크게 오른다
 				if f.simmaOwner == killer then
 					-- (1.5판: 심마도 싸움이라 적을 쓰러뜨린 만큼 크게. 내 전투력의 적 세 마리 몫)
@@ -14570,8 +14661,30 @@ function Actions.discipleClaim(player: Player, quiet: boolean?)
 	end
 	local D = Config.DISCIPLE
 	local now = os.time()
-	local secs = now - (d.since or now)
+	-- 3.99.56판: 다쳐서 쉬는 동안은 일하지 않는다 (쉼이 끝난 뒤부터 센다)
+	local from = math.max(d.since or now, d.restUntil or 0)
+	if (d.restUntil or 0) > now then
+		d.since = now
+		if not quiet then
+			local left = d.restUntil - now
+			toast(player, string.format("🩹 %s은(는) 지옥에서 다쳐 쉬는 중이에요 (%d시간 %d분 남음)", d.name, math.floor(left / 3600), math.floor(left % 3600 / 60)))
+		end
+		return
+	end
+	local secs = now - math.min(from, now)
 	d.since = now
+	-- 지옥 원정: 한 시간마다 다칠 수 있다. 다치면 그때까지 것만 가져오고 쉰다
+	local hurt = false
+	if d.job == "hell" then
+		local hours = math.floor(math.min(secs, D.capSec) / 3600)
+		for hIdx = 1, hours do
+			if math.random() < D.hell.injury then
+				secs = math.max(60, (hIdx - 0.5) * 3600)
+				hurt = true
+				break
+			end
+		end
+	end
 	if secs < 60 then
 		if not quiet then
 			toast(player, "🧑‍🎓 " .. d.name .. ": 아직 가져온 것이 없어요")
@@ -14631,6 +14744,10 @@ function Actions.discipleClaim(player: Player, quiet: boolean?)
 	if ups > 0 then
 		msg ..= string.format(" · 경지가 올라 %s!", Config.Realms[d.lv].name)
 	end
+	if hurt then
+		d.restUntil = now + D.hell.rest
+		msg ..= string.format(" · 🩹 지옥에서 다쳐 %d시간 쉬어야 해요", math.floor(D.hell.rest / 3600))
+	end
 	toast(player, msg)
 	pushState(player)
 end
@@ -14660,7 +14777,18 @@ function Actions.disciple(player: Player, what: any, arg: any)
 	elseif what == "claim" then
 		Actions.discipleClaim(player)
 		return
-	elseif what == "job" and (arg == "train" or arg == "gather" or arg == "errand") then
+	elseif what == "job" and (arg == "train" or arg == "gather" or arg == "errand" or arg == "hell") then
+		if arg == "hell" then
+			local H = D.hell
+			if (p.rebirth or 0) < H.rebirth then
+				toast(player, string.format("🔥 지옥 원정은 내가 환생을 %d번 한 몸이어야 보낼 수 있어요", H.rebirth))
+				return
+			end
+			if p.disciple.lv < H.minLv then
+				toast(player, string.format("🔥 지옥 원정은 제자의 경지가 %d단계 이상이어야 해요 (지금 %d)", H.minLv, p.disciple.lv))
+				return
+			end
+		end
 		if p.disciple.job ~= arg then
 			Actions.discipleClaim(player, true)
 			p.disciple.job = arg
@@ -18311,6 +18439,121 @@ task.spawn(function()
 	end
 end)
 -- 천궁의 투기장 문: 투기장 가장자리로 (싸우는 중에는 안 된다)
+-- 3.99.56판 전생의 업경 (염라전): 비추면 내가 가장 많이 쓰러뜨린 적이 거대해져 심판하러 나온다
+local Karma = {}
+local karmaActive: { [Player]: any } = {}
+function Karma.reflect(player: Player)
+	local KM = Config.KARMA_MIRROR
+	local p, st = profiles[player], states[player]
+	local f = Combat.fighterOfPlayer(player)
+	if not KM or not p or not st or not f or f.dead then
+		return
+	end
+	if karmaActive[player] then
+		toast(player, "🪞 업경에서 나온 업이 아직 너를 노리고 있다")
+		return
+	end
+	local t = os.clock()
+	if t - ((st :: any).karmaAt or -9999) < KM.cd then
+		toast(player, string.format("🪞 업경이 아직 흐리다 (%d초)", math.ceil(KM.cd - (t - (st :: any).karmaAt))))
+		return
+	end
+	-- 가장 많이 쓰러뜨린 적 (도감에 센 것)
+	local best, bestN = nil, 0
+	for id, n in pairs(p.dex or {}) do
+		if Config.Enemies[id] and n > bestN then
+			best, bestN = id, n
+		end
+	end
+	if not best or bestN < KM.minKills then
+		toast(player, string.format("🪞 거울에 아무것도 비치지 않는다. 아직 쌓인 업이 얕다 (한 종류의 적을 %d번 이상 쓰러뜨려야)", KM.minKills))
+		return
+	end
+	local base = Config.Enemies[best]
+	local judge = Config.Bosses.yeomra
+	local key = "karma_" .. best
+	if not Config.Bosses[key] then
+		local def = table.clone(base)
+		def.name = "업경 · " .. (base.name or best) .. "의 업"
+		def.scale = (base.scale or 1) * KM.scale
+		def.hp = judge.hp * KM.hpK
+		def.posture = judge.posture
+		def.mult = judge.mult
+		def.speed = math.max(14, (base.speed or 16) * 0.9)
+		def.reach = 1.8
+		def.patterns = judge.patterns
+		def.coins = judge.coins
+		def.xp = judge.xp
+		def.respawn = 99999
+		def.late = true
+		def.elite = nil
+		Config.Bosses[key] = def
+	end
+	local at = KM.at + Vector3.new(0, 3, 22)
+	local ok, e = pcall(Npc.spawn, key, true, at, "summon")
+	if not ok or not e then
+		warn("[권왕] 업경 보스 오류:", e)
+		return
+	end
+	;(st :: any).karmaAt = t
+	local ef = e.f :: any
+	ef.karmaOwner = player
+	ef.model:SetAttribute("Label", "🪞 " .. ef.name)
+	e.target = f
+	karmaActive[player] = ef
+	Push:FireClient(player, "dialog", { who = "🪞 전생의 업경", title = string.format("%s · %s번", base.name or best, bestN), text = string.format("거울 속에서 네가 쓰러뜨린 %s %s마리의 업이 하나로 엉긴다. 그 무게만큼 커진 업이 너를 심판하러 걸어 나온다.", base.name or best, Config.formatNumber(bestN)) })
+	Push:FireAllClients("karmaRise", { m = ef.model, at = at })
+	task.delay(KM.life, function()
+		if karmaActive[player] == ef then
+			karmaActive[player] = nil
+			if not ef.dead then
+				Npc.despawn(ef)
+				if player.Parent then
+					toast(player, "🪞 업이 거울 속으로 돌아갔다")
+				end
+			end
+		end
+	end)
+end
+function Karma.killed(player: Player, f: any)
+	local KM = Config.KARMA_MIRROR
+	local p, st = profiles[player], states[player]
+	if karmaActive[player] == f then
+		karmaActive[player] = nil
+	end
+	if not p or not st then
+		return
+	end
+	local got = {}
+	local gems = KM.gems * (Premium.owns(player, "gems2x") and 2 or 1)
+	p.skyGems += gems
+	table.insert(got, "💠 " .. gems)
+	p.shards = (p.shards or 0) + KM.shards
+	table.insert(got, "🧩 " .. KM.shards)
+	p.scrolls += KM.scrolls
+	table.insert(got, "📜 " .. KM.scrolls)
+	for _ = 1, KM.mats do
+		local M = Config.SKY_MATS[math.random(#Config.SKY_MATS)]
+		p.mats[M.id] = (p.mats[M.id] or 0) + 1
+		table.insert(got, M.icon)
+	end
+	st.dirty = true
+	toast(player, "🪞 업을 끊었다! " .. table.concat(got, " · "))
+	pushState(player)
+end
+(_G :: any).KwonKarma = Karma
+if W.karmaMirror then
+	W.karmaMirror.Triggered:Connect(function(player: Player)
+		Karma.reflect(player)
+	end)
+end
+Players.PlayerRemoving:Connect(function(player: Player)
+	local ef = karmaActive[player]
+	karmaActive[player] = nil
+	if ef and not ef.dead then
+		pcall(Npc.despawn, ef)
+	end
+end)
 if W.raidGate then
 	W.raidGate.Triggered:Connect(function(player: Player)
 		local f = Combat.fighterOfPlayer(player)
@@ -21677,6 +21920,11 @@ local function damageOf(att: Fighter, hit: any, move: any, isSkill: boolean, act
 	end
 	if isSkill then
 		d *= att.skillMult
+	end
+	-- 3.99.56판 무간귀왕권: 지옥 안에서는 모든 피해 ×hellBoost
+	local hb = Combat.styleOf(att)
+	if hb and hb.hellBoost and Config.inHell(att.root.Position) then
+		d *= hb.hellBoost
 	end
 	-- 3.84판 만물상 폭혈단
 	if ((att :: any).shopDmgUntil or 0) > os.clock() then
@@ -40454,6 +40702,11 @@ local function hellWorld(out: any)
 		local mp = c + Vector3.new(0, 12, 80)
 		local mg = part({ Name = "KarmaMirror", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 28, 28), CFrame = CFrame.new(mp + Vector3.new(0, 14, 0)) * CFrame.Angles(0, math.rad(90), 0), Color = rgb(220, 50, 60), Material = Enum.Material.Glass, Transparency = 0.35, CanCollide = false, Parent = f })
 		light(mg, rgb(255, 60, 60), 60, 2)
+		-- 3.99.56판: 비추면 가장 많이 쓰러뜨린 적이 업이 되어 나온다 (init.server 의 Karma)
+		local kp = prompt(mg, "비춰 본다", "🪞 전생의 업경", "KarmaMirror")
+		kp.MaxActivationDistance = 22
+		kp.HoldDuration = 1
+		out.karmaMirror = kp
 		for k = 0, 23 do
 			local a = k / 24 * math.pi * 2
 			part({ Name = "KarmaFrame", Size = Vector3.new(2, 4, 2), CFrame = CFrame.new(mp + Vector3.new(math.cos(a) * 14.6, 14 + math.sin(a) * 14.6, 0)) * CFrame.Angles(0, 0, a), Color = BLK, Material = Enum.Material.Metal, Parent = f })
@@ -41195,6 +41448,49 @@ ART_SITES.sashin = function(g: Vector3, _back: Vector3, f: Folder)
 		local lamp = P(f, "GodLamp", Vector3.new(1.3, 1.6, 1.3), CFrame.new(lampAt + Vector3.new(0, 4.8, 0)), col, Enum.Material.Neon, false)
 		light(lamp, col, 16, 1.2)
 	end
+end
+-- 3.99.56판 귀왕 (무간귀왕권): 무간지옥 가장 깊은 곳. 금이 간 검은 왕좌, 왕좌를 묶은 쇠사슬 넷, 둘레의 창백한 원혼불, 꺼진 화로
+ART_SITES.mugan = function(g: Vector3, back: Vector3, f: Folder)
+	local side = Vector3.new(-back.Z, 0, back.X)
+	local BLACK, RED, PALE, GOLDC = Color3.fromRGB(26, 20, 26), Color3.fromRGB(150, 30, 45), Color3.fromRGB(170, 235, 255), Color3.fromRGB(200, 170, 100)
+	disc("GhostDais", g + Vector3.new(0, 0.4, 0), 13, 0.8, Color3.fromRGB(40, 34, 42), Enum.Material.Basalt, f, true)
+	disc("GhostDaisRim", g + Vector3.new(0, 0.82, 0), 13.4, 0.1, RED, Enum.Material.Neon, f, false)
+	-- 등 뒤의 왕좌 (등받이가 비스듬히 갈라졌다)
+	local th = g + back * 7
+	local cf = CFrame.lookAt(th, th - back)
+	P(f, "ThroneSeat", Vector3.new(8, 3, 6), cf * CFrame.new(0, 2.3, 0), BLACK, Enum.Material.Basalt)
+	P(f, "ThroneBackL", Vector3.new(3.6, 12, 1.4), cf * CFrame.new(-2.1, 9, 2.6) * CFrame.Angles(0, 0, math.rad(4)), BLACK, Enum.Material.Basalt)
+	P(f, "ThroneBackR", Vector3.new(3.6, 10, 1.4), cf * CFrame.new(2.2, 8.2, 2.6) * CFrame.Angles(0, 0, math.rad(-9)), BLACK, Enum.Material.Basalt)
+	for _, sx in ipairs({ -1, 1 }) do
+		P(f, "ThroneArm", Vector3.new(1.4, 2.2, 6), cf * CFrame.new(sx * 4.6, 4.6, 0), BLACK, Enum.Material.Basalt)
+		P(f, "ThroneGold", Vector3.new(1.6, 0.3, 6.2), cf * CFrame.new(sx * 4.6, 5.8, 0), GOLDC, Enum.Material.Metal, false)
+	end
+	P(f, "ThroneCrack", Vector3.new(0.3, 9, 1.5), cf * CFrame.new(0.1, 8.5, 2.5) * CFrame.Angles(0, 0, math.rad(-6)), RED, Enum.Material.Neon, false)
+	-- 왕좌를 묶은 쇠사슬 넷 (땅의 말뚝까지)
+	for k = 0, 3 do
+		local a = (k + 0.5) / 4 * math.pi * 2
+		local stake = g + (back * math.cos(a) + side * math.sin(a)) * 12
+		pillar(f, "ChainStake", stake, 0.6, 2.4, Color3.fromRGB(60, 56, 62), Enum.Material.Metal)
+		local from = th + Vector3.new(0, 5, 0)
+		local to = stake + Vector3.new(0, 2, 0)
+		local L = (to - from).Magnitude
+		for i = 0, math.floor(L / 1.2) do
+			local p0 = from:Lerp(to, i / math.floor(L / 1.2)) - Vector3.new(0, math.sin(i / math.floor(L / 1.2) * math.pi) * 1.5, 0)
+			P(f, "BoundChain", Vector3.new(0.3, 0.8, 0.45), CFrame.lookAt(p0, to) * CFrame.Angles(0, 0, (i % 2) * math.pi / 2), Color3.fromRGB(70, 64, 70), Enum.Material.Metal, false)
+		end
+	end
+	-- 둘레를 떠도는 창백한 원혼불 여섯
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2
+		local at = g + Vector3.new(math.cos(a) * 16, 4 + (k % 2) * 2, math.sin(a) * 16)
+		local wisp = P(f, "GhostWisp", Vector3.new(1.2, 1.6, 1.2), CFrame.new(at), PALE, Enum.Material.Neon, false)
+		wisp.Shape = Enum.PartType.Ball
+		wisp.Transparency = 0.3
+		light(wisp, PALE, 14, 1)
+	end
+	local ember = P(f, "ThroneGlow", Vector3.new(1, 1, 1), CFrame.new(th + Vector3.new(0, 4, 0)), RED, Enum.Material.Neon, false)
+	ember.Transparency = 1
+	light(ember, RED, 26, 1.2)
 end
 -- 3.99.48판 사부들의 집: 소품만 두고 들판에 서 있던 사부들에게 들어가 볼 수 있는 집을 지어 준다
 --   보이는 집 (누구나 찾는 사부): 사부 등 뒤에, 문이 사부 쪽을 본다
@@ -44194,6 +44490,16 @@ end
 function handlers.attend(data: any)
 	local seventh = data.day == data.total
 	UI.banner(string.format("📅 출석 %d일째", data.day), seventh and "일곱째 날 · 가장 큰 보상" or string.format("이어서 %d일 · 일곱째 날이 가장 크다", data.streak), seventh and Color3.fromRGB(255, 210, 110) or Color3.fromRGB(150, 220, 255))
+end
+
+-- 3.99.56판 전생의 업경: 업이 거울에서 걸어 나온다 (핏빛 섬광, 땅울림)
+function handlers.karmaRise(data: any)
+	if typeof(data) ~= "table" or typeof(data.at) ~= "Vector3" then
+		return
+	end
+	pcall(Fx.flash, data.at + Vector3.new(0, 8, 0), Color3.fromRGB(255, 60, 70), 60, 6, 0.5)
+	pcall(Fx.ring, data.at, Color3.fromRGB(255, 60, 70), 4, 50, 0.6)
+	shake(1)
 end
 
 -- 3.99.23판 권법 제작소: 벼린 순간 단로에서 불기둥이 솟는다
@@ -58045,6 +58351,232 @@ VFX.galeTornado = function(d, c, c2)
 	shake(0.7)
 end
 
+------------------------------------------------------------------------
+-- 3.99.56판 무간귀왕권 (지옥 권법): 저승의 쇠사슬, 땅 밑에서 솟는 원혼의 손, 등 뒤에 서는 귀왕의 혼
+--   빛깔: 핏빛 사슬 · 창백한 원혼 (하늘빛 흰빛) · 귀왕의 금빛 테
+------------------------------------------------------------------------
+local MG_RED, MG_PALE, MG_GOLD, MG_DARK = Color3.fromRGB(200, 40, 60), Color3.fromRGB(170, 235, 255), Color3.fromRGB(255, 220, 140), Color3.fromRGB(40, 10, 20)
+-- 사슬 한 줄: 고리 조각을 늘어놓고 뒤에서부터 끌려 들어오며 사라진다
+local function mgChainLine(from: Vector3, to: Vector3, life: number)
+	local dir = to - from
+	local L = dir.Magnitude
+	if L < 0.5 then
+		return
+	end
+	local n = math.floor(L / 1.3)
+	for i = 0, n do
+		local p0 = from + dir * (i / n)
+		local link = piece(V(0.35, 0.9, 0.5), CFrame.lookAt(p0, to) * CFrame.Angles(0, 0, (i % 2) * math.pi / 2), MG_DARK, 0)
+		link.Material = Enum.Material.Metal
+		link.Color = (i % 4 == 0) and MG_RED or Color3.fromRGB(60, 52, 58)
+		task.delay(life * (1 - i / n) * 0.8, function()
+			fadeOut(link, 0.15)
+		end)
+	end
+	gStroke(from, to, 0.08, 0.35, 0.3, MG_RED, MG_GOLD, true, 0.25)
+end
+VFX.mgChain = function(d)
+	local from = (d.from or d.at) + V(0, 2.5, 0)
+	local dir = d.dir or V(0, 0, -1)
+	local len = d.length or 28
+	local right = V(-dir.Z, 0, dir.X)
+	for i = -2, 3 do
+		local tip = from + dir * len + right * (i - 0.5) * 2.6 + V(0, (math.random() - 0.5) * 2, 0)
+		task.delay(math.abs(i) * 0.02, function()
+			mgChainLine(from, tip, 0.45)
+		end)
+	end
+	gEmit(from + dir * len, TEX_SPARK, MG_RED, MG_GOLD, 14, 0.5, 10, 0.4)
+	pcall(Fx.sound, "block", 0.9, 0.6, from)
+end
+VFX.mgClench = function(d)
+	local g = ground(d.at) + V(0, 2.5, 0)
+	local r = d.radius or 8
+	-- 사슬이 둘레에서 가운데로 조여들고 핏빛으로 터진다
+	for i = 1, 8 do
+		local a = i / 8 * math.pi * 2
+		mgChainLine(g + V(math.cos(a) * r * 1.4, 0.5, math.sin(a) * r * 1.4), g, 0.25)
+	end
+	task.delay(0.12, function()
+		gEmit(g, TEX_SPARK, MG_RED, MG_DARK, 30, 0.9, 16, 0.5)
+		Fx.ring(g - V(0, 2, 0), MG_RED, 2, r * 2.4, 0.35)
+		shake(0.45)
+	end)
+end
+-- 원혼의 손: 땅이 검게 갈라지고, 창백한 손가락 다섯이 솟아 움켜쥔다
+local function mgHand(g: Vector3, s: number, life: number)
+	local crack = piece(V(0.2, 1, 1), CF(g + V(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90)), MG_DARK, 0.1, Enum.PartType.Cylinder)
+	tween(crack, 0.15, { Size = V(0.2, 5 * s, 5 * s) })
+	local fingers: { { Vector3 } } = {}
+	for f = 0, 4 do
+		local a = f / 5 * math.pi * 1.6 - 0.8
+		local base = V(math.cos(a) * 1.1, 0, math.sin(a) * 1.1)
+		table.insert(fingers, { base, base * 1.4 + V(0, 3.2, 0) })
+		table.insert(fingers, { base * 1.4 + V(0, 3.2, 0), base * 0.5 + V(0, 4.6, 0) })
+	end
+	table.insert(fingers, { V(0, -2, 0), V(0, 0.5, 0) })
+	beamBeast(fingers, function(t)
+		if t > life then
+			return nil
+		end
+		local rise = math.min(1, t / 0.18)
+		return CF(g + V(0, -4 * s * (1 - rise), 0)) * CFrame.Angles(0, t * 0.6, 0)
+	end, life, s, MG_PALE, MG_RED, { per = 2, w = 0.5, glow = true, amp = 0.5 })
+	task.delay(life, function()
+		fadeOut(crack, 0.4)
+	end)
+end
+VFX.mgHands = function(d)
+	local g = ground(d.at)
+	mgHand(g, 1.3, 0.9)
+	gEmit(g + V(0, 2, 0), TEX_SMOKE, MG_PALE, MG_DARK, 10, 2.5, 4, 0.9, 0.2, V(0, 4, 0))
+	pcall(Fx.sound, "splash", 0.5, 0.5, g)
+end
+VFX.mgWail = function(d)
+	local g = ground(d.at) + V(0, 2, 0)
+	local r = d.radius or 15
+	-- 둘레를 도는 원혼들이 한 번에 바깥으로 울부짖는다
+	gSwirl(function()
+		return g
+	end, 18, r * 0.5, 4, 0.35, MG_PALE, MG_RED, { width = 0.9, trail = 0.4, speed = 3 })
+	task.delay(0.3, function()
+		for i = 1, 14 do
+			local a = i / 14 * math.pi * 2
+			gStroke(g, g + V(math.cos(a) * r, math.random() * 3, math.sin(a) * r), 0.2, 1.2, 1.5, MG_PALE, MG_RED, true, 0.4)
+		end
+		Fx.ring(g - V(0, 1.5, 0), MG_PALE, 3, r * 2.2, 0.4)
+		shake(0.6)
+	end)
+end
+-- G 귀왕강림: 저승문 → 귀왕의 혼 → 손바닥 둘 → 주먹
+VFX.mgGate = function(d)
+	local g = ground(d.at) + V(0, 0.15, 0)
+	local r = d.radius or 30
+	local life = d.life or 2.2
+	local disc = piece(V(0.2, 1, 1), CF(g) * CFrame.Angles(0, 0, math.rad(90)), MG_DARK, 0.15, Enum.PartType.Cylinder)
+	disc.Material = Enum.Material.SmoothPlastic
+	tween(disc, 0.35, { Size = V(0.2, r * 1.6, r * 1.6) })
+	local rim = piece(V(0.25, 1, 1), CF(g + V(0, 0.05, 0)) * CFrame.Angles(0, 0, math.rad(90)), MG_RED, 0.2, Enum.PartType.Cylinder)
+	rim.Material = Enum.Material.Neon
+	tween(rim, 0.35, { Size = V(0.25, r * 1.7, r * 1.7) })
+	-- 문 가장자리를 도는 금빛 글자 띠 대신 금빛 획 고리
+	gSwirl(function()
+		return g + V(0, 0.6, 0)
+	end, 16, r * 0.82, 0.6, life, MG_GOLD, MG_RED, { width = 0.5, trail = 0.8, speed = 0.6, flat = true })
+	gEmit(g + V(0, 1, 0), TEX_SMOKE, MG_DARK, MG_RED, 30, 4, 6, 1.4, 0, V(0, 3, 0))
+	task.delay(life, function()
+		fadeOut(disc, 0.4)
+		fadeOut(rim, 0.4)
+	end)
+	shake(0.4)
+end
+-- 귀왕의 혼: 빛 줄기로 그린 거대한 상반신 (머리 · 왕관 · 어깨 · 두 팔) 이 등 뒤 땅에서 솟는다
+local MG_KING: { { Vector3 } } = {
+	{ V(0, 0, 0), V(0, 7, 0) }, -- 몸통
+	{ V(-4, 7, 0), V(4, 7, 0) }, -- 어깨
+	{ V(0, 7, 0), V(0, 9, 0) }, -- 목
+	{ V(-1.4, 9, 0), V(1.4, 9, 0) },
+	{ V(-1.4, 9, 0), V(-1.2, 11.6, 0) },
+	{ V(1.4, 9, 0), V(1.2, 11.6, 0) },
+	{ V(-1.2, 11.6, 0), V(1.2, 11.6, 0) },
+	{ V(-1.3, 11.6, 0), V(-1.6, 13, 0) }, -- 왕관
+	{ V(0, 11.6, 0), V(0, 13.4, 0) },
+	{ V(1.3, 11.6, 0), V(1.6, 13, 0) },
+	{ V(-4, 7, 0), V(-6, 3.5, -2) }, -- 팔
+	{ V(-6, 3.5, -2), V(-5, 1, -5) },
+	{ V(4, 7, 0), V(6, 3.5, -2) },
+	{ V(6, 3.5, -2), V(5, 1, -5) },
+	{ V(-2.5, 0, 0), V(2.5, 0, 0) },
+}
+VFX.mgKing = function(d)
+	local model = d.m
+	local root = typeof(model) == "Instance" and model:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return
+	end
+	local rootP = root :: BasePart
+	local life = d.life or 1.9
+	local k = 3.2
+	local function place(t: number): CFrame?
+		if not rootP.Parent or t > life then
+			return nil
+		end
+		local look = rootP.CFrame.LookVector
+		local flat = V(look.X, 0, look.Z)
+		flat = flat.Magnitude > 0.01 and flat.Unit or V(0, 0, -1)
+		local g = ground(rootP.Position)
+		local rise = math.min(1, t / 0.35)
+		local base = g - flat * 10 + V(0, -14 * (1 - rise), 0)
+		return CFrame.lookAt(base, base + flat) * CF(0, math.sin(t * 3) * 0.4, 0)
+	end
+	beamBeast(MG_KING, place, life, k, MG_PALE, MG_RED, { per = 3, w = 0.7, gold = { 7, 8, 9, 10 }, glow = true, amp = 1.2 })
+	local cf0 = place(0.4)
+	if cf0 then
+		gEmit(cf0.Position + V(0, 20, 0), TEX_SMOKE, MG_PALE, MG_DARK, 30, 6, 6, 1.6, 0.4, V(0, 2, 0))
+		Fx.flash(cf0.Position + V(0, 20, 0), MG_PALE, 40, 3, 0.4)
+	end
+	pcall(Fx.sound, "splash", 1, 0.3, rootP.Position)
+	shake(0.7)
+end
+VFX.mgKingPalm = function(d)
+	local g = ground(d.at)
+	local top = g + V(0, 34, 0)
+	-- 위에서 내리누르는 거대한 손바닥 (창백한 빛 다섯 손가락)
+	local palm: { { Vector3 } } = {}
+	for f = -2, 2 do
+		table.insert(palm, { V(f * 1.1, 0, 0), V(f * 1.25, 0, -3.4 + math.abs(f) * 0.5) })
+	end
+	table.insert(palm, { V(-2.6, 0, 1.6), V(2.6, 0, 1.6) })
+	table.insert(palm, { V(0, 0, 1.6), V(0, 6, 4) })
+	beamBeast(palm, function(t)
+		if t > 0.3 then
+			return nil
+		end
+		local q = math.min(1, t / 0.24)
+		return CF(top:Lerp(g + V(0, 1.5, 0), q * q))
+	end, 0.3, 1.8, MG_PALE, MG_RED, { per = 2, w = 0.8, glow = true, amp = 0.3 })
+	task.delay(0.24, function()
+		gEmit(g + V(0, 1, 0), TEX_SMOKE, MG_PALE, MG_DARK, 16, 3, 10, 0.7)
+		Fx.ring(g + V(0, 0.4, 0), MG_PALE, 2, (d.radius or 7) * 2.6, 0.35)
+		Fx.debris(g, 5, 14)
+		shake(0.4)
+	end)
+end
+VFX.mgKingFist = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 22
+	local top = g + V(0, 50, 0)
+	local fist: { { Vector3 } } = {}
+	for f = -1.5, 1.5, 1 do
+		table.insert(fist, { V(f * 2.2, 0, 0), V(f * 2.2, -3, -2.2) })
+	end
+	table.insert(fist, { V(-4.4, 0, 3), V(4.4, 0, 3) })
+	table.insert(fist, { V(0, 0, 3), V(0, 18, 7) })
+	table.insert(fist, { V(-3.6, 18, 7), V(3.6, 18, 7) })
+	beamBeast(fist, function(t)
+		if t > 0.34 then
+			return nil
+		end
+		local q = math.min(1, t / 0.3)
+		return CF(top:Lerp(g + V(0, 4, 0), q * q))
+	end, 0.34, 2, MG_PALE, MG_GOLD, { per = 3, w = 1, glow = true, amp = 0.4 })
+	task.delay(0.3, function()
+		-- 땅이 핏빛으로 갈라지고 저승의 연기가 솟는다
+		for i = 1, 10 do
+			local a = i / 10 * math.pi * 2 + math.random() * 0.3
+			local dir = V(math.cos(a), 0, math.sin(a))
+			gStroke(g + dir * 2 + V(0, 0.3, 0), g + dir * r + V(0, 0.3, 0), 0.18, 1, 0.6, MG_RED, MG_GOLD, true, 0.9)
+		end
+		gEmit(g + V(0, 2, 0), TEX_SMOKE, MG_DARK, MG_RED, 50, 6, 26, 1.4, 0, V(0, 6, 0))
+		gEmit(g + V(0, 3, 0), TEX_SPARK, MG_PALE, MG_GOLD, 50, 1.2, 30, 0.8)
+		Fx.ring(g + V(0, 0.5, 0), MG_RED, 4, r * 2.4, 0.5)
+		Fx.ring(g + V(0, 3, 0), MG_PALE, 3, r * 1.8, 0.45)
+		Fx.flash(g + V(0, 8, 0), MG_PALE, r * 2.4, 6, 0.4)
+		Fx.debris(g, 14, 30)
+		shake(1.5)
+	end)
+end
+
 function ForgeFx.handles(data: any): boolean
 	return data.kind == "forgeStart" or data.kind == "forgeStep" or (data.kind == "pulse" and OWN_PULSE[data.fx or ""] == true)
 end
@@ -69608,6 +70140,49 @@ return {
 	["하늘과 땅이 나뉘기 전"] = "Before heaven and earth were parted",
 	["오의"] = "Secret Art",
 	["초 오의"] = "Super Secret Art",
+	["🔥 지옥 원정"] = "🔥 Hell Expedition",
+	["셋 다 많이 · 다칠 수 있다"] = "Lots of all three · may get hurt",
+	["비춰 본다"] = "Look into it",
+	["🪞 전생의 업경"] = "🪞 Mirror of Past Karma",
+	["🩹 %s은(는) 지옥에서 다쳐 쉬는 중이에요 (%d시간 %d분 남음)"] = "🩹 %s was hurt in Hell and is resting (%dh %dm left)",
+	[" · 🩹 지옥에서 다쳐 %d시간 쉬어야 해요"] = "· 🩹 Hurt in Hell, must rest %d hours",
+	["🔥 지옥 원정은 내가 환생을 %d번 한 몸이어야 보낼 수 있어요"] = "🔥 You must have been reborn %d times to send a Hell Expedition",
+	["🔥 지옥 원정은 제자의 경지가 %d단계 이상이어야 해요 (지금 %d)"] = "🔥 Your disciple must be realm %d or higher for a Hell Expedition (now %d)",
+	["🪞 업경에서 나온 업이 아직 너를 노리고 있다"] = "🪞 The karma from the mirror is still hunting you",
+	["🪞 업경이 아직 흐리다 (%d초)"] = "🪞 The mirror is still clouded (%ds)",
+	["🪞 거울에 아무것도 비치지 않는다. 아직 쌓인 업이 얕다 (한 종류의 적을 %d번 이상 쓰러뜨려야)"] = "🪞 Nothing appears in the mirror. Your karma is still shallow (defeat one kind of enemy %d times or more)",
+	["업경 · "] = "Karma Mirror ·",
+	["의 업"] = "'s Karma",
+	["%s · %s번"] = "%s · %s times",
+	["거울 속에서 네가 쓰러뜨린 %s %s마리의 업이 하나로 엉긴다. 그 무게만큼 커진 업이 너를 심판하러 걸어 나온다."] = "In the mirror, the karma of the %s you defeated, %s of them, knots into one. Grown to that weight, it walks out to judge you.",
+	["🪞 업이 거울 속으로 돌아갔다"] = "🪞 The karma returned into the mirror",
+	["🪞 업을 끊었다! "] = "🪞 You severed your karma!",
+	["무간귀왕권"] = "Endless Ghost King Fist",
+	["생전에 권왕이었으나 끝없는 싸움 끝에 무간지옥에 떨어진 원혼의 주먹. 저승의 쇠사슬로 끌어오고, 땅 밑의 손들로 붙잡고, 등 뒤에 선 귀왕의 혼이 함께 내리친다."] = "The fist of a ghost who was a Fist King in life, but fell into the Endless Hell after endless fighting. It drags foes in with underworld chains, seizes them with hands from beneath the ground, and the Ghost King's spirit behind you strikes along.",
+	["무간: 지옥 안에서는 모든 피해가 1.5배. 지상에서는 지존의 권법 그대로"] = "Endless: all damage x1.5 inside Hell. On the surface it is a plain Supreme style",
+	["세 번 환생해 지옥에 든 자만이, 무간지옥 가장 깊은 곳에서 떠도는 귀왕의 원혼을 꺾고 얻는다"] = "Only one reborn three times who enters Hell can defeat the Ghost King's spirit in the deepest part of the Endless Hell and earn it",
+	["귀수"] = "Ghost Hand",
+	["쇄장"] = "Chain Palm",
+	["무간타"] = "Endless Strike",
+	["귀왕추"] = "Ghost King Hammer",
+	["황천승"] = "Yellow Springs Rise",
+	["무간쇄"] = "Endless Chains",
+	["저승의 쇠사슬 여섯 줄을 앞으로 던져 걸린 적을 발밑까지 끌어오고, 끌려온 적을 사슬째 움켜쥐어 터뜨린다"] = "Hurl six underworld chains forward, drag the caught foes to your feet, then crush them, chains and all",
+	["귀수천망"] = "Ghost Hand Net",
+	["가까운 적 다섯의 발밑에서 원혼의 손이 솟아 붙잡는다. 이어서 둘레의 원혼들이 한꺼번에 울부짖어 밀쳐 낸다"] = "Ghost hands burst from beneath five nearby foes and grab them. Then the spirits around you wail at once and blast them away",
+	["귀왕강림"] = "Ghost King Descends",
+	["발밑에 저승문이 열리고, 등 뒤로 산만 한 귀왕의 혼이 솟는다. 귀왕이 두 번 손바닥으로 적 여섯을 내리누르고, 마지막에 주먹으로 땅을 부순다"] = "The underworld gate opens beneath you and the mountain-sized spirit of the Ghost King rises behind you. It presses down on six foes with its palm twice, then smashes the ground with its fist",
+	["무간의 시련"] = "Trial of the Endless",
+	["나도 한때는 권왕이라 불렸다. 끝없이 싸우다 끝없이 떨어졌지. 여기까지 내려온 너도 다르지 않을 것이다. 내 주먹을 끝까지 받아 내면, 이 끝없는 주먹을 너에게 넘겨주마."] = "I too was once called Fist King. I fought without end and fell without end. You who came down this far are no different. Take my fists to the very end, and I will hand this endless fist to you.",
+	["원혼의 손"] = "Ghost Hands",
+	["저승문"] = "Underworld Gate",
+	["업화비"] = "Karmic Fire Rain",
+	["귀왕"] = "Ghost King",
+	["무간지옥 가장 깊은 곳 (지옥)"] = "Deepest Endless Hell (Hell)",
+	["산 자의 발소리를 들은 지 천 년이 넘었구나."] = "It has been over a thousand years since I heard a living man's footsteps.",
+	["무간지옥 가장 깊은 곳, 무너진 왕좌에 생전에 권왕이었던 원혼이 앉아 있다더라"] = "They say in the deepest part of the Endless Hell, on a broken throne, sits the ghost of one who was a Fist King in life",
+	["<font color=\"#FF8C78\">🩹 지옥에서 다쳐 쉬는 중 (%d시간 %d분 남음)</font>"] = "<font color=\"#FF8C78\">🩹 Hurt in Hell, resting (%dh %dm left)</font>",
+	["\n<font color=\"#FF8C78\">🔥 한 시간마다 %d%% 확률로 다친다 (다치면 그때까지 것만, %d시간 쉰다)</font>"] = "\n<font color=\"#FF8C78\">🔥 %d%% chance each hour to get hurt (keeps what was gathered until then, rests %d hours)</font>",
 }
 ]]></string>
           </Properties>
@@ -90219,9 +90794,10 @@ function UIB.buildDisciple()
 		{ "train", "🥋 수련", "제자 경지가 빨리 오른다" },
 		{ "gather", "🌿 채집", "천상 재료 · 비급 조각" },
 		{ "errand", "📦 심부름", "은자" },
+		{ "hell", "🔥 지옥 원정", "셋 다 많이 · 다칠 수 있다" },
 	}
 	for i, j in ipairs(JOBS) do
-		local b = button({ Position = UDim2.new((i - 1) / 3, 4, 0, 96), Size = UDim2.new(1 / 3, -8, 0, 70), Text = j[2] .. "\n" .. j[3], TextSize = 16, BackgroundColor3 = C.panel, Parent = page }, function()
+		local b = button({ Position = UDim2.new((i - 1) / 4, 4, 0, 96), Size = UDim2.new(1 / 4, -8, 0, 70), Text = j[2] .. "\n" .. j[3], TextSize = 16, BackgroundColor3 = C.panel, Parent = page }, function()
 			Request:FireServer("disciple", "job", j[1])
 		end)
 		jobs[j[1]] = b
@@ -90280,6 +90856,12 @@ function UIB.buildDisciple()
 		local h = math.floor(math.min(d.away or 0, D.capSec) / 3600)
 		local m = math.floor(math.min(d.away or 0, D.capSec) % 3600 / 60)
 		pending.Text = string.format('<font color="#FFD27A">쌓인 것 (%d시간 %d분%s)</font>\n%s', h, m, (d.away or 0) >= D.capSec and ", 가득" or "", table.concat(parts, "  ·  "))
+		-- 3.99.56판: 지옥에서 다쳐 쉬는 중이면 그것부터
+		if (d.rest or 0) > 0 then
+			pending.Text = string.format('<font color="#FF8C78">🩹 지옥에서 다쳐 쉬는 중 (%d시간 %d분 남음)</font>', math.floor(d.rest / 3600), math.floor(d.rest % 3600 / 60))
+		elseif d.job == "hell" then
+			pending.Text ..= string.format('\n<font color="#FF8C78">🔥 한 시간마다 %d%% 확률로 다친다 (다치면 그때까지 것만, %d시간 쉰다)</font>', math.floor(D.hell.injury * 100 + 0.5), math.floor(D.hell.rest / 3600))
+		end
 	end
 end
 

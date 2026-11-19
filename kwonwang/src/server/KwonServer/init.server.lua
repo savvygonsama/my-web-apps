@@ -311,8 +311,9 @@ local function sanitize(data: any): Profile
 			style = (type(d.style) == "string" and Config.STYLE_BY_ID[d.style]) and d.style or "samjae",
 			lv = math.clamp(math.floor(num(d.lv, D.maxLv)), 1, D.maxLv),
 			xp = num(d.xp, 1e9),
-			job = (d.job == "gather" or d.job == "errand") and d.job or "train",
+			job = (d.job == "gather" or d.job == "errand" or d.job == "hell") and d.job or "train",
 			since = math.floor(num(d.since, 1e11)),
+			restUntil = math.floor(num(d.restUntil, 1e11)),
 			frac = num(d.frac, 10),
 		}
 	end
@@ -1326,6 +1327,7 @@ local function pushState(player: Player)
 			job = p.disciple.job,
 			style = p.disciple.style,
 			away = os.time() - p.disciple.since,
+			rest = math.max(0, (p.disciple.restUntil or 0) - os.time()),
 		} or nil,
 		scrolls = p.scrolls,
 		pity = p.pity,
@@ -2612,6 +2614,13 @@ Combat.init(Push, {
 				elseif f.typeId then
 					Story.event(killer, "kill", f.typeId)
 				end
+				-- 3.99.56판 업경의 업
+				if f.karmaOwner == killer then
+					local KK = (_G :: any).KwonKarma
+					if KK then
+						KK.killed(killer, f)
+					end
+				end
 				-- 심마를 이긴 주인: 모든 능력치가 크게 오른다
 				if f.simmaOwner == killer then
 					-- (1.5판: 심마도 싸움이라 적을 쓰러뜨린 만큼 크게. 내 전투력의 적 세 마리 몫)
@@ -3440,8 +3449,30 @@ function Actions.discipleClaim(player: Player, quiet: boolean?)
 	end
 	local D = Config.DISCIPLE
 	local now = os.time()
-	local secs = now - (d.since or now)
+	-- 3.99.56판: 다쳐서 쉬는 동안은 일하지 않는다 (쉼이 끝난 뒤부터 센다)
+	local from = math.max(d.since or now, d.restUntil or 0)
+	if (d.restUntil or 0) > now then
+		d.since = now
+		if not quiet then
+			local left = d.restUntil - now
+			toast(player, string.format("🩹 %s은(는) 지옥에서 다쳐 쉬는 중이에요 (%d시간 %d분 남음)", d.name, math.floor(left / 3600), math.floor(left % 3600 / 60)))
+		end
+		return
+	end
+	local secs = now - math.min(from, now)
 	d.since = now
+	-- 지옥 원정: 한 시간마다 다칠 수 있다. 다치면 그때까지 것만 가져오고 쉰다
+	local hurt = false
+	if d.job == "hell" then
+		local hours = math.floor(math.min(secs, D.capSec) / 3600)
+		for hIdx = 1, hours do
+			if math.random() < D.hell.injury then
+				secs = math.max(60, (hIdx - 0.5) * 3600)
+				hurt = true
+				break
+			end
+		end
+	end
 	if secs < 60 then
 		if not quiet then
 			toast(player, "🧑‍🎓 " .. d.name .. ": 아직 가져온 것이 없어요")
@@ -3501,6 +3532,10 @@ function Actions.discipleClaim(player: Player, quiet: boolean?)
 	if ups > 0 then
 		msg ..= string.format(" · 경지가 올라 %s!", Config.Realms[d.lv].name)
 	end
+	if hurt then
+		d.restUntil = now + D.hell.rest
+		msg ..= string.format(" · 🩹 지옥에서 다쳐 %d시간 쉬어야 해요", math.floor(D.hell.rest / 3600))
+	end
 	toast(player, msg)
 	pushState(player)
 end
@@ -3530,7 +3565,18 @@ function Actions.disciple(player: Player, what: any, arg: any)
 	elseif what == "claim" then
 		Actions.discipleClaim(player)
 		return
-	elseif what == "job" and (arg == "train" or arg == "gather" or arg == "errand") then
+	elseif what == "job" and (arg == "train" or arg == "gather" or arg == "errand" or arg == "hell") then
+		if arg == "hell" then
+			local H = D.hell
+			if (p.rebirth or 0) < H.rebirth then
+				toast(player, string.format("🔥 지옥 원정은 내가 환생을 %d번 한 몸이어야 보낼 수 있어요", H.rebirth))
+				return
+			end
+			if p.disciple.lv < H.minLv then
+				toast(player, string.format("🔥 지옥 원정은 제자의 경지가 %d단계 이상이어야 해요 (지금 %d)", H.minLv, p.disciple.lv))
+				return
+			end
+		end
 		if p.disciple.job ~= arg then
 			Actions.discipleClaim(player, true)
 			p.disciple.job = arg
@@ -7181,6 +7227,121 @@ task.spawn(function()
 	end
 end)
 -- 천궁의 투기장 문: 투기장 가장자리로 (싸우는 중에는 안 된다)
+-- 3.99.56판 전생의 업경 (염라전): 비추면 내가 가장 많이 쓰러뜨린 적이 거대해져 심판하러 나온다
+local Karma = {}
+local karmaActive: { [Player]: any } = {}
+function Karma.reflect(player: Player)
+	local KM = Config.KARMA_MIRROR
+	local p, st = profiles[player], states[player]
+	local f = Combat.fighterOfPlayer(player)
+	if not KM or not p or not st or not f or f.dead then
+		return
+	end
+	if karmaActive[player] then
+		toast(player, "🪞 업경에서 나온 업이 아직 너를 노리고 있다")
+		return
+	end
+	local t = os.clock()
+	if t - ((st :: any).karmaAt or -9999) < KM.cd then
+		toast(player, string.format("🪞 업경이 아직 흐리다 (%d초)", math.ceil(KM.cd - (t - (st :: any).karmaAt))))
+		return
+	end
+	-- 가장 많이 쓰러뜨린 적 (도감에 센 것)
+	local best, bestN = nil, 0
+	for id, n in pairs(p.dex or {}) do
+		if Config.Enemies[id] and n > bestN then
+			best, bestN = id, n
+		end
+	end
+	if not best or bestN < KM.minKills then
+		toast(player, string.format("🪞 거울에 아무것도 비치지 않는다. 아직 쌓인 업이 얕다 (한 종류의 적을 %d번 이상 쓰러뜨려야)", KM.minKills))
+		return
+	end
+	local base = Config.Enemies[best]
+	local judge = Config.Bosses.yeomra
+	local key = "karma_" .. best
+	if not Config.Bosses[key] then
+		local def = table.clone(base)
+		def.name = "업경 · " .. (base.name or best) .. "의 업"
+		def.scale = (base.scale or 1) * KM.scale
+		def.hp = judge.hp * KM.hpK
+		def.posture = judge.posture
+		def.mult = judge.mult
+		def.speed = math.max(14, (base.speed or 16) * 0.9)
+		def.reach = 1.8
+		def.patterns = judge.patterns
+		def.coins = judge.coins
+		def.xp = judge.xp
+		def.respawn = 99999
+		def.late = true
+		def.elite = nil
+		Config.Bosses[key] = def
+	end
+	local at = KM.at + Vector3.new(0, 3, 22)
+	local ok, e = pcall(Npc.spawn, key, true, at, "summon")
+	if not ok or not e then
+		warn("[권왕] 업경 보스 오류:", e)
+		return
+	end
+	;(st :: any).karmaAt = t
+	local ef = e.f :: any
+	ef.karmaOwner = player
+	ef.model:SetAttribute("Label", "🪞 " .. ef.name)
+	e.target = f
+	karmaActive[player] = ef
+	Push:FireClient(player, "dialog", { who = "🪞 전생의 업경", title = string.format("%s · %s번", base.name or best, bestN), text = string.format("거울 속에서 네가 쓰러뜨린 %s %s마리의 업이 하나로 엉긴다. 그 무게만큼 커진 업이 너를 심판하러 걸어 나온다.", base.name or best, Config.formatNumber(bestN)) })
+	Push:FireAllClients("karmaRise", { m = ef.model, at = at })
+	task.delay(KM.life, function()
+		if karmaActive[player] == ef then
+			karmaActive[player] = nil
+			if not ef.dead then
+				Npc.despawn(ef)
+				if player.Parent then
+					toast(player, "🪞 업이 거울 속으로 돌아갔다")
+				end
+			end
+		end
+	end)
+end
+function Karma.killed(player: Player, f: any)
+	local KM = Config.KARMA_MIRROR
+	local p, st = profiles[player], states[player]
+	if karmaActive[player] == f then
+		karmaActive[player] = nil
+	end
+	if not p or not st then
+		return
+	end
+	local got = {}
+	local gems = KM.gems * (Premium.owns(player, "gems2x") and 2 or 1)
+	p.skyGems += gems
+	table.insert(got, "💠 " .. gems)
+	p.shards = (p.shards or 0) + KM.shards
+	table.insert(got, "🧩 " .. KM.shards)
+	p.scrolls += KM.scrolls
+	table.insert(got, "📜 " .. KM.scrolls)
+	for _ = 1, KM.mats do
+		local M = Config.SKY_MATS[math.random(#Config.SKY_MATS)]
+		p.mats[M.id] = (p.mats[M.id] or 0) + 1
+		table.insert(got, M.icon)
+	end
+	st.dirty = true
+	toast(player, "🪞 업을 끊었다! " .. table.concat(got, " · "))
+	pushState(player)
+end
+(_G :: any).KwonKarma = Karma
+if W.karmaMirror then
+	W.karmaMirror.Triggered:Connect(function(player: Player)
+		Karma.reflect(player)
+	end)
+end
+Players.PlayerRemoving:Connect(function(player: Player)
+	local ef = karmaActive[player]
+	karmaActive[player] = nil
+	if ef and not ef.dead then
+		pcall(Npc.despawn, ef)
+	end
+end)
 if W.raidGate then
 	W.raidGate.Triggered:Connect(function(player: Player)
 		local f = Combat.fighterOfPlayer(player)

@@ -7438,6 +7438,11 @@ local function hellWorld(out: any)
 		local mp = c + Vector3.new(0, 12, 80)
 		local mg = part({ Name = "KarmaMirror", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 28, 28), CFrame = CFrame.new(mp + Vector3.new(0, 14, 0)) * CFrame.Angles(0, math.rad(90), 0), Color = rgb(220, 50, 60), Material = Enum.Material.Glass, Transparency = 0.35, CanCollide = false, Parent = f })
 		light(mg, rgb(255, 60, 60), 60, 2)
+		-- 3.99.56판: 비추면 가장 많이 쓰러뜨린 적이 업이 되어 나온다 (init.server 의 Karma)
+		local kp = prompt(mg, "비춰 본다", "🪞 전생의 업경", "KarmaMirror")
+		kp.MaxActivationDistance = 22
+		kp.HoldDuration = 1
+		out.karmaMirror = kp
 		for k = 0, 23 do
 			local a = k / 24 * math.pi * 2
 			part({ Name = "KarmaFrame", Size = Vector3.new(2, 4, 2), CFrame = CFrame.new(mp + Vector3.new(math.cos(a) * 14.6, 14 + math.sin(a) * 14.6, 0)) * CFrame.Angles(0, 0, a), Color = BLK, Material = Enum.Material.Metal, Parent = f })
@@ -8179,6 +8184,49 @@ ART_SITES.sashin = function(g: Vector3, _back: Vector3, f: Folder)
 		local lamp = P(f, "GodLamp", Vector3.new(1.3, 1.6, 1.3), CFrame.new(lampAt + Vector3.new(0, 4.8, 0)), col, Enum.Material.Neon, false)
 		light(lamp, col, 16, 1.2)
 	end
+end
+-- 3.99.56판 귀왕 (무간귀왕권): 무간지옥 가장 깊은 곳. 금이 간 검은 왕좌, 왕좌를 묶은 쇠사슬 넷, 둘레의 창백한 원혼불, 꺼진 화로
+ART_SITES.mugan = function(g: Vector3, back: Vector3, f: Folder)
+	local side = Vector3.new(-back.Z, 0, back.X)
+	local BLACK, RED, PALE, GOLDC = Color3.fromRGB(26, 20, 26), Color3.fromRGB(150, 30, 45), Color3.fromRGB(170, 235, 255), Color3.fromRGB(200, 170, 100)
+	disc("GhostDais", g + Vector3.new(0, 0.4, 0), 13, 0.8, Color3.fromRGB(40, 34, 42), Enum.Material.Basalt, f, true)
+	disc("GhostDaisRim", g + Vector3.new(0, 0.82, 0), 13.4, 0.1, RED, Enum.Material.Neon, f, false)
+	-- 등 뒤의 왕좌 (등받이가 비스듬히 갈라졌다)
+	local th = g + back * 7
+	local cf = CFrame.lookAt(th, th - back)
+	P(f, "ThroneSeat", Vector3.new(8, 3, 6), cf * CFrame.new(0, 2.3, 0), BLACK, Enum.Material.Basalt)
+	P(f, "ThroneBackL", Vector3.new(3.6, 12, 1.4), cf * CFrame.new(-2.1, 9, 2.6) * CFrame.Angles(0, 0, math.rad(4)), BLACK, Enum.Material.Basalt)
+	P(f, "ThroneBackR", Vector3.new(3.6, 10, 1.4), cf * CFrame.new(2.2, 8.2, 2.6) * CFrame.Angles(0, 0, math.rad(-9)), BLACK, Enum.Material.Basalt)
+	for _, sx in ipairs({ -1, 1 }) do
+		P(f, "ThroneArm", Vector3.new(1.4, 2.2, 6), cf * CFrame.new(sx * 4.6, 4.6, 0), BLACK, Enum.Material.Basalt)
+		P(f, "ThroneGold", Vector3.new(1.6, 0.3, 6.2), cf * CFrame.new(sx * 4.6, 5.8, 0), GOLDC, Enum.Material.Metal, false)
+	end
+	P(f, "ThroneCrack", Vector3.new(0.3, 9, 1.5), cf * CFrame.new(0.1, 8.5, 2.5) * CFrame.Angles(0, 0, math.rad(-6)), RED, Enum.Material.Neon, false)
+	-- 왕좌를 묶은 쇠사슬 넷 (땅의 말뚝까지)
+	for k = 0, 3 do
+		local a = (k + 0.5) / 4 * math.pi * 2
+		local stake = g + (back * math.cos(a) + side * math.sin(a)) * 12
+		pillar(f, "ChainStake", stake, 0.6, 2.4, Color3.fromRGB(60, 56, 62), Enum.Material.Metal)
+		local from = th + Vector3.new(0, 5, 0)
+		local to = stake + Vector3.new(0, 2, 0)
+		local L = (to - from).Magnitude
+		for i = 0, math.floor(L / 1.2) do
+			local p0 = from:Lerp(to, i / math.floor(L / 1.2)) - Vector3.new(0, math.sin(i / math.floor(L / 1.2) * math.pi) * 1.5, 0)
+			P(f, "BoundChain", Vector3.new(0.3, 0.8, 0.45), CFrame.lookAt(p0, to) * CFrame.Angles(0, 0, (i % 2) * math.pi / 2), Color3.fromRGB(70, 64, 70), Enum.Material.Metal, false)
+		end
+	end
+	-- 둘레를 떠도는 창백한 원혼불 여섯
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2
+		local at = g + Vector3.new(math.cos(a) * 16, 4 + (k % 2) * 2, math.sin(a) * 16)
+		local wisp = P(f, "GhostWisp", Vector3.new(1.2, 1.6, 1.2), CFrame.new(at), PALE, Enum.Material.Neon, false)
+		wisp.Shape = Enum.PartType.Ball
+		wisp.Transparency = 0.3
+		light(wisp, PALE, 14, 1)
+	end
+	local ember = P(f, "ThroneGlow", Vector3.new(1, 1, 1), CFrame.new(th + Vector3.new(0, 4, 0)), RED, Enum.Material.Neon, false)
+	ember.Transparency = 1
+	light(ember, RED, 26, 1.2)
 end
 -- 3.99.48판 사부들의 집: 소품만 두고 들판에 서 있던 사부들에게 들어가 볼 수 있는 집을 지어 준다
 --   보이는 집 (누구나 찾는 사부): 사부 등 뒤에, 문이 사부 쪽을 본다

@@ -2364,6 +2364,16 @@ function handlers.attend(data: any)
 	UI.banner(string.format("📅 출석 %d일째", data.day), seventh and "일곱째 날 · 가장 큰 보상" or string.format("이어서 %d일 · 일곱째 날이 가장 크다", data.streak), seventh and Color3.fromRGB(255, 210, 110) or Color3.fromRGB(150, 220, 255))
 end
 
+-- 3.99.56판 전생의 업경: 업이 거울에서 걸어 나온다 (핏빛 섬광, 땅울림)
+function handlers.karmaRise(data: any)
+	if typeof(data) ~= "table" or typeof(data.at) ~= "Vector3" then
+		return
+	end
+	pcall(Fx.flash, data.at + Vector3.new(0, 8, 0), Color3.fromRGB(255, 60, 70), 60, 6, 0.5)
+	pcall(Fx.ring, data.at, Color3.fromRGB(255, 60, 70), 4, 50, 0.6)
+	shake(1)
+end
+
 -- 3.99.23판 권법 제작소: 벼린 순간 단로에서 불기둥이 솟는다
 function handlers.forged(data: any)
 	local st = Config.STYLE_BY_ID[data.style or ""]

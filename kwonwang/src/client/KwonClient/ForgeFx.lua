@@ -2662,6 +2662,232 @@ VFX.galeTornado = function(d, c, c2)
 	shake(0.7)
 end
 
+------------------------------------------------------------------------
+-- 3.99.56판 무간귀왕권 (지옥 권법): 저승의 쇠사슬, 땅 밑에서 솟는 원혼의 손, 등 뒤에 서는 귀왕의 혼
+--   빛깔: 핏빛 사슬 · 창백한 원혼 (하늘빛 흰빛) · 귀왕의 금빛 테
+------------------------------------------------------------------------
+local MG_RED, MG_PALE, MG_GOLD, MG_DARK = Color3.fromRGB(200, 40, 60), Color3.fromRGB(170, 235, 255), Color3.fromRGB(255, 220, 140), Color3.fromRGB(40, 10, 20)
+-- 사슬 한 줄: 고리 조각을 늘어놓고 뒤에서부터 끌려 들어오며 사라진다
+local function mgChainLine(from: Vector3, to: Vector3, life: number)
+	local dir = to - from
+	local L = dir.Magnitude
+	if L < 0.5 then
+		return
+	end
+	local n = math.floor(L / 1.3)
+	for i = 0, n do
+		local p0 = from + dir * (i / n)
+		local link = piece(V(0.35, 0.9, 0.5), CFrame.lookAt(p0, to) * CFrame.Angles(0, 0, (i % 2) * math.pi / 2), MG_DARK, 0)
+		link.Material = Enum.Material.Metal
+		link.Color = (i % 4 == 0) and MG_RED or Color3.fromRGB(60, 52, 58)
+		task.delay(life * (1 - i / n) * 0.8, function()
+			fadeOut(link, 0.15)
+		end)
+	end
+	gStroke(from, to, 0.08, 0.35, 0.3, MG_RED, MG_GOLD, true, 0.25)
+end
+VFX.mgChain = function(d)
+	local from = (d.from or d.at) + V(0, 2.5, 0)
+	local dir = d.dir or V(0, 0, -1)
+	local len = d.length or 28
+	local right = V(-dir.Z, 0, dir.X)
+	for i = -2, 3 do
+		local tip = from + dir * len + right * (i - 0.5) * 2.6 + V(0, (math.random() - 0.5) * 2, 0)
+		task.delay(math.abs(i) * 0.02, function()
+			mgChainLine(from, tip, 0.45)
+		end)
+	end
+	gEmit(from + dir * len, TEX_SPARK, MG_RED, MG_GOLD, 14, 0.5, 10, 0.4)
+	pcall(Fx.sound, "block", 0.9, 0.6, from)
+end
+VFX.mgClench = function(d)
+	local g = ground(d.at) + V(0, 2.5, 0)
+	local r = d.radius or 8
+	-- 사슬이 둘레에서 가운데로 조여들고 핏빛으로 터진다
+	for i = 1, 8 do
+		local a = i / 8 * math.pi * 2
+		mgChainLine(g + V(math.cos(a) * r * 1.4, 0.5, math.sin(a) * r * 1.4), g, 0.25)
+	end
+	task.delay(0.12, function()
+		gEmit(g, TEX_SPARK, MG_RED, MG_DARK, 30, 0.9, 16, 0.5)
+		Fx.ring(g - V(0, 2, 0), MG_RED, 2, r * 2.4, 0.35)
+		shake(0.45)
+	end)
+end
+-- 원혼의 손: 땅이 검게 갈라지고, 창백한 손가락 다섯이 솟아 움켜쥔다
+local function mgHand(g: Vector3, s: number, life: number)
+	local crack = piece(V(0.2, 1, 1), CF(g + V(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90)), MG_DARK, 0.1, Enum.PartType.Cylinder)
+	tween(crack, 0.15, { Size = V(0.2, 5 * s, 5 * s) })
+	local fingers: { { Vector3 } } = {}
+	for f = 0, 4 do
+		local a = f / 5 * math.pi * 1.6 - 0.8
+		local base = V(math.cos(a) * 1.1, 0, math.sin(a) * 1.1)
+		table.insert(fingers, { base, base * 1.4 + V(0, 3.2, 0) })
+		table.insert(fingers, { base * 1.4 + V(0, 3.2, 0), base * 0.5 + V(0, 4.6, 0) })
+	end
+	table.insert(fingers, { V(0, -2, 0), V(0, 0.5, 0) })
+	beamBeast(fingers, function(t)
+		if t > life then
+			return nil
+		end
+		local rise = math.min(1, t / 0.18)
+		return CF(g + V(0, -4 * s * (1 - rise), 0)) * CFrame.Angles(0, t * 0.6, 0)
+	end, life, s, MG_PALE, MG_RED, { per = 2, w = 0.5, glow = true, amp = 0.5 })
+	task.delay(life, function()
+		fadeOut(crack, 0.4)
+	end)
+end
+VFX.mgHands = function(d)
+	local g = ground(d.at)
+	mgHand(g, 1.3, 0.9)
+	gEmit(g + V(0, 2, 0), TEX_SMOKE, MG_PALE, MG_DARK, 10, 2.5, 4, 0.9, 0.2, V(0, 4, 0))
+	pcall(Fx.sound, "splash", 0.5, 0.5, g)
+end
+VFX.mgWail = function(d)
+	local g = ground(d.at) + V(0, 2, 0)
+	local r = d.radius or 15
+	-- 둘레를 도는 원혼들이 한 번에 바깥으로 울부짖는다
+	gSwirl(function()
+		return g
+	end, 18, r * 0.5, 4, 0.35, MG_PALE, MG_RED, { width = 0.9, trail = 0.4, speed = 3 })
+	task.delay(0.3, function()
+		for i = 1, 14 do
+			local a = i / 14 * math.pi * 2
+			gStroke(g, g + V(math.cos(a) * r, math.random() * 3, math.sin(a) * r), 0.2, 1.2, 1.5, MG_PALE, MG_RED, true, 0.4)
+		end
+		Fx.ring(g - V(0, 1.5, 0), MG_PALE, 3, r * 2.2, 0.4)
+		shake(0.6)
+	end)
+end
+-- G 귀왕강림: 저승문 → 귀왕의 혼 → 손바닥 둘 → 주먹
+VFX.mgGate = function(d)
+	local g = ground(d.at) + V(0, 0.15, 0)
+	local r = d.radius or 30
+	local life = d.life or 2.2
+	local disc = piece(V(0.2, 1, 1), CF(g) * CFrame.Angles(0, 0, math.rad(90)), MG_DARK, 0.15, Enum.PartType.Cylinder)
+	disc.Material = Enum.Material.SmoothPlastic
+	tween(disc, 0.35, { Size = V(0.2, r * 1.6, r * 1.6) })
+	local rim = piece(V(0.25, 1, 1), CF(g + V(0, 0.05, 0)) * CFrame.Angles(0, 0, math.rad(90)), MG_RED, 0.2, Enum.PartType.Cylinder)
+	rim.Material = Enum.Material.Neon
+	tween(rim, 0.35, { Size = V(0.25, r * 1.7, r * 1.7) })
+	-- 문 가장자리를 도는 금빛 글자 띠 대신 금빛 획 고리
+	gSwirl(function()
+		return g + V(0, 0.6, 0)
+	end, 16, r * 0.82, 0.6, life, MG_GOLD, MG_RED, { width = 0.5, trail = 0.8, speed = 0.6, flat = true })
+	gEmit(g + V(0, 1, 0), TEX_SMOKE, MG_DARK, MG_RED, 30, 4, 6, 1.4, 0, V(0, 3, 0))
+	task.delay(life, function()
+		fadeOut(disc, 0.4)
+		fadeOut(rim, 0.4)
+	end)
+	shake(0.4)
+end
+-- 귀왕의 혼: 빛 줄기로 그린 거대한 상반신 (머리 · 왕관 · 어깨 · 두 팔) 이 등 뒤 땅에서 솟는다
+local MG_KING: { { Vector3 } } = {
+	{ V(0, 0, 0), V(0, 7, 0) }, -- 몸통
+	{ V(-4, 7, 0), V(4, 7, 0) }, -- 어깨
+	{ V(0, 7, 0), V(0, 9, 0) }, -- 목
+	{ V(-1.4, 9, 0), V(1.4, 9, 0) },
+	{ V(-1.4, 9, 0), V(-1.2, 11.6, 0) },
+	{ V(1.4, 9, 0), V(1.2, 11.6, 0) },
+	{ V(-1.2, 11.6, 0), V(1.2, 11.6, 0) },
+	{ V(-1.3, 11.6, 0), V(-1.6, 13, 0) }, -- 왕관
+	{ V(0, 11.6, 0), V(0, 13.4, 0) },
+	{ V(1.3, 11.6, 0), V(1.6, 13, 0) },
+	{ V(-4, 7, 0), V(-6, 3.5, -2) }, -- 팔
+	{ V(-6, 3.5, -2), V(-5, 1, -5) },
+	{ V(4, 7, 0), V(6, 3.5, -2) },
+	{ V(6, 3.5, -2), V(5, 1, -5) },
+	{ V(-2.5, 0, 0), V(2.5, 0, 0) },
+}
+VFX.mgKing = function(d)
+	local model = d.m
+	local root = typeof(model) == "Instance" and model:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return
+	end
+	local rootP = root :: BasePart
+	local life = d.life or 1.9
+	local k = 3.2
+	local function place(t: number): CFrame?
+		if not rootP.Parent or t > life then
+			return nil
+		end
+		local look = rootP.CFrame.LookVector
+		local flat = V(look.X, 0, look.Z)
+		flat = flat.Magnitude > 0.01 and flat.Unit or V(0, 0, -1)
+		local g = ground(rootP.Position)
+		local rise = math.min(1, t / 0.35)
+		local base = g - flat * 10 + V(0, -14 * (1 - rise), 0)
+		return CFrame.lookAt(base, base + flat) * CF(0, math.sin(t * 3) * 0.4, 0)
+	end
+	beamBeast(MG_KING, place, life, k, MG_PALE, MG_RED, { per = 3, w = 0.7, gold = { 7, 8, 9, 10 }, glow = true, amp = 1.2 })
+	local cf0 = place(0.4)
+	if cf0 then
+		gEmit(cf0.Position + V(0, 20, 0), TEX_SMOKE, MG_PALE, MG_DARK, 30, 6, 6, 1.6, 0.4, V(0, 2, 0))
+		Fx.flash(cf0.Position + V(0, 20, 0), MG_PALE, 40, 3, 0.4)
+	end
+	pcall(Fx.sound, "splash", 1, 0.3, rootP.Position)
+	shake(0.7)
+end
+VFX.mgKingPalm = function(d)
+	local g = ground(d.at)
+	local top = g + V(0, 34, 0)
+	-- 위에서 내리누르는 거대한 손바닥 (창백한 빛 다섯 손가락)
+	local palm: { { Vector3 } } = {}
+	for f = -2, 2 do
+		table.insert(palm, { V(f * 1.1, 0, 0), V(f * 1.25, 0, -3.4 + math.abs(f) * 0.5) })
+	end
+	table.insert(palm, { V(-2.6, 0, 1.6), V(2.6, 0, 1.6) })
+	table.insert(palm, { V(0, 0, 1.6), V(0, 6, 4) })
+	beamBeast(palm, function(t)
+		if t > 0.3 then
+			return nil
+		end
+		local q = math.min(1, t / 0.24)
+		return CF(top:Lerp(g + V(0, 1.5, 0), q * q))
+	end, 0.3, 1.8, MG_PALE, MG_RED, { per = 2, w = 0.8, glow = true, amp = 0.3 })
+	task.delay(0.24, function()
+		gEmit(g + V(0, 1, 0), TEX_SMOKE, MG_PALE, MG_DARK, 16, 3, 10, 0.7)
+		Fx.ring(g + V(0, 0.4, 0), MG_PALE, 2, (d.radius or 7) * 2.6, 0.35)
+		Fx.debris(g, 5, 14)
+		shake(0.4)
+	end)
+end
+VFX.mgKingFist = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 22
+	local top = g + V(0, 50, 0)
+	local fist: { { Vector3 } } = {}
+	for f = -1.5, 1.5, 1 do
+		table.insert(fist, { V(f * 2.2, 0, 0), V(f * 2.2, -3, -2.2) })
+	end
+	table.insert(fist, { V(-4.4, 0, 3), V(4.4, 0, 3) })
+	table.insert(fist, { V(0, 0, 3), V(0, 18, 7) })
+	table.insert(fist, { V(-3.6, 18, 7), V(3.6, 18, 7) })
+	beamBeast(fist, function(t)
+		if t > 0.34 then
+			return nil
+		end
+		local q = math.min(1, t / 0.3)
+		return CF(top:Lerp(g + V(0, 4, 0), q * q))
+	end, 0.34, 2, MG_PALE, MG_GOLD, { per = 3, w = 1, glow = true, amp = 0.4 })
+	task.delay(0.3, function()
+		-- 땅이 핏빛으로 갈라지고 저승의 연기가 솟는다
+		for i = 1, 10 do
+			local a = i / 10 * math.pi * 2 + math.random() * 0.3
+			local dir = V(math.cos(a), 0, math.sin(a))
+			gStroke(g + dir * 2 + V(0, 0.3, 0), g + dir * r + V(0, 0.3, 0), 0.18, 1, 0.6, MG_RED, MG_GOLD, true, 0.9)
+		end
+		gEmit(g + V(0, 2, 0), TEX_SMOKE, MG_DARK, MG_RED, 50, 6, 26, 1.4, 0, V(0, 6, 0))
+		gEmit(g + V(0, 3, 0), TEX_SPARK, MG_PALE, MG_GOLD, 50, 1.2, 30, 0.8)
+		Fx.ring(g + V(0, 0.5, 0), MG_RED, 4, r * 2.4, 0.5)
+		Fx.ring(g + V(0, 3, 0), MG_PALE, 3, r * 1.8, 0.45)
+		Fx.flash(g + V(0, 8, 0), MG_PALE, r * 2.4, 6, 0.4)
+		Fx.debris(g, 14, 30)
+		shake(1.5)
+	end)
+end
+
 function ForgeFx.handles(data: any): boolean
 	return data.kind == "forgeStart" or data.kind == "forgeStep" or (data.kind == "pulse" and OWN_PULSE[data.fx or ""] == true)
 end

@@ -2404,9 +2404,10 @@ function UIB.buildDisciple()
 		{ "train", "🥋 수련", "제자 경지가 빨리 오른다" },
 		{ "gather", "🌿 채집", "천상 재료 · 비급 조각" },
 		{ "errand", "📦 심부름", "은자" },
+		{ "hell", "🔥 지옥 원정", "셋 다 많이 · 다칠 수 있다" },
 	}
 	for i, j in ipairs(JOBS) do
-		local b = button({ Position = UDim2.new((i - 1) / 3, 4, 0, 96), Size = UDim2.new(1 / 3, -8, 0, 70), Text = j[2] .. "\n" .. j[3], TextSize = 16, BackgroundColor3 = C.panel, Parent = page }, function()
+		local b = button({ Position = UDim2.new((i - 1) / 4, 4, 0, 96), Size = UDim2.new(1 / 4, -8, 0, 70), Text = j[2] .. "\n" .. j[3], TextSize = 16, BackgroundColor3 = C.panel, Parent = page }, function()
 			Request:FireServer("disciple", "job", j[1])
 		end)
 		jobs[j[1]] = b
@@ -2465,6 +2466,12 @@ function UIB.buildDisciple()
 		local h = math.floor(math.min(d.away or 0, D.capSec) / 3600)
 		local m = math.floor(math.min(d.away or 0, D.capSec) % 3600 / 60)
 		pending.Text = string.format('<font color="#FFD27A">쌓인 것 (%d시간 %d분%s)</font>\n%s', h, m, (d.away or 0) >= D.capSec and ", 가득" or "", table.concat(parts, "  ·  "))
+		-- 3.99.56판: 지옥에서 다쳐 쉬는 중이면 그것부터
+		if (d.rest or 0) > 0 then
+			pending.Text = string.format('<font color="#FF8C78">🩹 지옥에서 다쳐 쉬는 중 (%d시간 %d분 남음)</font>', math.floor(d.rest / 3600), math.floor(d.rest % 3600 / 60))
+		elseif d.job == "hell" then
+			pending.Text ..= string.format('\n<font color="#FF8C78">🔥 한 시간마다 %d%% 확률로 다친다 (다치면 그때까지 것만, %d시간 쉰다)</font>', math.floor(D.hell.injury * 100 + 0.5), math.floor(D.hell.rest / 3600))
+		end
 	end
 end
 

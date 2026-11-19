@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.55" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.56" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4691,6 +4691,8 @@ Config.DISCIPLE = {
 	lvBonus = 0.15, -- 경지 하나마다 가져오는 양 +15%
 	gather = { mats = 0.8, shards = 0.4 }, -- 한 시간에 (경지 1)
 	errand = { shares = 0.5 }, -- 한 시간에 은자 몫 (경지 1)
+	-- 3.99.56판 지옥 원정: 셋 다 많이 가져오지만, 한 시간마다 다칠 수 있다 (다치면 그때까지 것만 가져오고 rest 초 동안 쉰다)
+	hell = { mats = 2.0, shares = 0.8, shards = 1.0, xp = 6, injury = 0.08, rest = 6 * 3600, minLv = 6, rebirth = 3 },
 	names = { "청아", "소운", "백린", "무진", "하랑", "설화", "도윤", "연비", "진혁", "운서", "단아", "효월", "강모", "초희", "석우", "한결" },
 	robes = { Color3.fromRGB(90, 120, 170), Color3.fromRGB(170, 70, 60), Color3.fromRGB(80, 140, 90), Color3.fromRGB(60, 60, 70), Color3.fromRGB(200, 190, 170), Color3.fromRGB(140, 90, 160) },
 	styles = { "samjae", "taeheo", "geumgang", "maehwa", "muyeong", "byeokryeok", "chwi" },
@@ -4708,6 +4710,11 @@ function Config.discipleYield(d: any, secs: number): any
 	if job == "gather" then
 		out.mats = D.gather.mats * h * k
 		out.shards = D.gather.shards * h * k
+	elseif job == "hell" then
+		out.xp = D.hell.xp * h
+		out.mats = D.hell.mats * h * k
+		out.shards = D.hell.shards * h * k
+		out.shares = D.hell.shares * h * k
 	elseif job == "errand" then
 		out.shares = D.errand.shares * h * k
 	end
@@ -7744,6 +7751,81 @@ Config.MANUSCRIPTS = {
 Config.MANUSCRIPT_BY_ID = {}
 for _, m in ipairs(Config.MANUSCRIPTS) do
 	Config.MANUSCRIPT_BY_ID[m.id] = m
+end
+
+-- 3.99.56판 지옥 권법 무간귀왕권 [지존]: 무간지옥 가장 깊은 곳, 생전에 권왕이었던 원혼 (귀왕) 에게서.
+--   지상에서는 지존 그대로, 지옥 안에서는 모든 피해 ×1.5 (hellBoost). 쇠사슬로 끌어오고, 땅에서 손이 솟고, 등 뒤에 귀왕의 혼이 선다
+do
+	local function seq(steps: { any }): any
+		return { kind = "forgeSeq", steps = steps }
+	end
+	local st: any = {
+		id = "mugan", name = "무간귀왕권", hanja = "無間鬼王拳", icon = "👻", grade = "지존", fx = "fire",
+		color = Color3.fromRGB(200, 40, 60), color2 = Color3.fromRGB(255, 225, 150),
+		palette = { Color3.fromRGB(190, 30, 50), Color3.fromRGB(255, 220, 140), Color3.fromRGB(150, 230, 255) },
+		desc = "생전에 권왕이었으나 끝없는 싸움 끝에 무간지옥에 떨어진 원혼의 주먹. 저승의 쇠사슬로 끌어오고, 땅 밑의 손들로 붙잡고, 등 뒤에 선 귀왕의 혼이 함께 내리친다.",
+		gimmick = "무간: 지옥 안에서는 모든 피해가 1.5배. 지상에서는 지존의 권법 그대로",
+		unlockHint = "세 번 환생해 지옥에 든 자만이, 무간지옥 가장 깊은 곳에서 떠도는 귀왕의 원혼을 꺾고 얻는다",
+		deflect = 0.26, speed = 1.04, stance = "stance_overlord",
+		hidden = true, keepGrade = true, secret = true, rebirthReq = 3, hellBoost = 1.5,
+		combo = {
+			{ id = "mg1", name = "귀수", pose = "ghost_palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 10, 0.35, 8) } },
+			{ id = "mg2", name = "쇄장", pose = "ghost_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 10, 0.35, 8) } },
+			{ id = "mg3", name = "왕권", pose = "king_jab_r", dur = 0.4, lunge = 2, hits = { hit(0.16, 5, 5.5, 10, 10, 0.4, 10, 10, true), hit(0.28, 5, 5.5, 8, 8, 0.3, 12) } },
+			{ id = "mg4", name = "무간타", pose = "king_cannon", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 5.5, 24, 28, 0.6, 38) } },
+		},
+		heavy = { id = "mgH", name = "귀왕추", pose = "king_hammer", dur = 0.7, lunge = 2, hits = { hit(0.34, 7, 7.5, 34, 46, 0.85, 46, 10, true) } },
+		finisher = { id = "mgF", name = "황천승", pose = "king_uppercut", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		skills = {
+			E = { id = "mgE", name = "무간쇄", desc = "저승의 쇠사슬 여섯 줄을 앞으로 던져 걸린 적을 발밑까지 끌어오고, 끌려온 적을 사슬째 움켜쥐어 터뜨린다", pose = "karma_chain", dur = 0.8, cd = 8, chi = 20,
+				mech = seq({
+					{ t = 0.15, shape = "line", at = "self", length = 28, width = 6, pull = 22, vfx = "mgChain", hit = hit(0, 0, 0, 18, 18, 0.5, 4) },
+					{ t = 0.5, shape = "circle", at = "self", radius = 8, vfx = "mgClench", hit = hit(0, 0, 0, 22, 24, 0.6, 24) },
+				}) },
+			R = { id = "mgR", name = "귀수천망", desc = "가까운 적 다섯의 발밑에서 원혼의 손이 솟아 붙잡는다. 이어서 둘레의 원혼들이 한꺼번에 울부짖어 밀쳐 낸다", pose = "bh_soul", dur = 1.0, cd = 11, chi = 25,
+				mech = seq({
+					{ t = 0.3, at = "each", n = 5, range = 24, radius = 6, vfx = "mgHands", hit = hit(0, 0, 0, 22, 26, 0.9, 2, 6) },
+					{ t = 0.85, shape = "circle", at = "self", radius = 15, vfx = "mgWail", hit = hit(0, 0, 0, 22, 22, 0.5, 30) },
+				}) },
+			G = { id = "mgG", name = "귀왕강림", desc = "발밑에 저승문이 열리고, 등 뒤로 산만 한 귀왕의 혼이 솟는다. 귀왕이 두 번 손바닥으로 적 여섯을 내리누르고, 마지막에 주먹으로 땅을 부순다", pose = "ult_star", dur = 2.4, cd = 30, chi = 100, armor = true,
+				mech = seq({
+					{ t = 0.15, shape = "circle", at = "self", radius = 30, life = 2.3, vfx = "mgGate" },
+					{ t = 0.4, shape = "circle", at = "self", radius = 1, life = 1.9, vfx = "mgKing" },
+					{ t = 0.95, at = "each", n = 6, range = 30, radius = 7, vfx = "mgKingPalm", hit = hit(0, 0, 0, 34, 34, 0.7, 6, 10) },
+					{ t = 1.45, at = "each", n = 6, range = 30, radius = 7, vfx = "mgKingPalm", hit = hit(0, 0, 0, 34, 34, 0.7, 6, 10) },
+					{ t = 2.05, shape = "circle", at = "self", radius = 22, vfx = "mgKingFist", big = true, hit = hit(0, 0, 0, 120, 140, 1.3, 50, 20) },
+				}) },
+		},
+	}
+	st.rank = OLD_RANK[st.grade] or 1
+	-- 시련: 귀왕의 원혼이 직접, 보스처럼 세 단계로 (사슬 → 손 → 강림)
+	local RED, PALE = Color3.fromRGB(200, 40, 60), Color3.fromRGB(150, 230, 255)
+	st.trialIntro = { title = "무간의 시련", text = "나도 한때는 권왕이라 불렸다. 끝없이 싸우다 끝없이 떨어졌지. 여기까지 내려온 너도 다르지 않을 것이다. 내 주먹을 끝까지 받아 내면, 이 끝없는 주먹을 너에게 넘겨주마." }
+	st.trialHp = 2
+	st.trialBoss = { hp = 5400, posture = 920, scale = 1.8, reach = 1.6, speed = 25, patterns = {
+		P("charge", "무간쇄", 1, { length = 56, width = 9, warn = 0.8, cd = 6, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 28, 50, 0.9, 50) }),
+		P("rain", "원혼의 손", 1, { count = 8, radius = 7, spread = 24, warn = 0.95, cd = 7, pose = "w_overhead", fx = "star", color = PALE, hit = hit(0, 0, 0, 24, 40, 0.8, 20) }),
+		P("donut", "저승문", 2, { inner = 8, outer = 28, warn = 1.1, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 32, 56, 1.0, 45) }),
+		P("leap", "귀왕추", 2, { radius = 18, warn = 0.9, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 36, 70, 1.1, 45, 20) }),
+		P("rain", "업화비", 3, { count = 12, radius = 6, spread = 30, warn = 0.85, cd = 6, pose = "w_overhead", fx = "star", color = RED, hit = hit(0, 0, 0, 22, 38, 0.7, 20) }),
+		P("quake", "귀왕강림", 3, { radius = 28, warn = 1.35, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 54, 108, 1.4, 60, 24) }),
+	} }
+	table.insert(Config.Styles, st)
+	st.index = #Config.Styles
+	Config.STYLE_BY_ID[st.id] = st
+	local HY0 = Config.HELL and Config.HELL.y or 8000
+	Config.MASTERS.mugan = { name = "귀왕", at = Vector3.new(-165, HY0 + 1.6, 1150), region = "무간지옥 가장 깊은 곳 (지옥)", regionId = "mugan", secret = true,
+		quote = "산 자의 발소리를 들은 지 천 년이 넘었구나.", rumor = "무간지옥 가장 깊은 곳, 무너진 왕좌에 생전에 권왕이었던 원혼이 앉아 있다더라" }
+	-- 3.99.56판 전생의 업경 (염라전): 비추면 내가 가장 많이 쓰러뜨린 적이 거대해져 나를 심판하러 나온다 (사람마다 다르다)
+	Config.KARMA_MIRROR = {
+		at = Vector3.new(0, HY0 + 12, -1120), -- 염라전 앞마당 업경대 (궁 단 위, 높이 12)
+		cd = 600, -- 한 사람이 다시 비추기까지 (초)
+		life = 300, -- 이 안에 못 꺾으면 거울로 돌아간다
+		minKills = 30, -- 이만큼은 쓰러뜨린 적이어야 비친다
+		scale = 3, -- 원래 몸집의 배
+		hpK = 0.8, -- 염라대왕 체력의 배
+		gems = 400, shards = 4, mats = 3, scrolls = 2,
+	}
 end
 
 -- 제작소 조리법: 환생 횟수 · 비급 조각 · 천상 재료 · 천정 · 은자 (은자는 지금 경지의 '은자 몫'으로 센다: Config.productCoins)

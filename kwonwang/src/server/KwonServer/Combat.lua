@@ -462,6 +462,11 @@ local function damageOf(att: Fighter, hit: any, move: any, isSkill: boolean, act
 	if isSkill then
 		d *= att.skillMult
 	end
+	-- 3.99.56판 무간귀왕권: 지옥 안에서는 모든 피해 ×hellBoost
+	local hb = Combat.styleOf(att)
+	if hb and hb.hellBoost and Config.inHell(att.root.Position) then
+		d *= hb.hellBoost
+	end
 	-- 3.84판 만물상 폭혈단
 	if ((att :: any).shopDmgUntil or 0) > os.clock() then
 		d *= Config.SHOP_BUFF.dmg
