@@ -5836,34 +5836,37 @@ local function skyWorld(out: any)
 	end
 	light(part({ Name = "PhoenixGlow", Size = Vector3.new(1, 1, 1), Position = st + Vector3.new(0, 14, 0), Transparency = 1, CanCollide = false, Parent = f }), EMBER, 60, 3)
 	-- 천공 투기장: 둥근 결투장과 계단식 관람석, 네 기둥과 큰 징
+	-- 3.99.55판: 누구나 함께 싸울 수 있게 두 배로 (섬 반지름 150 → 300, 결투장 100 → 200)
 	local ra = I.raidarena.at
-	disc("RaidFloor", ra + Vector3.new(0, 0.2, 0), 100, 0.4, Color3.fromRGB(180, 170, 155), Enum.Material.Slate, f)
-	disc("RaidRing", ra + Vector3.new(0, 0.3, 0), 70, 0.4, Color3.fromRGB(150, 40, 45), Enum.Material.Fabric, f, false)
-	disc("RaidCore", ra + Vector3.new(0, 0.35, 0), 66, 0.4, Color3.fromRGB(195, 185, 170), Enum.Material.Slate, f, false)
-	for tier = 1, 3 do
-		local r = 110 + tier * 9
-		local n = 40
+	local K = 2
+	disc("RaidFloor", ra + Vector3.new(0, 0.2, 0), 100 * K, 0.4, Color3.fromRGB(180, 170, 155), Enum.Material.Slate, f)
+	disc("RaidRing", ra + Vector3.new(0, 0.3, 0), 70 * K, 0.4, Color3.fromRGB(150, 40, 45), Enum.Material.Fabric, f, false)
+	disc("RaidCore", ra + Vector3.new(0, 0.35, 0), 66 * K, 0.4, Color3.fromRGB(195, 185, 170), Enum.Material.Slate, f, false)
+	for tier = 1, 4 do
+		local r = 110 * K + tier * 10
+		local n = 80
 		for k = 0, n - 1 do
 			local a = k / n * math.pi * 2
-			-- 다리 쪽 (남동: 성운원으로) 은 비운다
+			-- 다리 쪽 (성운원으로) 은 비운다
 			local toBridge = math.atan2(I.nebula.at.Z - ra.Z, I.nebula.at.X - ra.X)
-			if math.abs((a - toBridge + math.pi) % (2 * math.pi) - math.pi) > 0.22 then
-				local p = ra + Vector3.new(math.cos(a) * r, tier * 1.5, math.sin(a) * r)
-				part({ Name = "RaidSeat", Size = Vector3.new(2 * math.pi * r / n + 0.3, tier * 3, 8), CFrame = CFrame.lookAt(p, Vector3.new(ra.X, p.Y, ra.Z)), Color = STONE:Lerp(Color3.fromRGB(120, 110, 100), tier * 0.15), Material = Enum.Material.Marble, Parent = f })
+			if math.abs((a - toBridge + math.pi) % (2 * math.pi) - math.pi) > 0.14 then
+				local p = ra + Vector3.new(math.cos(a) * r, tier * 1.8, math.sin(a) * r)
+				part({ Name = "RaidSeat", Size = Vector3.new(2 * math.pi * r / n + 0.3, tier * 3.6, 9), CFrame = CFrame.lookAt(p, Vector3.new(ra.X, p.Y, ra.Z)), Color = STONE:Lerp(Color3.fromRGB(120, 110, 100), tier * 0.12), Material = Enum.Material.Marble, Parent = f })
 			end
 		end
 	end
-	for k = 0, 3 do
-		local a = math.pi / 4 + k * math.pi / 2
-		local p = ra + Vector3.new(math.cos(a) * 92, 0, math.sin(a) * 92)
-		part({ Name = "RaidPillar", Size = Vector3.new(6, 40, 6), Position = p + Vector3.new(0, 20, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
-		brazier(p + Vector3.new(0, 40, 0), 1.6, f)
+	for k = 0, 7 do
+		local a = math.pi / 8 + k * math.pi / 4
+		local p = ra + Vector3.new(math.cos(a) * 92 * K, 0, math.sin(a) * 92 * K)
+		part({ Name = "RaidPillar", Size = Vector3.new(8, 56, 8), Position = p + Vector3.new(0, 28, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+		brazier(p + Vector3.new(0, 56, 0), 2, f)
 	end
-	local gong = part({ Name = "RaidGong", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 14, 14), CFrame = CFrame.new(ra + Vector3.new(0, 14, -104)) * CFrame.Angles(0, math.rad(90), 0), Color = GOLD, Material = Enum.Material.Metal, Parent = f })
+	local gz = -104 * K
+	local gong = part({ Name = "RaidGong", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.6, 24, 24), CFrame = CFrame.new(ra + Vector3.new(0, 22, gz)) * CFrame.Angles(0, math.rad(90), 0), Color = GOLD, Material = Enum.Material.Metal, Parent = f })
 	local _ = gong
-	part({ Name = "RaidGongFrame", Size = Vector3.new(20, 1.4, 1.4), Position = ra + Vector3.new(0, 22, -104), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+	part({ Name = "RaidGongFrame", Size = Vector3.new(32, 2, 2), Position = ra + Vector3.new(0, 36, gz), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
 	for _, sx in ipairs({ -1, 1 }) do
-		part({ Name = "RaidGongPost", Size = Vector3.new(1.4, 22, 1.4), Position = ra + Vector3.new(sx * 9.5, 11, -104), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+		part({ Name = "RaidGongPost", Size = Vector3.new(2, 36, 2), Position = ra + Vector3.new(sx * 15, 18, gz), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
 	end
 	-- 1.8판 비천폭: 섬 한가운데 바위산에서 쏟아지는 폭포가 섬 끝을 넘어 구름 아래로 떨어진다
 	local fa = I.falls.at

@@ -7020,10 +7020,25 @@ local function raidTell(kind: string, data: any)
 		end
 	end
 end
+-- 3.99.55판: 한 사람 몫의 레이드 보스 체력 (로그 피해와 같은 눈금: baseDps × (1 + ln(1 + 배율)) × hpSecs)
+local function raidBudget(player: Player): number
+	local R = Config.RAID
+	local pf = Combat.fighterOfPlayer(player)
+	local m = math.max(1, (pf and pf.dmgMult) or 1)
+	return R.baseDps * (1 + math.log(1 + m)) * R.logK * R.hpSecs
+end
 function Raid.onHit(player: Player, f: any, dmg: number)
 	local c = Raid.cur
 	if c and c.f == f then
 		c.dmg[player] = (c.dmg[player] or 0) + dmg
+		-- 늦게 와서 처음 친 사람만큼 체력이 는다 (남은 체력 비율은 그대로가 아니라, 그 사람 몫을 더한다)
+		if not c.counted[player] then
+			c.counted[player] = true
+			local add = raidBudget(player)
+			f.maxHp += add
+			f.hp += add
+			Combat.sync(f)
+		end
 	end
 end
 local function raidRanking(c: any): { { player: Player, dmg: number } }
@@ -7050,12 +7065,19 @@ function Raid.spawn()
 	end
 	local ef = e.f :: any
 	ef.raid = true
-	ef.maxHp = math.floor(ef.maxHp * (1 + R.hpPer * (n - 1)))
+	-- 3.99.55판: 체력은 그때 천상계에 있는 사람마다 한 사람 몫을 더한 것 (로그 피해와 같은 눈금. 센 사람이 혼자 녹이지 못한다)
+	local counted = {}
+	local hp = 0
+	for _, pl in ipairs(playersInSky()) do
+		counted[pl] = true
+		hp += raidBudget(pl)
+	end
+	ef.maxHp = math.max(1, math.floor(hp))
 	ef.hp = ef.maxHp
 	ef.model:SetAttribute("Label", "⚔ 레이드 · " .. ef.name)
 	ef.model:SetAttribute("Raid", true)
 	Combat.sync(ef)
-	local c = { f = ef, dmg = {}, endsAt = os.clock() + R.life, n = n }
+	local c = { f = ef, dmg = {}, endsAt = os.clock() + R.life, n = n, counted = counted }
 	Raid.cur = c
 	raidTell("raidAlert", { stage = "on", name = ef.name, n = n, life = R.life })
 	-- 남은 시간 안에 못 쓰러뜨리면 하늘로 돌아간다

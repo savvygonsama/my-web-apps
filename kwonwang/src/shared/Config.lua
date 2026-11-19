@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.54" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.55" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -5248,7 +5248,7 @@ Config.SKY = {
 		{ id = "phoenix", name = "봉황대", at = Vector3.new(0, SY, -1120), radius = 180, ground = Color3.fromRGB(150, 60, 40), material = Enum.Material.Basalt,
 			camps = { { enemy = "phoenixguard", count = 3, at = Vector3.new(-80, SY, -1060) }, { enemy = "flamesage", count = 3, at = Vector3.new(80, SY, -1060) }, { enemy = "phoenixguard", count = 2, at = Vector3.new(0, SY, -1180) } },
 			boss = { id = "yeombong", at = Vector3.new(0, SY, -1220) } },
-		{ id = "raidarena", name = "천공 투기장", at = Vector3.new(-620, SY, -640), radius = 150, ground = Color3.fromRGB(200, 190, 175), material = Enum.Material.Slate, raid = true },
+		{ id = "raidarena", name = "천공 투기장", at = Vector3.new(-620, SY, -760), radius = 300, ground = Color3.fromRGB(200, 190, 175), material = Enum.Material.Slate, raid = true },
 		-- 1.8판: 뇌정봉 남쪽의 비천폭 (하늘에서 떨어지는 폭포), 운해 평원 남쪽 너머의 청학봉
 		{ id = "falls", name = "비천폭", at = Vector3.new(640, SY, -800), radius = 170, ground = Color3.fromRGB(110, 150, 120), material = Enum.Material.Grass,
 			camps = { { enemy = "waterspirit", count = 3, at = Vector3.new(580, SY, -740) }, { enemy = "fallsguard", count = 3, at = Vector3.new(700, SY, -860) } },
@@ -5903,6 +5903,15 @@ Config.RAID = {
 	coins = 250000,
 	scrolls = 2,
 	statKills = 10, -- 능력치: 내 전투력의 적 처치 몫 × 이만큼 × (0.3 + 기여)
+	-- 3.99.55판 로그 피해 (Combat.raidShape): 사람 → 보스는 배율 m 대신 (1 + ln(1 + m)) × logK
+	logK = 1,
+	-- 보스 → 사람은 그 사람 최대 체력의 (한 방 피해 ÷ hitRef) 만큼 (hitMin ~ hitMax 사이)
+	hitRef = 260,
+	hitMin = 0.03,
+	hitMax = 0.3,
+	-- 보스 체력 = 참가자마다 (baseDps × (1 + ln(1 + m)) × hpSecs) 를 더한 것. 늦게 와서 처음 친 사람도 그만큼 늘린다
+	baseDps = 60,
+	hpSecs = 180,
 }
 
 -- 1.7판 구름 미궁: 천궁의 🌀 문으로 들어가는 혼자만의 미궁. 구름 다리로 이어진 일곱 방을 차례로 넘는다

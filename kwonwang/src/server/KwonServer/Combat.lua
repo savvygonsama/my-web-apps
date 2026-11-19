@@ -399,6 +399,21 @@ function Combat.kill(f: Fighter, by: Fighter?)
 end
 
 -- 3.3판 배틀그라운드: 사람이 받는 피해를 눌러 담고 (기술 크기의 거듭제곱), 한 대·1초 상한을 둔다
+-- 3.99.55판 천공 투기장 레이드: 누구나 함께 잡을 수 있게
+--   · 사람이 레이드 보스를 칠 때: 내 공격 배율 (전투력) 을 로그로 눌러 센 사람과 약한 사람의 피해 차이를 줄인다
+--     (배율 m 대신 1 + ln(1 + m). 배율 1 → 1.7, 100 → 5.6, 100만 → 14.8) · 경지 차이로 깎이던 피해도 빼고 본다
+--   · 레이드 보스가 사람을 칠 때: 그 사람 최대 체력의 몇 % 로 친다 (약한 사람도 몇 대는 버티고, 센 사람도 맞으면 아프다)
+local function raidShape(att: Fighter, tgt: Fighter, d: number, hit: any, isSkill: boolean?, gapMul: number): number
+	local R = Config.RAID
+	if (tgt :: any).raid and att.player then
+		local m = math.max(1, att.dmgMult or 1) * ((isSkill and att.skillMult) or 1)
+		return d / (m * math.max(0.05, gapMul)) * (1 + math.log(1 + m)) * R.logK
+	end
+	if (att :: any).raid and tgt.player and tgt.maxHp > 0 then
+		return tgt.maxHp * math.clamp((hit.dmg or 0) / R.hitRef, R.hitMin, R.hitMax)
+	end
+	return d
+end
 local function battleShape(att: Fighter, tgt: Fighter, d: number, move: any?): number
 	if not Config.BATTLE_MODE or not tgt.player or d <= 0 then
 		return d
@@ -724,6 +739,9 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	if tgt.guarding and facing > 0.2 and not opt.unblockable and not opt.chain and not (tStyle and tStyle.noBlock) then
 		local d = damageOf(att, hit, move, opt.isSkill, opt.act) * Config.BLOCK_DAMAGE * (tStyle and tStyle.weakBlock or 1) * defense(tgt) * gapMul
 		d = battleShape(att, tgt, d, move)
+		if (att :: any).raid or (tgt :: any).raid then
+			d = raidShape(att, tgt, d / Config.BLOCK_DAMAGE, hit, opt.isSkill, gapMul) * Config.BLOCK_DAMAGE
+		end
 		tgt.hp -= d
 		local broke = (not steady) and addPosture(tgt, postureDmg * Config.BLOCK_POSTURE)
 		if not steady then
@@ -787,6 +805,9 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	-- 3.98판: 보스 한 방은 내 최대 체력의 BOSS_HIT_CAP 까지 (천상 · 지옥 보스가 한 방에 쓰러뜨리면서 잡는 데 1분이 넘게 걸렸다)
 	if att.npc and tgt.player and att.model:GetAttribute("Boss") == true and tgt.maxHp > 0 then
 		d = math.min(d, tgt.maxHp * Config.BOSS_HIT_CAP)
+	end
+	if (att :: any).raid or (tgt :: any).raid then
+		d = raidShape(att, tgt, d, hit, opt.isSkill, gapMul)
 	end
 	tgt.hp -= d
 	if tgt.player then
