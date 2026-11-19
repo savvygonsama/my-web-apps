@@ -805,15 +805,26 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end
 		-- 3.99.41판: 타는 기술 (천지미분) 은 그동안 몸을 들어 올린다 (거대한 말의 등 위)
+		-- 3.99.52판: 말에서 중간에 떨어지던 것 고침. 내리는 때를 '기술 + 뒤이어 타는 시간' 끝에 맞추고 (빠르기 sp 로 나눈 같은 시계),
+		--   그동안 다른 것이 몸 높이를 되돌려도 0.15초마다 다시 올린다. 말 그림 (ride 단계) 도 같은 때 사라지게 life 를 맞춰 보낸다
+		local rideEnd = m.ride and (m.afterRide and (total + m.afterRide.dur) or ((m.ride.from or 0) + (m.ride.dur or 2))) or 0
 		if forged and m.ride and f.hum then
 			local R = m.ride
 			after(R.from or 0, function()
 				local hum = f.hum
 				local base = hum.HipHeight
-				hum.HipHeight = base + R.hip
-				task.delay((R.dur or 2) / sp, function()
+				local target = base + R.hip
+				hum.HipHeight = target
+				local untilT = os.clock() + (rideEnd - (R.from or 0)) / sp
+				task.spawn(function()
+					while os.clock() < untilT and hum.Parent and not f.dead do
+						if hum.HipHeight < target - 0.3 then
+							hum.HipHeight = target
+						end
+						task.wait(0.15)
+					end
 					if hum.Parent then
-						hum.HipHeight = math.max(0, hum.HipHeight - R.hip)
+						hum.HipHeight = math.max(0, base)
 					end
 				end)
 			end)
@@ -854,7 +865,7 @@ function Skills.run(f: any, move: any, ctx: any)
 					origin = near[1] and near[1].root.Position or (base + fwd * 8)
 				end
 				if forged and not st.hit then
-					Push:FireAllClients("skillfx", { kind = "forgeStep", m = f.model, life = st.life, ride = st.ride, form = st.form, vfx = st.vfx, col = st.col, shape = "circle", at = origin, from = base, dir = fwd, radius = st.radius, big = st.big, style = style })
+					Push:FireAllClients("skillfx", { kind = "forgeStep", m = f.model, life = (st.ride and m.ride) and (rideEnd - st.t) / sp or st.life, ride = st.ride, form = st.form, vfx = st.vfx, col = st.col, shape = "circle", at = origin, from = base, dir = fwd, radius = st.radius, big = st.big, style = style })
 					return
 				end
 				local h = scaled(st.hit, sc)

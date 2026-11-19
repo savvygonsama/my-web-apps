@@ -1145,7 +1145,7 @@ VFX.inkSteed = function(d)
 		return
 	end
 	local big = d.big == true
-	local k = big and 5 or 1.8
+	local k = big and 6.5 or 1.8 -- 3.99.52판: 5 → 6.5 (산만 한 천마)
 	local life = d.life or 1.3
 	local rootP = root :: BasePart
 	local function bodyAt(t: number): CFrame?
@@ -1265,19 +1265,38 @@ VFX.inkCore = function(d)
 		Fx.ring(g + V(0, 0.5, 0), BRUSH_GOLD, 4, r * 2.8, 0.6)
 		Fx.ring(g + V(0, 6, 0), PAPER, 4, r * 2.2, 0.5)
 		Fx.flash(at, WHITE, r * 2.5, 5, 0.35)
-		shake(1.3)
+		-- 3.99.52판: 터진 자리에서 먹 기둥이 하늘까지 꼬여 오른다
+		inkSwirl(function()
+			return g + V(0, 2, 0)
+		end, 22, 6, 6, 1.1, { width = 2.6, trail = 0.9, speed = 2.2, rise = 80, gold = true })
+		shake(1.6)
 	end)
 end
 -- X 천지미분: 하늘을 휘감는 먹의 용 (줄기 수십 개가 한 몸으로 엉켜 굽이친다) 이 적에게 내리꽂힌다
 VFX.inkDragonDive = function(d)
 	local g = ground(d.at)
-	local sky = g + V((math.random() - 0.5) * 60, 70, (math.random() - 0.5) * 60)
-	for i = 1, 9 do
-		inkStroke(sky + V((math.random() - 0.5) * 5, (math.random() - 0.5) * 5, (math.random() - 0.5) * 5), g + V(0, 1, 0), 0.26 + i * 0.01, 2.4, 9, i == 5 or i == 2)
+	local sky = g + V((math.random() - 0.5) * 80, 110, (math.random() - 0.5) * 80)
+	for i = 1, 14 do
+		inkStroke(sky + V((math.random() - 0.5) * 7, (math.random() - 0.5) * 7, (math.random() - 0.5) * 7), g + V(0, 1, 0), 0.24 + i * 0.01, i % 5 == 0 and 3.4 or 2.4, 14, i == 5 or i == 2 or i == 11)
 	end
 	task.delay(0.3, function()
-		inkBurst(g + V(0, 1, 0), (d.radius or 8) * 1.5, false)
-		shake(0.3)
+		inkBurst(g + V(0, 1, 0), (d.radius or 8) * 1.8, true)
+		-- 내리꽂힌 자리에 금빛으로 갈라진 땅 (번개처럼 꺾이며 뻗는다)
+		for j = 1, 5 do
+			local a = j / 5 * math.pi * 2 + math.random() * 0.5
+			local p0 = g + V(0, 0.3, 0)
+			for _ = 1, 3 do
+				local p1 = p0 + V(math.cos(a) * 4, 0, math.sin(a) * 4)
+				a += (math.random() - 0.5) * 1.2
+				local seg = piece(V(0.35, 0.12, (p1 - p0).Magnitude), CFrame.lookAt((p0 + p1) / 2, p1), BRUSH_GOLD, 0)
+				seg.Material = Enum.Material.Neon
+				task.delay(0.9, function()
+					fadeOut(seg, 0.5)
+				end)
+				p0 = p1
+			end
+		end
+		shake(0.5)
 	end)
 end
 VFX.inkHeaven = function(d)
@@ -1286,6 +1305,19 @@ VFX.inkHeaven = function(d)
 	inkSwirl(function()
 		return g + V(0, 14, 0)
 	end, 48, r * 1.15, 34, d.life or 2.2, { width = 3.2, trail = 1.4, speed = 0.55, gold = true, drips = 60 })
+	-- 3.99.52판: 하늘을 덮는 먹구름 (높이 70 에서 넓게 휘도는 두꺼운 획) 과 그 아래로 내리는 먹비
+	inkSwirl(function()
+		return g + V(0, 72, 0)
+	end, 40, r * 2.2, 8, d.life or 2.2, { width = 6, trail = 2, speed = 0.3, drips = 120 })
+	local rain = piece(V(r * 3, 1, r * 3), CF(g + V(0, 70, 0)), WHITE, 1)
+	local e = inkDrips(rain, 0, 2.4)
+	e.Rate = 120
+	e.Speed = NumberRange.new(40, 60)
+	e.EmissionDirection = Enum.NormalId.Bottom
+	task.delay(d.life or 2.2, function()
+		e.Enabled = false
+		Debris:AddItem(rain, 2)
+	end)
 end
 
 ------------------------------------------------------------------------
@@ -2247,8 +2279,31 @@ VFX.inkCleave = function(d)
 		inkBurst(g - right * r * 0.5, r * 0.4, true)
 		Fx.ring(ground(d.at) + V(0, 0.5, 0), BRUSH_GOLD, 4, r * 2.2, 0.6)
 		Fx.flash(g, WHITE, r * 2.5, 6, 0.4)
-		calligraphy(g + V(0, 30, 0), "天地", 1.4)
-		shake(1.5)
+		calligraphy(g + V(0, 34, 0), "天地未分", 1.8)
+		-- 3.99.52판: 두 획이 지나간 땅이 금빛으로 갈라지고, 갈라진 금을 따라 먹 기둥이 하늘로 솟는다
+		local floor0 = ground(d.at) + V(0, 0.25, 0)
+		for _, st in ipairs(strokes) do
+			local a0 = V(st[1].X, floor0.Y, st[1].Z)
+			local a1 = V(st[2].X, floor0.Y, st[2].Z)
+			local seam = piece(V(1.4, 0.2, (a1 - a0).Magnitude), CFrame.lookAt((a0 + a1) / 2, a1), BRUSH_GOLD, 0)
+			seam.Material = Enum.Material.Neon
+			local glow = Instance.new("PointLight")
+			glow.Color = BRUSH_GOLD
+			glow.Range = 40
+			glow.Brightness = 3
+			glow.Parent = seam
+			task.delay(1.8, function()
+				fadeOut(seam, 0.6)
+			end)
+			for j = 0, 8 do
+				task.delay(j * 0.05, function()
+					local p = a0:Lerp(a1, j / 8)
+					inkStroke(p, p + V((math.random() - 0.5) * 6, 40 + math.random() * 30, (math.random() - 0.5) * 6), 0.3, 3, 4, j % 3 == 0)
+				end)
+			end
+		end
+		inkScreen(1.2)
+		shake(2)
 	end)
 end
 
@@ -2628,6 +2683,25 @@ function ForgeFx.run(data: any)
 		end
 		if r0 and r0:IsA("BasePart") and data.mid == "hdX" then
 			calligraphy(r0.Position + V(0, 55, 0), "混沌", 3.2)
+			-- 3.99.52판: 화면 가운데 이름, 등 뒤 하늘에 붓으로 긋는 커다란 원 (끝이 닿지 않는 일원상)
+			if cam and (cam.CFrame.Position - r0.Position).Magnitude < 160 then
+				domainTitle("천지미분", "하늘과 땅이 나뉘기 전", 2.2)
+			end
+			local look = r0.CFrame.LookVector
+			local flatL = V(look.X, 0, look.Z)
+			flatL = flatL.Magnitude > 0.01 and flatL.Unit or V(0, 0, -1)
+			local right = V(-flatL.Z, 0, flatL.X)
+			local c0 = r0.Position - flatL * 40 + V(0, 52, 0)
+			local R0, N = 38, 30
+			for i = 0, N - 3 do
+				task.delay(i * 0.025, function()
+					local a1, a2 = i / N * math.pi * 2 + 1.9, (i + 1) / N * math.pi * 2 + 1.9
+					local p1 = c0 + right * math.cos(a1) * R0 + V(0, math.sin(a1) * R0, 0)
+					local p2 = c0 + right * math.cos(a2) * R0 + V(0, math.sin(a2) * R0, 0)
+					inkStroke(p1, p2, 0.08, 5 - i / N * 3, 0.5, i % 7 == 0)
+				end)
+			end
+			pcall(Fx.sound, "splash", 1, 0.35, r0.Position)
 		end
 	end
 	if data.kind == "forgeStart" then

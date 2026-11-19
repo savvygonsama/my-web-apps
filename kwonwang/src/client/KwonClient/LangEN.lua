@@ -5086,4 +5086,5 @@ return {
 	["♻ 환생 +1"] = "♻ Rebirth +1",
 	["♻ 환생 8번으로"] = "♻ Rebirth to 8",
 	["♻ 환생 %d번 (끝 %d번)"] = "♻ Rebirth %d (max %d)",
+	["하늘과 땅이 나뉘기 전"] = "Before heaven and earth were parted",
 }
