@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.49" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.50" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -16589,7 +16589,23 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		for i = Config.GATE.from, cap do
 			p.gates[tostring(i)] = true
 		end
+		-- 3.99.50판: 일곱째 · 여덟째 환생에 필요한 천겁의 길도 채운다
+		local gq = Config.REBIRTH.geopReq and Config.REBIRTH.geopReq[p.rebirth + 1]
+		if gq then
+			p.geopBest = math.max(p.geopBest or 0, gq)
+		end
 		toast(player, "♻ 환생 준비 완료 (" .. Config.Realms[cap].name .. ")")
+	elseif action == "testRebirthPlus" or action == "testRebirthMax" then
+		-- 3.99.50판 테스트: 환생 횟수를 바로 올린다 (+1 또는 끝인 8번까지). 천겁의 길 기록도 맞춘다
+		local RB = Config.REBIRTH
+		p.rebirth = action == "testRebirthMax" and RB.max or math.min(RB.max, (p.rebirth or 0) + 1)
+		for n, need in pairs(RB.geopReq or {}) do
+			if p.rebirth >= n then
+				p.geopBest = math.max(p.geopBest or 0, need)
+			end
+		end
+		refreshFighter(player)
+		toast(player, string.format("♻ 환생 %d번 (끝 %d번)", p.rebirth, RB.max))
 	elseif action == "testSamsaraReady" then
 		-- 테스트: 환생이 없으면 한 번 환생한 것으로, 능력치를 윤회의 시련 경지까지 채운다
 		if p.rebirth <= p.samsara and p.rebirth < Config.REBIRTH.max then
@@ -69417,6 +69433,9 @@ return {
 	["🖌 먹물 굴"] = "🖌 Ink Grotto",
 	["땅 위로 올라간다"] = "Climb back up",
 	["🖌 마을 단로로는 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아 재료를 녹여라 (무극신권을 익히고 일곱 번 환생한 몸으로)"] = "🖌 The village furnace cannot forge it. Find the place where ink seeps under the earth and melt the materials there (after learning Limitless Fist and being reborn seven times)",
+	["♻ 환생 +1"] = "♻ Rebirth +1",
+	["♻ 환생 8번으로"] = "♻ Rebirth to 8",
+	["♻ 환생 %d번 (끝 %d번)"] = "♻ Rebirth %d (max %d)",
 }
 ]]></string>
           </Properties>
@@ -90775,6 +90794,7 @@ function UIB.buildTest()
 	section("♻ 환생·극", {
 		{ "♻ 환생 조건 채우기", "testRebirthReady" }, { "☸ 바로 환생 (의식)", "testRebirthRite" }, { "♻ 공덕 모두 채우기", "testPerkPoints" },
 		{ "☯ 윤회의 시련 준비", "testSamsaraReady" }, { "☯ 윤회의 시련 도전", "samsara" }, { "🌇 극 가득 채우기", "testGeuk" }, { "🌠 극 광속권 바로 익히기", "testStyle", "geukspeed" }, { "🔥 지옥 황천 나루로", "testHellWorld", close = true }, { "🌅 신 삼재권 얻는 컷씬", "testSinRite", close = true }, { "🌑 신의 동굴로", "testSinCave", close = true },
+		{ "♻ 환생 +1", "testRebirthPlus" }, { "♻ 환생 8번으로", "testRebirthMax" },
 		{ "♻ 환생 기록 지우기", "testRebirthReset", color = C.red },
 	})
 	section("🌍 이동·이벤트", {

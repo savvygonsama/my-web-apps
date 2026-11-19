@@ -3151,6 +3151,7 @@ function UIB.buildTest()
 	section("♻ 환생·극", {
 		{ "♻ 환생 조건 채우기", "testRebirthReady" }, { "☸ 바로 환생 (의식)", "testRebirthRite" }, { "♻ 공덕 모두 채우기", "testPerkPoints" },
 		{ "☯ 윤회의 시련 준비", "testSamsaraReady" }, { "☯ 윤회의 시련 도전", "samsara" }, { "🌇 극 가득 채우기", "testGeuk" }, { "🌠 극 광속권 바로 익히기", "testStyle", "geukspeed" }, { "🔥 지옥 황천 나루로", "testHellWorld", close = true }, { "🌅 신 삼재권 얻는 컷씬", "testSinRite", close = true }, { "🌑 신의 동굴로", "testSinCave", close = true },
+		{ "♻ 환생 +1", "testRebirthPlus" }, { "♻ 환생 8번으로", "testRebirthMax" },
 		{ "♻ 환생 기록 지우기", "testRebirthReset", color = C.red },
 	})
 	section("🌍 이동·이벤트", {

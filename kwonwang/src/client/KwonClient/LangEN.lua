@@ -5083,4 +5083,7 @@ return {
 	["🖌 먹물 굴"] = "🖌 Ink Grotto",
 	["땅 위로 올라간다"] = "Climb back up",
 	["🖌 마을 단로로는 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아 재료를 녹여라 (무극신권을 익히고 일곱 번 환생한 몸으로)"] = "🖌 The village furnace cannot forge it. Find the place where ink seeps under the earth and melt the materials there (after learning Limitless Fist and being reborn seven times)",
+	["♻ 환생 +1"] = "♻ Rebirth +1",
+	["♻ 환생 8번으로"] = "♻ Rebirth to 8",
+	["♻ 환생 %d번 (끝 %d번)"] = "♻ Rebirth %d (max %d)",
 }

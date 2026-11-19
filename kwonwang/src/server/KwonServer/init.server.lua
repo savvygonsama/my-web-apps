@@ -5494,7 +5494,23 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		for i = Config.GATE.from, cap do
 			p.gates[tostring(i)] = true
 		end
+		-- 3.99.50판: 일곱째 · 여덟째 환생에 필요한 천겁의 길도 채운다
+		local gq = Config.REBIRTH.geopReq and Config.REBIRTH.geopReq[p.rebirth + 1]
+		if gq then
+			p.geopBest = math.max(p.geopBest or 0, gq)
+		end
 		toast(player, "♻ 환생 준비 완료 (" .. Config.Realms[cap].name .. ")")
+	elseif action == "testRebirthPlus" or action == "testRebirthMax" then
+		-- 3.99.50판 테스트: 환생 횟수를 바로 올린다 (+1 또는 끝인 8번까지). 천겁의 길 기록도 맞춘다
+		local RB = Config.REBIRTH
+		p.rebirth = action == "testRebirthMax" and RB.max or math.min(RB.max, (p.rebirth or 0) + 1)
+		for n, need in pairs(RB.geopReq or {}) do
+			if p.rebirth >= n then
+				p.geopBest = math.max(p.geopBest or 0, need)
+			end
+		end
+		refreshFighter(player)
+		toast(player, string.format("♻ 환생 %d번 (끝 %d번)", p.rebirth, RB.max))
 	elseif action == "testSamsaraReady" then
 		-- 테스트: 환생이 없으면 한 번 환생한 것으로, 능력치를 윤회의 시련 경지까지 채운다
 		if p.rebirth <= p.samsara and p.rebirth < Config.REBIRTH.max then
