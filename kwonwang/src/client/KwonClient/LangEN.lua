@@ -5132,4 +5132,13 @@ return {
 	["무간지옥 가장 깊은 곳, 무너진 왕좌에 생전에 권왕이었던 원혼이 앉아 있다더라"] = "They say in the deepest part of the Endless Hell, on a broken throne, sits the ghost of one who was a Fist King in life",
 	["<font color=\"#FF8C78\">🩹 지옥에서 다쳐 쉬는 중 (%d시간 %d분 남음)</font>"] = "<font color=\"#FF8C78\">🩹 Hurt in Hell, resting (%dh %dm left)</font>",
 	["\n<font color=\"#FF8C78\">🔥 한 시간마다 %d%% 확률로 다친다 (다치면 그때까지 것만, %d시간 쉰다)</font>"] = "\n<font color=\"#FF8C78\">🔥 %d%% chance each hour to get hurt (keeps what was gathered until then, rests %d hours)</font>",
+	["적멸경"] = "Quiescence",
+	["열반경"] = "Nirvana",
+	["모든 것이 비어 다시 차는 경지, 허무경에 오른다"] = "Reach Nothingness, where all empties and fills again",
+	["모든 불이 꺼진 고요, 적멸경에 오른다"] = "Reach Quiescence, the stillness where every fire is out",
+	["모든 경지의 진짜 끝, 열반경에 오른다"] = "Reach Nirvana, the true end of all realms",
+	["적멸에 든 자"] = "One in Quiescence",
+	["열반에 든 자"] = "One in Nirvana",
+	["⭐ %s 너머 별 %d · 피해 · 체력 +%d%%"] = "⭐ Beyond %s, star %d · damage · HP +%d%%",
+	["모든 것이 비어 다시 차는 경지, 허무경에 올라라. 그 너머는 일곱째 · 여덟째 삶에 열린다."] = "Reach Nothingness, where everything empties and fills again. What lies beyond opens in your seventh and eighth lives.",
 }

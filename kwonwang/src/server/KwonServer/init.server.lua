@@ -752,11 +752,13 @@ function Calc.stars(p: Profile): number
 	if (p.rebirth or 0) < (Config.STAR.fromRebirth or 6) then
 		return 0
 	end
+	-- 3.99.57판: 별은 지금 열린 끝 경지 너머 (육환 허무경 · 칠환 적멸경 · 팔환 열반경)
+	local cap = Config.realmCap(p.rebirth or 0)
 	local idx = Calc.realm(p)
-	if idx < #Config.Realms then
+	if idx < cap then
 		return 0
 	end
-	local need = Config.Realms[#Config.Realms].need
+	local need = Config.Realms[cap].need
 	local t = Calc.total(p)
 	if need <= 0 or t < need * Config.STAR.growth then
 		return 0
@@ -1919,8 +1921,8 @@ function Story.check(player: Player)
 		if sk > ((sp :: any).starBest or 0) then
 			(sp :: any).starBest = sk
 			states[player].dirty = true
-			Push:FireAllClients("realm", { name = player.DisplayName, realm = Config.Realms[#Config.Realms].name .. " ★" .. sk })
-			toast(player, string.format("⭐ 허무경 너머 별 %d · 피해 · 체력 +%d%%", sk, math.floor(Config.STAR.dmg * sk * 100 + 0.5)))
+			Push:FireAllClients("realm", { name = player.DisplayName, realm = Config.Realms[Config.realmCap(sp.rebirth or 0)].name .. " ★" .. sk })
+			toast(player, string.format("⭐ %s 너머 별 %d · 피해 · 체력 +%d%%", Config.Realms[Config.realmCap(sp.rebirth or 0)].name, sk, math.floor(Config.STAR.dmg * sk * 100 + 0.5)))
 			refreshFighter(player)
 			pushState(player)
 		end

@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.56" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.57" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -152,6 +152,9 @@ Config.Realms = {
 	-- 3.21판: 환생 둘 더 (지옥으로 가는 길). 환생 한 번에 한 경지
 	{ name = "대라경", need = 1562500000000, color = Color3.fromRGB(190, 110, 255), rebirth = 5 },
 	{ name = "허무경", need = 7812500000000, color = Color3.fromRGB(235, 40, 60), rebirth = 6 },
+	-- 3.99.57판: 칠환 · 팔환에도 경지가 하나씩 열린다 (예전엔 허무경에서 멈춰 칠환 · 팔환의 능력치 조건이 같았다)
+	{ name = "적멸경", need = 39062500000000, color = Color3.fromRGB(150, 110, 220), rebirth = 7 },
+	{ name = "열반경", need = 195312500000000, color = Color3.fromRGB(255, 235, 180), rebirth = 8 },
 }
 -- 예전 (1.9판까지) 문턱. 능력치의 효과는 이 숫자로 되돌려 셈한다 (경지마다 세기가 예전과 같게)
 local OLD_NEED = { 0, 150, 600, 2000, 5000, 10000, 20000, 36000, 60000, 218000, 791000, 2874000, 10438000, 37908000, 137674000, 500000000, 2500000000, 12500000000, 62500000000, 312500000000, 1562500000000, 7812500000000 }
@@ -5049,7 +5052,7 @@ do
 			{ title = "업경대 앞에서", text = "지옥의 한가운데 염라전. 업경대에 비친 네 지난 삶을 마주하고 염라대왕을 꺾어라.", goal = { kind = "bosses", ids = { "yeomra" }, n = 1 }, reward = rw(21, 4) },
 			{ title = "극에 닿다", text = "권법에도 끝이 있다. 해와 달 사이의 극 일월신권, 비어 있는 좌표의 극 공백권, 빛보다 먼저 닿는 극 광속권. 숨은 사부를 찾아 극 권법 하나를 익혀라.", goal = { kind = "geuk", n = 1 }, reward = rw(21, 4) },
 			{ title = "여섯 번째 삶", text = "마지막 환생이다. 여섯 번째 삶에 허무경이 열린다.", goal = { kind = "rebirth", n = 6 }, reward = rw(21, 3) },
-			{ title = "허무경", text = "모든 것이 비어 다시 차는 경지, 허무경에 올라라. 경지의 끝이다.", goal = { kind = "realm", n = 22 }, reward = rw(22, 3) },
+			{ title = "허무경", text = "모든 것이 비어 다시 차는 경지, 허무경에 올라라. 그 너머는 일곱째 · 여덟째 삶에 열린다.", goal = { kind = "realm", n = 22 }, reward = rw(22, 3) },
 			{ title = "지옥의 깊은 곳", text = "지옥은 아래로 갈수록 깊다. 독사지옥의 독사대왕, 발설지옥의 발설대왕, 끝없이 떨어지는 무간의 군주를 꺾어라.", goal = { kind = "bosses", ids = { "dokssawang", "balseolwang", "mugunwang" }, n = 3 }, reward = rw(22, 4) },
 			{ title = "세 개의 극", text = "극 권법 셋을 모두 익혀라. 셋을 다 가진 자에게만 다음 소문이 들린다.", goal = { kind = "geuk", n = 3 }, reward = rw(22, 4) },
 			{ title = "신의 동굴", text = "세상 북서쪽 맨 끝, 지옥 입구의 정반대 자리에 사람 모양의 돌이 서 있다. 다섯 번 환생한 몸으로 은자 999만을 바치면 땅 밑 동굴이 열린다. 세 대좌에 극 권법의 기운을 차례로 보내 신 삼재권을 얻어라.", goal = { kind = "learn", id = "sinsamjae" }, reward = rw(22, 5) },
@@ -6075,7 +6078,9 @@ Config.ACHIEVEMENTS = {
 	{ id = "rb5", icon = "♻", name = "오환", desc = "다섯 번 환생한다", kind = "rebirth", n = 5, coins = 60000000, scrolls = 35, title = "오환의 주인" },
 	{ id = "rb6", icon = "♻", name = "육환 · 끝에 선 자", desc = "여섯 번 환생한다", kind = "rebirth", n = 6, coins = 150000000, scrolls = 60, title = "육환 · 끝에 선 자", tier = 5 },
 	{ id = "r21", icon = "🔮", name = "대라경", desc = "권왕 너머, 대라경에 오른다", kind = "realm", n = 21, coins = 200000000, scrolls = 60, title = "대라의 주인" },
-	{ id = "r22", icon = "🕳", name = "허무경", desc = "모든 경지의 진짜 끝, 허무경에 오른다", kind = "realm", n = 22, coins = 500000000, scrolls = 100, title = "허무를 걷는 자", tier = 5 },
+	{ id = "r22", icon = "🕳", name = "허무경", desc = "모든 것이 비어 다시 차는 경지, 허무경에 오른다", kind = "realm", n = 22, coins = 500000000, scrolls = 100, title = "허무를 걷는 자", tier = 5 },
+	{ id = "r23", icon = "🌑", name = "적멸경", desc = "모든 불이 꺼진 고요, 적멸경에 오른다", kind = "realm", n = 23, coins = 1500000000, scrolls = 150, title = "적멸에 든 자", tier = 5 },
+	{ id = "r24", icon = "🪷", name = "열반경", desc = "모든 경지의 진짜 끝, 열반경에 오른다", kind = "realm", n = 24, coins = 5000000000, scrolls = 250, title = "열반에 든 자", tier = 5 },
 	{ id = "s5", icon = "🥋", name = "다섯 갈래", desc = "권법 다섯을 익힌다", kind = "styles", n = 5, coins = 20000 },
 	{ id = "s15", icon = "🥋", name = "백가쟁명", desc = "권법 열다섯을 익힌다", kind = "styles", n = 15, coins = 1000000, title = "백가의 주인" },
 	{ id = "s25", icon = "🥋", name = "만권귀종", desc = "권법 스물다섯을 익힌다", kind = "styles", n = 25, coins = 10000000, scrolls = 20, title = "만권귀종" },
@@ -11972,11 +11977,13 @@ function Calc.stars(p: Profile): number
 	if (p.rebirth or 0) < (Config.STAR.fromRebirth or 6) then
 		return 0
 	end
+	-- 3.99.57판: 별은 지금 열린 끝 경지 너머 (육환 허무경 · 칠환 적멸경 · 팔환 열반경)
+	local cap = Config.realmCap(p.rebirth or 0)
 	local idx = Calc.realm(p)
-	if idx < #Config.Realms then
+	if idx < cap then
 		return 0
 	end
-	local need = Config.Realms[#Config.Realms].need
+	local need = Config.Realms[cap].need
 	local t = Calc.total(p)
 	if need <= 0 or t < need * Config.STAR.growth then
 		return 0
@@ -13139,8 +13146,8 @@ function Story.check(player: Player)
 		if sk > ((sp :: any).starBest or 0) then
 			(sp :: any).starBest = sk
 			states[player].dirty = true
-			Push:FireAllClients("realm", { name = player.DisplayName, realm = Config.Realms[#Config.Realms].name .. " ★" .. sk })
-			toast(player, string.format("⭐ 허무경 너머 별 %d · 피해 · 체력 +%d%%", sk, math.floor(Config.STAR.dmg * sk * 100 + 0.5)))
+			Push:FireAllClients("realm", { name = player.DisplayName, realm = Config.Realms[Config.realmCap(sp.rebirth or 0)].name .. " ★" .. sk })
+			toast(player, string.format("⭐ %s 너머 별 %d · 피해 · 체력 +%d%%", Config.Realms[Config.realmCap(sp.rebirth or 0)].name, sk, math.floor(Config.STAR.dmg * sk * 100 + 0.5)))
 			refreshFighter(player)
 			pushState(player)
 		end
@@ -70191,6 +70198,15 @@ return {
 	["무간지옥 가장 깊은 곳, 무너진 왕좌에 생전에 권왕이었던 원혼이 앉아 있다더라"] = "They say in the deepest part of the Endless Hell, on a broken throne, sits the ghost of one who was a Fist King in life",
 	["<font color=\"#FF8C78\">🩹 지옥에서 다쳐 쉬는 중 (%d시간 %d분 남음)</font>"] = "<font color=\"#FF8C78\">🩹 Hurt in Hell, resting (%dh %dm left)</font>",
 	["\n<font color=\"#FF8C78\">🔥 한 시간마다 %d%% 확률로 다친다 (다치면 그때까지 것만, %d시간 쉰다)</font>"] = "\n<font color=\"#FF8C78\">🔥 %d%% chance each hour to get hurt (keeps what was gathered until then, rests %d hours)</font>",
+	["적멸경"] = "Quiescence",
+	["열반경"] = "Nirvana",
+	["모든 것이 비어 다시 차는 경지, 허무경에 오른다"] = "Reach Nothingness, where all empties and fills again",
+	["모든 불이 꺼진 고요, 적멸경에 오른다"] = "Reach Quiescence, the stillness where every fire is out",
+	["모든 경지의 진짜 끝, 열반경에 오른다"] = "Reach Nirvana, the true end of all realms",
+	["적멸에 든 자"] = "One in Quiescence",
+	["열반에 든 자"] = "One in Nirvana",
+	["⭐ %s 너머 별 %d · 피해 · 체력 +%d%%"] = "⭐ Beyond %s, star %d · damage · HP +%d%%",
+	["모든 것이 비어 다시 차는 경지, 허무경에 올라라. 그 너머는 일곱째 · 여덟째 삶에 열린다."] = "Reach Nothingness, where everything empties and fills again. What lies beyond opens in your seventh and eighth lives.",
 }
 ]]></string>
           </Properties>
