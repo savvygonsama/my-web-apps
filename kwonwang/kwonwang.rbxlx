@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.47" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.48" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -41030,6 +41030,190 @@ ART_SITES.sashin = function(g: Vector3, _back: Vector3, f: Folder)
 		light(lamp, col, 16, 1.2)
 	end
 end
+-- 3.99.48판 사부들의 집: 소품만 두고 들판에 서 있던 사부들에게 들어가 볼 수 있는 집을 지어 준다
+--   보이는 집 (누구나 찾는 사부): 사부 등 뒤에, 문이 사부 쪽을 본다
+--   숨은 집 (숨은 사부): 더 멀리, 대숲 · 덤불 · 바위가 둘러싸고 틈은 뒤쪽에 하나뿐이라 돌아 들어가야 보인다
+type Home = { wall: Color3, wallMat: Enum.Material, roof: Color3, post: Color3, glow: Color3, w: number, d: number, h: number, dist: number, hidden: boolean?, screen: string?, extra: ((CFrame, Folder) -> ())? }
+local function groundY(at: Vector3): number
+	local rp = RaycastParams.new()
+	rp.FilterType = Enum.RaycastFilterType.Include
+	rp.FilterDescendantsInstances = { workspace.Terrain }
+	local hit = workspace:Raycast(at + Vector3.new(0, 60, 0), Vector3.new(0, -120, 0), rp)
+	if hit and math.abs(hit.Position.Y - at.Y) < 24 then
+		return hit.Position.Y
+	end
+	return at.Y
+end
+local function dwelling(g: Vector3, back: Vector3, f: Folder, o: Home)
+	local at = g + back * o.dist
+	at = Vector3.new(at.X, groundY(at), at.Z)
+	-- 앞 (-Z) 이 사부를 본다 (숨은 집은 바깥을 본다)
+	local face = o.hidden and back or -back
+	local cf = CFrame.lookAt(at, at + face)
+	local w, d, h = o.w, o.d, o.h
+	local T = 1
+	P(f, "HomePlinth", Vector3.new(w + 3, 1.2, d + 3), cf * CFrame.new(0, 0.6, 0), STONE_DARK, Enum.Material.Cobblestone)
+	P(f, "HomeFloor", Vector3.new(w, 0.3, d), cf * CFrame.new(0, 1.35, 0), Color3.fromRGB(150, 115, 80), Enum.Material.WoodPlanks)
+	local b = cf * CFrame.new(0, 1.5, 0)
+	-- 벽 넷 (앞벽은 가운데 문 자리를 비운다)
+	P(f, "HomeWall", Vector3.new(w, h, T), b * CFrame.new(0, h / 2, d / 2 - T / 2), o.wall, o.wallMat)
+	for _, sx in ipairs({ -1, 1 }) do
+		P(f, "HomeWall", Vector3.new(T, h, d), b * CFrame.new(sx * (w / 2 - T / 2), h / 2, 0), o.wall, o.wallMat)
+		local seg = (w - 5) / 2
+		P(f, "HomeWall", Vector3.new(seg, h, T), b * CFrame.new(sx * (2.5 + seg / 2), h / 2, -d / 2 + T / 2), o.wall, o.wallMat)
+		-- 옆벽 창 (안에서 빛이 샌다)
+		local win = P(f, "HomeWindow", Vector3.new(0.2, 2.4, 3), b * CFrame.new(sx * (w / 2 + 0.02), h * 0.6, 0), o.glow, Enum.Material.Neon, false)
+		win.Transparency = 0.3
+	end
+	P(f, "HomeLintel", Vector3.new(5, h - 7, T), b * CFrame.new(0, 7 + (h - 7) / 2, -d / 2 + T / 2), o.wall, o.wallMat)
+	-- 기둥과 들보
+	for _, sx in ipairs({ -1, 1 }) do
+		for _, sz in ipairs({ -1, 1 }) do
+			P(f, "HomePost", Vector3.new(1.2, h + 0.4, 1.2), b * CFrame.new(sx * w / 2, h / 2, sz * d / 2), o.post, Enum.Material.Wood)
+		end
+		P(f, "DoorPost", Vector3.new(0.8, 7, 0.8), b * CFrame.new(sx * 2.6, 3.5, -d / 2), o.post, Enum.Material.Wood)
+	end
+	P(f, "HomeBeam", Vector3.new(w + 0.8, 0.8, d + 0.8), b * CFrame.new(0, h, 0), o.post, Enum.Material.Wood)
+	roof(b * CFrame.new(0, h + 0.4, 0), w, d, o.roof, o.wall, f)
+	-- 문 앞 디딤돌과 등
+	for i = 1, 3 do
+		disc("HomeStep", (cf * CFrame.new(0, 0.15, -d / 2 - 2 - i * 2.4)).Position, 1.4, 0.3, Color3.fromRGB(150, 145, 135), Enum.Material.Slate, f, true)
+	end
+	local lamp = P(f, "HomeLamp", Vector3.new(0.9, 1.3, 0.9), b * CFrame.new(3.4, 6.4, -d / 2 - 0.7), o.glow, Enum.Material.Neon, false)
+	light(lamp, o.glow, 16, 1.2)
+	-- 안: 이부자리, 낮은 상과 찻잔, 화로, 벽의 족자
+	P(f, "Bedroll", Vector3.new(4, 0.5, 7), b * CFrame.new(-w / 2 + 3.2, 0.25, d / 2 - 4.6), Color3.fromRGB(190, 170, 140), Enum.Material.Fabric, false)
+	P(f, "Pillow", Vector3.new(2.2, 0.7, 1.2), b * CFrame.new(-w / 2 + 3.2, 0.6, d / 2 - 1.6), Color3.fromRGB(220, 210, 190), Enum.Material.Fabric, false)
+	P(f, "LowTable", Vector3.new(4, 0.4, 3), b * CFrame.new(w / 2 - 4, 1.4, 0), o.post, Enum.Material.Wood)
+	for _, sx in ipairs({ -1, 1 }) do
+		for _, sz in ipairs({ -1, 1 }) do
+			P(f, "TableLeg", Vector3.new(0.3, 1.2, 0.3), b * CFrame.new(w / 2 - 4 + sx * 1.7, 0.6, sz * 1.2), o.post, Enum.Material.Wood, false)
+		end
+	end
+	for k = -1, 1, 2 do
+		local cup = P(f, "TeaCup", Vector3.new(0.5, 0.4, 0.5), b * CFrame.new(w / 2 - 4 + k * 0.8, 1.8, 0), Color3.fromRGB(235, 235, 225), Enum.Material.SmoothPlastic, false)
+		cup.Shape = Enum.PartType.Cylinder
+		cup.CFrame = b * CFrame.new(w / 2 - 4 + k * 0.8, 1.8, 0) * CFrame.Angles(0, 0, math.rad(90))
+	end
+	local brazier = disc("HomeHearth", (b * CFrame.new(0, 0.4, 1)).Position, 1.6, 0.8, Color3.fromRGB(60, 55, 55), Enum.Material.Slate, f, false)
+	local ember = disc("HomeEmber", (b * CFrame.new(0, 0.85, 1)).Position, 1.1, 0.2, Color3.fromRGB(255, 120, 50), Enum.Material.Neon, f, false)
+	local _ = brazier
+	light(ember, Color3.fromRGB(255, 150, 80), 18, 1.4)
+	P(f, "Scroll", Vector3.new(2.4, 5, 0.15), b * CFrame.new(0, h * 0.55, d / 2 - T - 0.1), Color3.fromRGB(235, 225, 200), Enum.Material.Fabric, false)
+	P(f, "ScrollRod", Vector3.new(2.8, 0.3, 0.3), b * CFrame.new(0, h * 0.55 + 2.6, d / 2 - T - 0.15), o.post, Enum.Material.Wood, false)
+	if o.extra then
+		o.extra(b, f)
+	end
+	-- 숨은 집: 둘레를 막고 뒤쪽에만 틈 (사부 쪽에서는 보이지 않는다)
+	if o.hidden then
+		local R = math.max(w, d) * 0.5 + 9
+		local n = 26
+		for k = 0, n - 1 do
+			local a = k / n * math.pi * 2
+			local dir = (cf * CFrame.Angles(0, a, 0)).LookVector
+			-- 앞 (바깥) 쪽 50도는 비워 들어가는 길로 둔다
+			if dir:Dot(face) < 0.64 then
+				local p0 = at + dir * (R + rng:NextNumber(-1, 1.5))
+				if o.screen == "bamboo" then
+					bamboo(p0, f)
+					bamboo(p0 + dir * 2.2 + Vector3.new(rng:NextNumber(-1, 1), 0, rng:NextNumber(-1, 1)), f)
+				elseif o.screen == "rock" then
+					rock(p0, rng:NextNumber(6, 9), f, o.wall:Lerp(Color3.fromRGB(110, 105, 100), 0.6))
+				elseif o.screen == "ice" then
+					local s = rng:NextNumber(5, 9)
+					P(f, "IceScreen", Vector3.new(s, s * 1.8, s), CFrame.new(p0 + Vector3.new(0, s * 0.7, 0)) * CFrame.Angles(rng:NextNumber(-0.3, 0.3), rng:NextNumber(0, 6), rng:NextNumber(-0.3, 0.3)), Color3.fromRGB(190, 220, 242), Enum.Material.Glacier)
+				elseif o.screen == "crystal" then
+					local s = rng:NextNumber(3, 5)
+					local c = P(f, "DuskCrystal", Vector3.new(s, s * 4, s), CFrame.new(p0 + Vector3.new(0, s * 1.6, 0)) * CFrame.Angles(rng:NextNumber(-0.2, 0.2), rng:NextNumber(0, 6), rng:NextNumber(-0.2, 0.2)), (k % 2 == 0) and Color3.fromRGB(255, 200, 120) or Color3.fromRGB(190, 200, 255), Enum.Material.Glass)
+					c.Transparency = 0.2
+				else
+					bush(p0, rng:NextNumber(1.6, 2.2), Color3.fromRGB(70, 110, 55):Lerp(Color3.fromRGB(120, 60, 40), o.screen == "maple" and 0.8 or 0), f)
+				end
+			end
+		end
+	end
+end
+local HOMES: { [string]: Home } = {
+	-- 대놓고 들판에 서 있던 사부들
+	cheolsae = { wall = Color3.fromRGB(90, 70, 58), wallMat = Enum.Material.WoodPlanks, roof = Color3.fromRGB(58, 60, 66), post = Color3.fromRGB(50, 40, 34), glow = Color3.fromRGB(255, 150, 70), w = 20, d = 16, h = 10, dist = 40,
+		extra = function(b, f)
+			-- 대장간 굴뚝과 모루, 벽에 걸린 사슬
+			local ch = P(f, "Chimney", Vector3.new(3, 18, 3), b * CFrame.new(7, 9, 5), STONE_DARK, Enum.Material.Brick)
+			local _ = ch
+			local fire = P(f, "ChimneyGlow", Vector3.new(2.2, 0.4, 2.2), b * CFrame.new(7, 18.1, 5), Color3.fromRGB(255, 120, 40), Enum.Material.Neon, false)
+			light(fire, Color3.fromRGB(255, 130, 60), 14, 1)
+			P(f, "Anvil", Vector3.new(3, 1.6, 1.6), b * CFrame.new(-6, 2, -12), Color3.fromRGB(60, 62, 68), Enum.Material.Metal)
+			P(f, "AnvilBase", Vector3.new(1.6, 1.4, 1.6), b * CFrame.new(-6, 0.7, -12), Color3.fromRGB(80, 60, 45), Enum.Material.Wood)
+			for i = 0, 7 do
+				P(f, "WallChain", Vector3.new(0.5, 0.9, 0.2), b * CFrame.new(-4 + (i % 2) * 0.2, 8 - i * 0.8, -8.6) * CFrame.Angles(0, (i % 2) * math.rad(90), 0), Color3.fromRGB(70, 74, 82), Enum.Material.Metal, false)
+			end
+		end },
+	yeokryu = { wall = Color3.fromRGB(205, 210, 205), wallMat = Enum.Material.Plaster, roof = Color3.fromRGB(60, 95, 115), post = Color3.fromRGB(70, 60, 50), glow = Color3.fromRGB(150, 230, 245), w = 18, d = 14, h = 9, dist = 34,
+		extra = function(b, f)
+			-- 처마 끝에서 물방울이 거꾸로 올라간다 (물빛 구슬 줄)
+			for i = -3, 3 do
+				for k = 0, 3 do
+					local drop = P(f, "RisingDrop", Vector3.new(0.5, 0.5, 0.5), b * CFrame.new(i * 2.6, 3 + k * 2.1, -9.6), Color3.fromRGB(170, 235, 250), Enum.Material.Glass, false)
+					drop.Shape = Enum.PartType.Ball
+					drop.Transparency = 0.3
+				end
+			end
+		end },
+	jilpung = { wall = Color3.fromRGB(235, 225, 200), wallMat = Enum.Material.Plaster, roof = Color3.fromRGB(200, 120, 60), post = Color3.fromRGB(120, 85, 55), glow = Color3.fromRGB(255, 220, 160), w = 16, d = 14, h = 9, dist = 34,
+		extra = function(b, f)
+			-- 처마의 풍경과 지붕 위 바람개비 깃
+			for i = -1, 1, 2 do
+				P(f, "WindBell", Vector3.new(0.8, 1.2, 0.8), b * CFrame.new(i * 9.4, 8, -8.6), Color3.fromRGB(200, 170, 90), Enum.Material.Metal, false)
+			end
+			P(f, "RoofPole", Vector3.new(0.4, 8, 0.4), b * CFrame.new(0, 17, 0), Color3.fromRGB(120, 85, 55), Enum.Material.Wood)
+			P(f, "RoofFlag", Vector3.new(0.1, 2, 5), b * CFrame.new(0, 19.8, -2.6), Color3.fromRGB(255, 170, 90), Enum.Material.Fabric, false)
+		end },
+	sanak = { wall = Color3.fromRGB(135, 110, 95), wallMat = Enum.Material.Slate, roof = Color3.fromRGB(95, 70, 60), post = Color3.fromRGB(80, 60, 48), glow = Color3.fromRGB(255, 180, 110), w = 20, d = 16, h = 9, dist = 46 },
+	-- 숨은 사부들: 집도 숨는다
+	geukilwol = { wall = Color3.fromRGB(245, 235, 225), wallMat = Enum.Material.Marble, roof = Color3.fromRGB(150, 110, 170), post = Color3.fromRGB(200, 160, 90), glow = Color3.fromRGB(255, 180, 120), w = 18, d = 14, h = 10, dist = 32, hidden = true, screen = "crystal",
+		extra = function(b, f)
+			-- 지붕 위 해 (금) 와 달 (은)
+			for i, c in ipairs({ Color3.fromRGB(255, 200, 90), Color3.fromRGB(215, 225, 255) }) do
+				local orb = P(f, "DuskOrb", Vector3.new(2.6, 2.6, 2.6), b * CFrame.new(i == 1 and -5 or 5, 19, 0), c, Enum.Material.Neon, false)
+				orb.Shape = Enum.PartType.Ball
+				light(orb, c, 18, 1)
+			end
+		end },
+	binghon = { wall = Color3.fromRGB(210, 230, 245), wallMat = Enum.Material.Glacier, roof = Color3.fromRGB(240, 248, 255), post = Color3.fromRGB(150, 175, 200), glow = Color3.fromRGB(170, 220, 255), w = 16, d = 14, h = 9, dist = 46, hidden = true, screen = "ice" },
+	cheonok = { wall = Color3.fromRGB(150, 200, 170), wallMat = Enum.Material.Marble, roof = Color3.fromRGB(70, 120, 95), post = Color3.fromRGB(90, 70, 55), glow = Color3.fromRGB(170, 255, 200), w = 16, d = 14, h = 9, dist = 44, hidden = true, screen = "rock" },
+	cheonjong = { wall = Color3.fromRGB(225, 210, 185), wallMat = Enum.Material.Plaster, roof = Color3.fromRGB(150, 60, 40), post = Color3.fromRGB(100, 60, 40), glow = Color3.fromRGB(255, 190, 120), w = 16, d = 14, h = 9, dist = 44, hidden = true, screen = "maple" },
+	myeonggyeong = { wall = Color3.fromRGB(230, 232, 228), wallMat = Enum.Material.Plaster, roof = Color3.fromRGB(90, 110, 100), post = Color3.fromRGB(110, 85, 60), glow = Color3.fromRGB(220, 240, 255), w = 18, d = 14, h = 9, dist = 42, hidden = true, screen = "bamboo",
+		extra = function(b, f)
+			local m = P(f, "HomeMirror", Vector3.new(3, 4, 0.2), b * CFrame.new(-3.5, 5, 6.3), Color3.fromRGB(230, 240, 250), Enum.Material.Glass, false)
+			m.Reflectance = 0.8
+		end },
+	chocheonryong = { wall = Color3.fromRGB(200, 190, 170), wallMat = Enum.Material.Plaster, roof = Color3.fromRGB(170, 130, 50), post = Color3.fromRGB(90, 60, 40), glow = Color3.fromRGB(255, 210, 120), w = 16, d = 14, h = 9, dist = 44, hidden = true, screen = "rock" },
+	cheonha = { wall = Color3.fromRGB(120, 40, 40), wallMat = Enum.Material.Fabric, roof = Color3.fromRGB(70, 25, 25), post = Color3.fromRGB(200, 160, 70), glow = Color3.fromRGB(255, 170, 90), w = 20, d = 16, h = 10, dist = 48, hidden = true, screen = "rock" },
+	sashin = { wall = Color3.fromRGB(60, 58, 66), wallMat = Enum.Material.Basalt, roof = Color3.fromRGB(35, 34, 40), post = Color3.fromRGB(150, 120, 60), glow = Color3.fromRGB(190, 140, 255), w = 18, d = 16, h = 10, dist = 56, hidden = true, screen = "rock" },
+}
+local function masterHomes()
+	for id, o in pairs(HOMES) do
+		local m = Config.MASTERS[id]
+		if m then
+			local f = Instance.new("Folder")
+			f.Name = "MasterHome_" .. id
+			f.Parent = folder
+			local g = Vector3.new(m.at.X, m.at.Y - 1.6, m.at.Z)
+			local flat = Vector3.new(g.X, 0, g.Z)
+			local back = flat.Magnitude > 1 and flat.Unit or Vector3.new(0, 0, 1)
+			-- 하늘섬의 사부는 섬 가운데에서 바깥쪽이 등 뒤
+			if id == "geukilwol" then
+				local v = Vector3.new(g.X + 640, 0, g.Z - 280) -- 윤회대 섬 가운데 (-640, 280)
+				back = v.Unit
+			end
+			local ok, err = pcall(dwelling, g, back, f, o)
+			if not ok then
+				warn("[권왕] 사부 집 오류:", id, err)
+			end
+		end
+	end
+end
+
 local function artSites()
 	for id, build in pairs(ART_SITES) do
 		local m = Config.MASTERS[id]
@@ -41046,6 +41230,7 @@ local function artSites()
 			end
 		end
 	end
+	masterHomes()
 end
 
 -- 3.18판: 맵 가볍게 (생김새는 그대로). 부품이 5만 개가 넘어 휴대폰·낮은 PC에서 끊긴다
