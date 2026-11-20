@@ -7115,7 +7115,18 @@ local function hellWorld(out: any)
 	end
 
 	------------------------------------------------ 바닥과 구역 바닥
-	disc("HellGround", center - Vector3.new(0, 20, 0), R, 40, rgb(46, 40, 48), Enum.Material.Basalt, f)
+	-- 3.99.59판: 바닥을 원판 하나 (반지름 R = 1560, 지름 3120) 로 깔았는데 부품 한 변은 2048을 넘을 수 없어 실제로는 반지름 약 1024에서 잘렸다.
+	--   그 바깥 (무간 · 독사 · 발설 · 혈 · 한빙 · 철환지옥과 염라전 뒤쪽) 은 바닥이 없어 떨어졌다. 2×2 네 장의 네모 판으로 R 전체를 덮는다
+	do
+		local half = R + 20
+		for ix = 0, 1 do
+			for iz = 0, 1 do
+				local cx = (ix - 0.5) * half
+				local cz2 = (iz - 0.5) * half
+				part({ Name = "HellGround", Size = Vector3.new(half, 40, half), Position = center + Vector3.new(cx, -20, cz2), Color = rgb(46, 40, 48), Material = Enum.Material.Basalt, Parent = f })
+			end
+		end
+	end
 	for _, z in ipairs(H.zones) do
 		disc("HellZone_" .. z.id, z.at + Vector3.new(0, 0.12, 0), z.radius, 0.3, z.ground, z.material, f, false)
 		-- 구역 테두리: 낮은 돌 띠 (이름 없는 곳과 가른다)
@@ -7167,7 +7178,15 @@ local function hellWorld(out: any)
 		end
 	end
 	-- 천장: 가운데로 갈수록 낮은 세 겹 (하늘이 보이지 않는다)
-	disc("HellCeiling1", center + Vector3.new(0, CEIL + 20, 0), R + 80, 50, rgb(28, 22, 30), Enum.Material.Basalt, f)
+	-- 3.99.59판: 맨 위 천장도 같은 까닭으로 반지름 약 1024에서 잘려 바깥 땅 위가 뚫려 있었다. 네모 판 넷으로
+	do
+		local half = R + 80
+		for ix = 0, 1 do
+			for iz = 0, 1 do
+				part({ Name = "HellCeiling1", Size = Vector3.new(half, 50, half), Position = center + Vector3.new((ix - 0.5) * half, CEIL + 20, (iz - 0.5) * half), Color = rgb(28, 22, 30), Material = Enum.Material.Basalt, Parent = f })
+			end
+		end
+	end
 	disc("HellCeiling2", center + Vector3.new(0, CEIL - 16, 0), R * 0.78, 28, rgb(34, 26, 34), Enum.Material.Basalt, f)
 	disc("HellCeiling3", center + Vector3.new(0, CEIL - 40, 0), R * 0.42, 22, rgb(42, 28, 32), Enum.Material.Basalt, f)
 	-- 천장의 붉은 균열 (용암이 스며 나온다)
