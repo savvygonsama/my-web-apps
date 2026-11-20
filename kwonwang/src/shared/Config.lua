@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.59" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.60" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -5023,20 +5023,20 @@ do
 		},
 		["태허경"] = {
 			{ title = "하늘 문 너머", text = "하늘의 끝에는 문이 있다. 신선호의 신선왕과 비상문의 비상왕을 넘으면 하늘에서 더 오를 곳은 없다.", goal = { kind = "bosses", ids = { "sinsunwang", "bisangwang" }, n = 2 }, reward = rw(19, 3) },
-			{ title = "황천 나루", text = "하늘 끝까지 가 봤다면 이번엔 땅 아래다. 세상 동남쪽 맨 끝, 희미한 풀이 밟히는 곳에서 사신에게 삯을 치르고 원혼을 달래면 지옥이 열린다. 삼도천의 탈의파와 화탕지옥의 화탕대왕을 꺾어라.", goal = { kind = "bosses", ids = { "talui", "hwatang" }, n = 2 }, reward = rw(19, 4) },
+			{ title = "황천 나루", text = "하늘 끝까지 가 봤다면 이번엔 땅 아래다. 세상 동남쪽 맨 끝, 희미한 풀이 밟히는 곳에서 사신에게 삯을 치르고 원혼을 달래면 지옥이 열린다. 삼도천의 삼도귀모와 화탕지옥의 업화염왕을 꺾어라.", goal = { kind = "bosses", ids = { "talui", "hwatang" }, n = 2 }, reward = rw(19, 4) },
 		},
 		["권왕"] = {
-			{ title = "칼의 산 · 굶주린 길", text = "왕의 자리는 지옥에서도 시험받는다. 도산지옥의 도산군주와 아귀도의 아귀왕을 꺾어라.", goal = { kind = "bosses", ids = { "dosan", "agwiwang" }, n = 2 }, reward = rw(20, 4) },
+			{ title = "칼의 산 · 굶주린 길", text = "왕의 자리는 지옥에서도 시험받는다. 도산지옥의 만검산주와 아귀도의 기갈마왕을 꺾어라.", goal = { kind = "bosses", ids = { "dosan", "agwiwang" }, n = 2 }, reward = rw(20, 4) },
 			{ title = "다섯 번째 삶", text = "권왕에 오른 몸으로 다시 환생하라. 다섯 번째 삶에는 권왕 위의 경지, 대라경이 열린다.", goal = { kind = "rebirth", n = 5 }, reward = rw(20, 3) },
 			{ title = "대라경", text = "다음 경지, 대라경에 올라라.", goal = { kind = "realm", n = 21 }, reward = rw(21, 3) },
 			{ title = "업경대 앞에서", text = "지옥의 한가운데 염라전. 업경대에 비친 네 지난 삶을 마주하고 염라대왕을 꺾어라.", goal = { kind = "bosses", ids = { "yeomra" }, n = 1 }, reward = rw(21, 4) },
 			{ title = "극에 닿다", text = "권법에도 끝이 있다. 해와 달 사이의 극 일월신권, 비어 있는 좌표의 극 공백권, 빛보다 먼저 닿는 극 광속권. 숨은 사부를 찾아 극 권법 하나를 익혀라.", goal = { kind = "geuk", n = 1 }, reward = rw(21, 4) },
 			{ title = "여섯 번째 삶", text = "마지막 환생이다. 여섯 번째 삶에 허무경이 열린다.", goal = { kind = "rebirth", n = 6 }, reward = rw(21, 3) },
 			{ title = "허무경", text = "모든 것이 비어 다시 차는 경지, 허무경에 올라라. 그 너머는 일곱째 · 여덟째 삶에 열린다.", goal = { kind = "realm", n = 22 }, reward = rw(22, 3) },
-			{ title = "지옥의 깊은 곳", text = "지옥은 아래로 갈수록 깊다. 독사지옥의 독사대왕, 발설지옥의 발설대왕, 끝없이 떨어지는 무간의 군주를 꺾어라.", goal = { kind = "bosses", ids = { "dokssawang", "balseolwang", "mugunwang" }, n = 3 }, reward = rw(22, 4) },
+			{ title = "지옥의 깊은 곳", text = "지옥은 아래로 갈수록 깊다. 독사지옥의 만사독왕, 발설지옥의 단설귀왕, 끝없이 떨어지는 무간의 군주를 꺾어라.", goal = { kind = "bosses", ids = { "dokssawang", "balseolwang", "mugunwang" }, n = 3 }, reward = rw(22, 4) },
 			{ title = "세 개의 극", text = "극 권법 셋을 모두 익혀라. 셋을 다 가진 자에게만 다음 소문이 들린다.", goal = { kind = "geuk", n = 3 }, reward = rw(22, 4) },
 			{ title = "신의 동굴", text = "세상 북서쪽 맨 끝, 지옥 입구의 정반대 자리에 사람 모양의 돌이 서 있다. 다섯 번 환생한 몸으로 은자 999만을 바치면 땅 밑 동굴이 열린다. 세 대좌에 극 권법의 기운을 차례로 보내 신 삼재권을 얻어라.", goal = { kind = "learn", id = "sinsamjae" }, reward = rw(22, 5) },
-			{ title = "지옥의 끝", text = "지옥의 가장 아래, 피의 못, 얼음 감옥, 쇠사슬 골짜기. 혈지대왕 · 한빙대왕 · 철환대왕을 꺾으면 지옥의 큰 싸움은 끝난다.", goal = { kind = "bosses", ids = { "hyeolwang", "hanbingwang", "cheolhwanwang" }, n = 3 }, reward = rw(22, 6) },
+			{ title = "지옥의 끝", text = "지옥의 가장 아래, 피의 못, 얼음 감옥, 쇠사슬 골짜기. 혈해마왕 · 빙옥한왕 · 철쇄옥왕을 꺾으면 지옥의 큰 싸움은 끝난다.", goal = { kind = "bosses", ids = { "hyeolwang", "hanbingwang", "cheolhwanwang" }, n = 3 }, reward = rw(22, 6) },
 		},
 	}
 	local i = 1
@@ -5083,10 +5083,10 @@ Config.CUTSCENES = {
 	boss_jukwang = { who = "죽왕", lines = { "대나무는 꺾이지 않는다. 휘었다가 너를 친다." } },
 	boss_wolyeong = { who = "월영", lines = { "호수에 비친 달을 베어 본 적이 있느냐." } },
 	boss_geumgang = { who = "금강천왕", lines = { "이 절의 문을 지킨 지 오래다. 주먹이 버틸지 보자." } },
-	boss_talui = { who = "탈의파", lines = { "삼도천을 건너려면 이승의 것을 모두 내려놓아라. 네 죄의 무게는 이 나무가 잰다." } },
-	boss_hwatang = { who = "화탕대왕", lines = { "이 솥은 한 번도 식은 적이 없다. 이번엔 네 차례다." } },
-	boss_dosan = { who = "도산군주", lines = { "이 산의 칼날은 모두 죄인의 것이었다. 네 것도 하나 더하마." } },
-	boss_agwiwang = { who = "아귀왕", lines = { "배가 고프다. 얼마나 먹어도 늘 고프다. 너는 좀 오래 씹어야겠군." } },
+	boss_talui = { who = "삼도귀모", lines = { "삼도천을 건너려면 이승의 것을 모두 내려놓아라. 네 죄의 무게는 이 나무가 잰다." } },
+	boss_hwatang = { who = "업화염왕", lines = { "이 솥은 한 번도 식은 적이 없다. 이번엔 네 차례다." } },
+	boss_dosan = { who = "만검산주", lines = { "이 산의 칼날은 모두 죄인의 것이었다. 네 것도 하나 더하마." } },
+	boss_agwiwang = { who = "기갈마왕", lines = { "배가 고프다. 얼마나 먹어도 늘 고프다. 너는 좀 오래 씹어야겠군." } },
 	boss_yeomra = { who = "염라대왕", lines = { "산 사람이 여기까지 온 건 오랜만이다. 업경대가 너를 어떻게 비추는지 보자." } },
 	boss_cheongeop = { who = "천겁", lines = { "천겁이다. 혼자서는 버티기 어렵다. 동료를 모아서 와라." } },
 }
@@ -5613,7 +5613,7 @@ do
 	E2.jeoseungmusa = variant(E2.shadowblade, { name = "저승 무사", shirt = Color3.fromRGB(30, 28, 40), pants = Color3.fromRGB(14, 12, 20), hp = 780, mult = 64, elite = true })
 	local B2 = Config.Bosses
 	local base = B2.cheonmun
-	B2.talui = variant(base, { name = "탈의파 · 삼도천의 주인", shirt = Color3.fromRGB(176, 186, 200), pants = Color3.fromRGB(60, 70, 96), hp = 1600000, posture = 2500, scale = 3.4, speed = 16, coins = 700000, xp = 66000, respawn = 300, mult = 4.9,
+	B2.talui = variant(base, { name = "삼도귀모 · 삼도천의 주인", shirt = Color3.fromRGB(176, 186, 200), pants = Color3.fromRGB(60, 70, 96), hp = 1600000, posture = 2500, scale = 3.4, speed = 16, coins = 700000, xp = 66000, respawn = 300, mult = 4.9,
 		patterns = {
 			P("rain", "원혼비", 1, { count = 12, radius = 9, spread = 34, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(150, 200, 255), hit = hit(0, 0, 0, 40, 70, 1.0, 25) }),
 			P("donut", "삼도천 물결", 1, { inner = 10, outer = 36, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 44, 78, 1.1, 50) }),
@@ -5621,7 +5621,7 @@ do
 			P("charge", "옷깃 휘감기", 2, { length = 64, width = 12, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 42, 72, 1.0, 60) }),
 			P("quake", "물귀신", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 72, 150, 1.6, 80, 30) }),
 		} })
-	B2.hwatang = variant(base, { name = "화탕대왕 · 화탕지옥의 주인", shirt = Color3.fromRGB(230, 80, 30), pants = Color3.fromRGB(90, 20, 10), hp = 1900000, posture = 2800, scale = 3.8, speed = 16, coins = 800000, xp = 74000, respawn = 300, mult = 5.4,
+	B2.hwatang = variant(base, { name = "업화염왕 · 화탕지옥의 주인", shirt = Color3.fromRGB(230, 80, 30), pants = Color3.fromRGB(90, 20, 10), hp = 1900000, posture = 2800, scale = 3.8, speed = 16, coins = 800000, xp = 74000, respawn = 300, mult = 5.4,
 		patterns = {
 			P("rain", "끓는 쇳물", 1, { count = 13, radius = 9, spread = 36, warn = 1.0, cd = 7, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(255, 130, 40), hit = hit(0, 0, 0, 44, 78, 1.0, 25) }),
 			P("leap", "솥 뒤엎기", 1, { radius = 20, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 50, 92, 1.3, 50, 20) }),
@@ -5630,7 +5630,7 @@ do
 			P("charge", "불가마 돌진", 3, { length = 66, width = 12, warn = 0.85, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 46, 80, 1.0, 60) }),
 			P("quake", "화탕 폭발", 3, { radius = 34, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 80, 164, 1.6, 80, 30) }),
 		} })
-	B2.dosan = variant(base, { name = "도산군주 · 도산지옥의 주인", shirt = Color3.fromRGB(150, 160, 178), pants = Color3.fromRGB(46, 50, 64), hp = 2200000, posture = 3000, scale = 3.8, speed = 17, coins = 900000, xp = 82000, respawn = 300, mult = 5.9,
+	B2.dosan = variant(base, { name = "만검산주 · 도산지옥의 주인", shirt = Color3.fromRGB(150, 160, 178), pants = Color3.fromRGB(46, 50, 64), hp = 2200000, posture = 3000, scale = 3.8, speed = 17, coins = 900000, xp = 82000, respawn = 300, mult = 5.9,
 		patterns = {
 			P("rain", "검우", 1, { count = 14, radius = 8, spread = 38, warn = 0.9, cd = 6, pose = "w_overhead", fx = "star", color = Color3.fromRGB(210, 220, 240), hit = hit(0, 0, 0, 48, 86, 1.0, 25) }),
 			P("charge", "검산 질주", 1, { length = 68, width = 12, warn = 0.85, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 50, 88, 1.0, 60) }),
@@ -5639,7 +5639,7 @@ do
 			P("leap", "검산 낙하", 3, { radius = 22, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 58, 108, 1.4, 60, 24) }),
 			P("quake", "검수림", 3, { radius = 36, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 88, 180, 1.6, 80, 30) }),
 		} })
-	B2.agwiwang = variant(base, { name = "아귀왕 · 아귀도의 주인", shirt = Color3.fromRGB(120, 140, 100), pants = Color3.fromRGB(50, 60, 44), hp = 2500000, posture = 3300, scale = 4.4, speed = 15, coins = 1000000, xp = 92000, respawn = 300, mult = 6.4,
+	B2.agwiwang = variant(base, { name = "기갈마왕 · 아귀도의 주인", shirt = Color3.fromRGB(120, 140, 100), pants = Color3.fromRGB(50, 60, 44), hp = 2500000, posture = 3300, scale = 4.4, speed = 15, coins = 1000000, xp = 92000, respawn = 300, mult = 6.4,
 		patterns = {
 			P("quake", "탐욕의 입", 1, { radius = 26, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 56, 104, 1.4, 60, 20) }),
 			P("rain", "썩은 비", 1, { count = 14, radius = 9, spread = 40, warn = 1.0, cd = 7, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(150, 200, 90), hit = hit(0, 0, 0, 52, 94, 1.0, 25) }),
@@ -5664,7 +5664,7 @@ do
 	E2.jipgeseolkkun = variant(E2.ironguard, { name = "집게 옥졸", shirt = Color3.fromRGB(70, 60, 64), pants = Color3.fromRGB(30, 26, 30), hp = 980, mult = 76, elite = true, scale = 1.4 })
 	E2.mugansu = variant(E2.ironguard, { name = "무간 수문장", shirt = Color3.fromRGB(26, 22, 34), pants = Color3.fromRGB(10, 8, 16), hp = 1100, mult = 84, elite = true, scale = 1.5 })
 	E2.muganbul = variant(E2.assassin, { name = "무간 불꽃귀", shirt = Color3.fromRGB(80, 40, 120), pants = Color3.fromRGB(24, 12, 40), hp = 900, mult = 84, elite = true })
-	B2.dokssawang = variant(base, { name = "독사대왕 · 독사지옥의 주인", shirt = Color3.fromRGB(70, 140, 70), pants = Color3.fromRGB(28, 56, 34), hp = 2900000, posture = 3500, scale = 4.0, speed = 17, coins = 1200000, xp = 110000, respawn = 300, mult = 7.6,
+	B2.dokssawang = variant(base, { name = "만사독왕 · 독사지옥의 주인", shirt = Color3.fromRGB(70, 140, 70), pants = Color3.fromRGB(28, 56, 34), hp = 2900000, posture = 3500, scale = 4.0, speed = 17, coins = 1200000, xp = 110000, respawn = 300, mult = 7.6,
 		patterns = {
 			P("rain", "독액비", 1, { count = 15, radius = 9, spread = 42, warn = 0.9, cd = 6, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(120, 255, 100), hit = hit(0, 0, 0, 60, 104, 1.0, 25) }),
 			P("charge", "독사 돌진", 1, { length = 70, width = 12, warn = 0.8, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 58, 100, 1.0, 60) }),
@@ -5673,7 +5673,7 @@ do
 			P("leap", "독사 낙하", 3, { radius = 24, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 70, 124, 1.4, 60, 24) }),
 			P("quake", "만독 폭발", 3, { radius = 40, warn = 1.6, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 104, 214, 1.6, 80, 30) }),
 		} })
-	B2.balseolwang = variant(base, { name = "발설대왕 · 발설지옥의 주인", shirt = Color3.fromRGB(180, 50, 66), pants = Color3.fromRGB(70, 18, 28), hp = 3300000, posture = 3800, scale = 4.2, speed = 16, coins = 1350000, xp = 124000, respawn = 300, mult = 8.0,
+	B2.balseolwang = variant(base, { name = "단설귀왕 · 발설지옥의 주인", shirt = Color3.fromRGB(180, 50, 66), pants = Color3.fromRGB(70, 18, 28), hp = 3300000, posture = 3800, scale = 4.2, speed = 16, coins = 1350000, xp = 124000, respawn = 300, mult = 8.0,
 		patterns = {
 			P("rain", "핏빛 혀", 1, { count = 15, radius = 9, spread = 44, warn = 0.9, cd = 6, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(255, 60, 80), hit = hit(0, 0, 0, 64, 112, 1.0, 25) }),
 			P("donut", "혀 휘감기", 1, { inner = 12, outer = 44, warn = 1.1, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 68, 120, 1.1, 50) }),
@@ -5851,9 +5851,9 @@ do
 	E4.cheolgwi = variant(E4.assassin, { name = "철귀", shirt = Color3.fromRGB(86, 86, 96), pants = Color3.fromRGB(34, 34, 40), hp = 1440, mult = 108, elite = true })
 	E4.hwangsu = variant(E4.ironguard, { name = "쇠고리 옥졸", shirt = Color3.fromRGB(70, 70, 80), pants = Color3.fromRGB(26, 26, 32), hp = 1620, mult = 108, elite = true, scale = 1.6 })
 	local hb = B4.mugunwang
-	B4.hyeolwang = variant(hb, { name = "혈지대왕 · 피의 못의 주인", shirt = Color3.fromRGB(160, 24, 34), pants = Color3.fromRGB(64, 10, 16), hp = 4800000, posture = 5000, scale = 4.4, speed = 17, coins = 2300000, xp = 190000, respawn = 600, mult = 9.4, patterns = pats("피의", Color3.fromRGB(255, 50, 60), "fire", "hyeolgwi", 1.1) })
-	B4.hanbingwang = variant(hb, { name = "한빙대왕 · 얼어붙은 비명", shirt = Color3.fromRGB(160, 205, 240), pants = Color3.fromRGB(70, 104, 150), hp = 5500000, posture = 5400, scale = 4.6, speed = 16, coins = 2700000, xp = 215000, respawn = 600, mult = 10, patterns = pats("얼음", Color3.fromRGB(160, 225, 255), "star", "binggwi", 1.2) })
-	B4.cheolhwanwang = variant(hb, { name = "철환대왕 · 끝없는 사슬", shirt = Color3.fromRGB(90, 90, 100), pants = Color3.fromRGB(30, 30, 38), hp = 6300000, posture = 5900, scale = 4.8, speed = 17, coins = 3200000, xp = 250000, respawn = 600, mult = 10.8, patterns = pats("쇠사슬", Color3.fromRGB(200, 200, 215), "star", "cheolgwi", 1.3) })
+	B4.hyeolwang = variant(hb, { name = "혈해마왕 · 피의 못의 주인", shirt = Color3.fromRGB(160, 24, 34), pants = Color3.fromRGB(64, 10, 16), hp = 4800000, posture = 5000, scale = 4.4, speed = 17, coins = 2300000, xp = 190000, respawn = 600, mult = 9.4, patterns = pats("피의", Color3.fromRGB(255, 50, 60), "fire", "hyeolgwi", 1.1) })
+	B4.hanbingwang = variant(hb, { name = "빙옥한왕 · 얼어붙은 비명", shirt = Color3.fromRGB(160, 205, 240), pants = Color3.fromRGB(70, 104, 150), hp = 5500000, posture = 5400, scale = 4.6, speed = 16, coins = 2700000, xp = 215000, respawn = 600, mult = 10, patterns = pats("얼음", Color3.fromRGB(160, 225, 255), "star", "binggwi", 1.2) })
+	B4.cheolhwanwang = variant(hb, { name = "철쇄옥왕 · 끝없는 사슬", shirt = Color3.fromRGB(90, 90, 100), pants = Color3.fromRGB(30, 30, 38), hp = 6300000, posture = 5900, scale = 4.8, speed = 17, coins = 3200000, xp = 250000, respawn = 600, mult = 10.8, patterns = pats("쇠사슬", Color3.fromRGB(200, 200, 215), "star", "cheolgwi", 1.3) })
 	for _, id in ipairs({ "hyeolwang", "hanbingwang", "cheolhwanwang" }) do
 		B4[id].late = true
 	end
@@ -6083,23 +6083,23 @@ Config.ACHIEVEMENTS = {
 	{ id = "gyunwang", icon = "🍄", name = "버섯 숲의 끝", desc = "균왕을 쓰러뜨린다", kind = "boss", arg = "gyunwang", n = 1, coins = 60000, tier = 2 },
 	{ id = "noeje", icon = "⚡", name = "벼락을 꺾다", desc = "뇌제를 쓰러뜨린다", kind = "boss", arg = "noeje", n = 1, gems = 400, title = "벼락을 꺾은 자", tier = 3 },
 	{ id = "yeombong", icon = "🔥", name = "불새를 떨구다", desc = "염봉을 쓰러뜨린다", kind = "boss", arg = "yeombong", n = 1, gems = 400, title = "불새를 떨군 자", tier = 3 },
-	{ id = "talui", icon = "🌊", name = "삼도천을 건너다", desc = "탈의파를 쓰러뜨린다", kind = "boss", arg = "talui", n = 1, gems = 600, title = "삼도천을 건넌 자", tier = 4 },
-	{ id = "hwatang", icon = "🍲", name = "화탕을 식히다", desc = "화탕대왕을 쓰러뜨린다", kind = "boss", arg = "hwatang", n = 1, gems = 700, title = "화탕을 식힌 자", tier = 4 },
-	{ id = "dosan", icon = "🗡", name = "검산을 넘다", desc = "도산군주를 쓰러뜨린다", kind = "boss", arg = "dosan", n = 1, gems = 800, title = "검산을 넘은 자", tier = 4 },
-	{ id = "agwiwang", icon = "👺", name = "허기를 채우다", desc = "아귀왕을 쓰러뜨린다", kind = "boss", arg = "agwiwang", n = 1, gems = 900, title = "아귀를 잠재운 자", tier = 4 },
+	{ id = "talui", icon = "🌊", name = "삼도천을 건너다", desc = "삼도귀모를 쓰러뜨린다", kind = "boss", arg = "talui", n = 1, gems = 600, title = "삼도천을 건넌 자", tier = 4 },
+	{ id = "hwatang", icon = "🍲", name = "화탕을 식히다", desc = "업화염왕을 쓰러뜨린다", kind = "boss", arg = "hwatang", n = 1, gems = 700, title = "화탕을 식힌 자", tier = 4 },
+	{ id = "dosan", icon = "🗡", name = "검산을 넘다", desc = "만검산주를 쓰러뜨린다", kind = "boss", arg = "dosan", n = 1, gems = 800, title = "검산을 넘은 자", tier = 4 },
+	{ id = "agwiwang", icon = "👺", name = "허기를 채우다", desc = "기갈마왕을 쓰러뜨린다", kind = "boss", arg = "agwiwang", n = 1, gems = 900, title = "아귀를 잠재운 자", tier = 4 },
 	{ id = "yeomra", icon = "⚖", name = "심판을 뒤집다", desc = "염라대왕을 쓰러뜨린다", kind = "boss", arg = "yeomra", n = 1, gems = 2000, scrolls = 30, title = "심판을 뒤집은 자", tier = 5 },
 	{ id = "biryong", icon = "🐲", name = "비룡을 꺾다", desc = "비룡을 쓰러뜨린다", kind = "boss", arg = "biryong", n = 1, gems = 1200, scrolls = 10, title = "비룡을 꺾은 자", tier = 4 },
 	{ id = "yuriwang", icon = "💠", name = "유리를 깨다", desc = "유리 군주를 쓰러뜨린다", kind = "boss", arg = "yuriwang", n = 1, gems = 1200, scrolls = 10, title = "유리를 깬 자", tier = 4 },
 	{ id = "cheonroeok", icon = "⛓", name = "감옥을 열다", desc = "천뢰를 쓰러뜨린다", kind = "boss", arg = "cheonroeok", n = 1, gems = 1200, scrolls = 10, title = "하늘 감옥을 연 자", tier = 4 },
-	{ id = "dokssawang", icon = "🐍", name = "독을 삼키다", desc = "독사대왕을 쓰러뜨린다", kind = "boss", arg = "dokssawang", n = 1, gems = 1200, scrolls = 10, title = "독을 삼킨 자", tier = 4 },
-	{ id = "balseolwang", icon = "👅", name = "혀를 지키다", desc = "발설대왕을 쓰러뜨린다", kind = "boss", arg = "balseolwang", n = 1, gems = 1200, scrolls = 10, title = "혀를 지킨 자", tier = 4 },
+	{ id = "dokssawang", icon = "🐍", name = "독을 삼키다", desc = "만사독왕을 쓰러뜨린다", kind = "boss", arg = "dokssawang", n = 1, gems = 1200, scrolls = 10, title = "독을 삼킨 자", tier = 4 },
+	{ id = "balseolwang", icon = "👅", name = "혀를 지키다", desc = "단설귀왕을 쓰러뜨린다", kind = "boss", arg = "balseolwang", n = 1, gems = 1200, scrolls = 10, title = "혀를 지킨 자", tier = 4 },
 	{ id = "mugunwang", icon = "🕳", name = "끝없는 낙하의 끝", desc = "무간의 군주를 쓰러뜨린다", kind = "boss", arg = "mugunwang", n = 1, gems = 1200, scrolls = 10, title = "무간을 넘은 자", tier = 4 },
 	{ id = "bukmyeongje", icon = "🧊", name = "북명을 얼리다", desc = "북명제를 쓰러뜨린다", kind = "boss", arg = "bukmyeongje", n = 1, gems = 1500, scrolls = 12, title = "북명을 꺾은 자", tier = 4 },
 	{ id = "seoyeoksawang", icon = "🏜", name = "사구를 건너다", desc = "서역사왕을 쓰러뜨린다", kind = "boss", arg = "seoyeoksawang", n = 1, gems = 1500, scrolls = 12, title = "서역을 평정한 자", tier = 4 },
 	{ id = "dongguckgun", icon = "🌋", name = "불길의 끝에 서다", desc = "동극군을 쓰러뜨린다", kind = "boss", arg = "dongguckgun", n = 1, gems = 1500, scrolls = 12, title = "동극의 불을 끈 자", tier = 4 },
-	{ id = "hyeolwang", icon = "🩸", name = "피의 못을 말리다", desc = "혈지대왕을 쓰러뜨린다", kind = "boss", arg = "hyeolwang", n = 1, gems = 1500, scrolls = 12, title = "혈지옥을 넘은 자", tier = 4 },
-	{ id = "hanbingwang", icon = "❄", name = "비명을 녹이다", desc = "한빙대왕을 쓰러뜨린다", kind = "boss", arg = "hanbingwang", n = 1, gems = 1500, scrolls = 12, title = "한빙을 녹인 자", tier = 4 },
-	{ id = "cheolhwanwang", icon = "⛓", name = "사슬을 끊다", desc = "철환대왕을 쓰러뜨린다", kind = "boss", arg = "cheolhwanwang", n = 1, gems = 1500, scrolls = 12, title = "철환을 끊은 자", tier = 4 },
+	{ id = "hyeolwang", icon = "🩸", name = "피의 못을 말리다", desc = "혈해마왕을 쓰러뜨린다", kind = "boss", arg = "hyeolwang", n = 1, gems = 1500, scrolls = 12, title = "혈지옥을 넘은 자", tier = 4 },
+	{ id = "hanbingwang", icon = "❄", name = "비명을 녹이다", desc = "빙옥한왕을 쓰러뜨린다", kind = "boss", arg = "hanbingwang", n = 1, gems = 1500, scrolls = 12, title = "한빙을 녹인 자", tier = 4 },
+	{ id = "cheolhwanwang", icon = "⛓", name = "사슬을 끊다", desc = "철쇄옥왕을 쓰러뜨린다", kind = "boss", arg = "cheolhwanwang", n = 1, gems = 1500, scrolls = 12, title = "철환을 끊은 자", tier = 4 },
 	{ id = "unryongwang", icon = "🐉", name = "구름 위의 용을 꺾다", desc = "운룡왕을 쓰러뜨린다", kind = "boss", arg = "unryongwang", n = 1, gems = 1500, scrolls = 12, title = "운룡을 꺾은 자", tier = 4 },
 	{ id = "sinsunwang", icon = "🪷", name = "선계의 호수를 건너다", desc = "신선왕을 쓰러뜨린다", kind = "boss", arg = "sinsunwang", n = 1, gems = 1500, scrolls = 12, title = "선호를 건넌 자", tier = 4 },
 	{ id = "bisangwang", icon = "🚪", name = "하늘 문을 열다", desc = "비상왕을 쓰러뜨린다", kind = "boss", arg = "bisangwang", n = 1, gems = 1500, scrolls = 12, title = "하늘 문을 연 자", tier = 4 },
@@ -6847,7 +6847,7 @@ Config.MINIQUEST = {
 		{ kind = "visit", at = Vector3.new(-5750, 0, -1500), r = 40, night = true, text = "서쪽의 백호: 밤, 서쪽 끝 서역 사구에서 흰 범의 발자국을 찾아라", say = "모래 위에 사람 키만 한 범의 발자국이 찍혀 있다. 발자국은 달 쪽으로 사라졌다." },
 		{ kind = "boss", boss = "seoyeoksawang", n = 1, text = "백호의 발자국을 지키는 서역사왕을 꺾어라" },
 		{ kind = "boss", boss = "yeombong", n = 1, text = "남쪽의 주작: 천상 봉황대의 주인 염봉을 꺾어 주작의 깃을 얻어라" },
-		{ kind = "boss", boss = "hanbingwang", n = 1, text = "북쪽의 현무: 지옥 한빙지옥의 한빙대왕을 꺾어 현무의 등껍질 조각을 얻어라" },
+		{ kind = "boss", boss = "hanbingwang", n = 1, text = "북쪽의 현무: 지옥 한빙지옥의 빙옥한왕을 꺾어 현무의 등껍질 조각을 얻어라" },
 		{ kind = "visit", at = Vector3.new(4100, 0, -4100), r = 18, night = true, text = "밤, 사신대 한가운데에 서서 네 신수를 불러라", say = "네 석상의 눈이 차례로 빛난다. 푸른빛, 흰빛, 붉은빛, 검은빛." },
 		{ kind = "offer", coins = 10000000, text = "사신왕에게 은자 천만을 바쳐라" },
 	} },
@@ -6872,7 +6872,7 @@ Config.MINIQUEST = {
 	geukspeed = { title = "황천을 달리는 자", steps = {
 		{ kind = "kill", enemy = "jeoseungmusa", n = 40, text = "지옥의 저승 무사 마흔을 꺾어라" },
 		{ kind = "kill", enemy = "wongwi", n = 40, text = "원귀 마흔을 잠재워라" },
-		{ kind = "boss", boss = "talui", n = 1, text = "삼도천의 주인 탈의파를 꺾어라" },
+		{ kind = "boss", boss = "talui", n = 1, text = "삼도천의 주인 삼도귀모를 꺾어라" },
 		{ kind = "boss", boss = "yeomra", n = 1, text = "염라대왕을 꺾어라" },
 		{ kind = "boss", boss = "mugunwang", n = 1, text = "무간의 군주를 꺾어라. 끝없이 떨어지는 곳에서 가장 빠른 자가 산다" },
 		{ kind = "offer", coins = 5000000, text = "질주귀에게 은자 오백만을 바쳐라" },

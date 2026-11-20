@@ -1948,6 +1948,167 @@ SIG.cheonroeok = function(model, look, k, P)
 	local _ = P
 end
 
+-- 3.99.60판 지옥 보스 열하나의 새 표식. 예전 표식은 덩어리져 보여 뺐다 (3.31.5판). 이번엔 몸의 형체를 가리지 않게:
+--   가는 빛 장식 (관 · 등 뒤 고리 · 칼 고리 따위) 하나, 무기 하나, 몸에서 피어오르는 기운 (입자), 빛나는 눈
+local function hellAura(model: Model, k: number, c1: Color3, c2: Color3, tex: string?, up: number?, rate: number?)
+	local ut = partOf(model, "UpperTorso")
+	if not ut then
+		return
+	end
+	local e = Instance.new("ParticleEmitter")
+	e.Name = "HellAura"
+	e.Texture = tex or "rbxasset://textures/particles/smoke_main.dds"
+	e.Color = ColorSequence.new(c1, c2)
+	e.LightEmission = 0.6
+	e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.2, 0.55), NumberSequenceKeypoint.new(1, 1) })
+	e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6 * k), NumberSequenceKeypoint.new(1, 1.6 * k) })
+	e.Lifetime = NumberRange.new(1.2, 2)
+	e.Rate = rate or 14
+	e.Speed = NumberRange.new(0.5 * k, 1.5 * k)
+	e.Acceleration = Vector3.new(0, (up or 2) * k, 0)
+	e.SpreadAngle = Vector2.new(60, 60)
+	e.Shape = Enum.ParticleEmitterShape.Box
+	e.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+	e.Parent = ut
+end
+local function eyesGlow(model: Model, color: Color3, k: number)
+	local hs = sizeOf(model, "Head")
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "Head", "HellEye", Vector3.new(0.22, 0.09, 0.05) * k, CFrame.new(x * hs.X * 0.2, hs.Y * 0.08, -hs.Z * 0.5), color, M.Neon)
+	end
+	headGlow(model, color, 22)
+end
+-- 머리 위 가는 빛의 관 (가시 n 개)
+local function spikeCrown(model: Model, color: Color3, k: number, n: number, len: number)
+	local hs = sizeOf(model, "Head")
+	for q = 0, n - 1 do
+		local a = math.rad(-70 + q * 140 / math.max(1, n - 1))
+		wear(model, "Head", "HellCrown", Vector3.new(0.1 * k, (len * (q % 2 == 0 and 1 or 0.7)) * k, 0.1 * k), CFrame.new(math.sin(a) * hs.X * 0.42, hs.Y * 0.5 + len * 0.4 * k, math.cos(a) * -hs.Z * 0.2) * CFrame.Angles(0, 0, -math.sin(a) * 0.35), color, M.Neon)
+	end
+end
+-- 등 뒤의 떠 있는 칼 고리 (가는 칼날 n 자루가 둥글게)
+local function bladeRing(model: Model, color: Color3, k: number, n: number, r: number)
+	local ut = sizeOf(model, "UpperTorso")
+	local center = CFrame.new(0, ut.Y * 0.4 + 0.8 * k, ut.Z * 0.9)
+	for i = 0, n - 1 do
+		local a = i / n * math.pi * 2
+		wear(model, "UpperTorso", "RingBlade", Vector3.new(0.08 * k, 1.6 * k, 0.3 * k), center * CFrame.new(math.cos(a) * r * k, math.sin(a) * r * k, 0) * CFrame.Angles(0, 0, a), color, M.Neon)
+	end
+end
+local SPARK = "rbxasset://textures/particles/sparkles_main.dds"
+local FIRE = "rbxasset://textures/particles/fire_main.dds"
+local HELL_SIG: { [string]: (Model, number) -> () } = {}
+-- 삼도귀모: 백발, 창백한 귀화의 고리, 붉은 강의 노 (뱃사공)
+HELL_SIG.talui = function(model, k)
+	hairCurtain(model, C3(235, 238, 245), k, 9, 3)
+	halo(model, C3(150, 220, 255), k, 1.7, M.Neon)
+	wear(model, "RightHand", "CroneOar", Vector3.new(0.22, 0.22, 7) * k, CFrame.new(0, 0, -2.8 * k), C3(40, 34, 38), M.Wood)
+	wear(model, "RightHand", "CroneOarBlade", Vector3.new(0.12, 1.4, 1.8) * k, CFrame.new(0, 0, -6.4 * k), C3(150, 30, 40), M.Neon)
+	eyesGlow(model, C3(150, 220, 255), k)
+	hellAura(model, k, C3(200, 230, 255), C3(110, 150, 200), nil, 1.5, 10)
+end
+-- 업화염왕: 불꽃 관, 가슴의 용암 균열 둘, 불의 창
+HELL_SIG.hwatang = function(model, k)
+	spikeCrown(model, C3(255, 140, 40), k, 5, 1.4)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "UpperTorso", "MagmaVein", Vector3.new(0.08, 1.3, 0.05) * k, CFrame.new(x * 0.45 * k, 0, -0.55 * k) * CFrame.Angles(0, 0, x * math.rad(16)), C3(255, 120, 40), M.Neon)
+	end
+	wear(model, "RightHand", "FlameGlaive", Vector3.new(0.2, 0.2, 6.4) * k, CFrame.new(0, 0, -2.6 * k), C3(40, 30, 30), M.Metal)
+	wear(model, "RightHand", "FlameGlaiveHead", Vector3.new(0.12, 0.9, 2.2) * k, CFrame.new(0, 0.2 * k, -6.2 * k), C3(255, 130, 40), M.Neon)
+	eyesGlow(model, C3(255, 180, 60), k)
+	hellAura(model, k, C3(255, 160, 60), C3(200, 40, 20), FIRE, 4, 18)
+end
+-- 만검산주: 등 뒤에 떠 있는 칼 여덟의 고리, 대검
+HELL_SIG.dosan = function(model, k)
+	bladeRing(model, C3(210, 228, 255), k, 8, 2.2)
+	wear(model, "RightHand", "GreatSword", Vector3.new(0.25 * k, 0.8 * k, 6 * k), CFrame.new(0, 0, -3.2 * k), C3(206, 214, 230), M.Metal)
+	wear(model, "RightHand", "GreatSwordEdge", Vector3.new(0.06 * k, 0.2 * k, 5.6 * k), CFrame.new(0, 0.42 * k, -3.3 * k), C3(210, 230, 255), M.Neon)
+	eyesGlow(model, C3(200, 220, 255), k)
+	hellAura(model, k, C3(220, 235, 255), C3(140, 160, 200), SPARK, 1, 10)
+end
+-- 기갈마왕: 가는 뼈의 관, 굶주린 초록 눈, 사슬 달린 그릇
+HELL_SIG.agwiwang = function(model, k)
+	spikeCrown(model, C3(230, 220, 190), k, 7, 1.1)
+	wear(model, "RightHand", "BeggarBowlChain", Vector3.new(0.1, 0.1, 3) * k, CFrame.new(0, -0.3 * k, -1.4 * k), C3(80, 76, 70), M.Metal)
+	wear(model, "RightHand", "BeggarBowl", Vector3.new(1.6, 0.7, 1.6) * k, CFrame.new(0, -0.4 * k, -3 * k), C3(120, 200, 110), M.Neon, Ball)
+	eyesGlow(model, C3(170, 255, 120), k)
+	hellAura(model, k, C3(180, 255, 140), C3(70, 110, 60), nil, 1, 12)
+end
+-- 염라대왕: 판관관 날개, 붉은 판결의 고리, 홀
+HELL_SIG.yeomra = function(model, k)
+	local hs = sizeOf(model, "Head")
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "Head", "JudgeWing", Vector3.new(1.5, 0.1, 0.4) * k, CFrame.new(x * (hs.X * 0.5 + 0.75 * k), hs.Y * 0.42, 0) * CFrame.Angles(0, 0, x * math.rad(6)), C3(16, 10, 14), M.Fabric)
+		wear(model, "Head", "JudgeWingTrim", Vector3.new(1.5, 0.04, 0.44) * k, CFrame.new(x * (hs.X * 0.5 + 0.75 * k), hs.Y * 0.42 + 0.07 * k, 0) * CFrame.Angles(0, 0, x * math.rad(6)), C3(230, 50, 60), M.Neon)
+	end
+	halo(model, C3(230, 40, 50), k, 2.2, M.Neon)
+	wear(model, "RightHand", "JudgeTablet", Vector3.new(0.25 * k, 2.6 * k, 0.1 * k), CFrame.new(0, 0.3 * k, -0.5 * k), C3(235, 220, 180), M.Wood)
+	eyesGlow(model, C3(255, 70, 60), k)
+	hellAura(model, k, C3(255, 80, 70), C3(80, 10, 20), nil, 2, 16)
+end
+-- 만사독왕: 등 뒤로 휘어 오른 독사 여섯 (가는 빛 줄기), 독의 지팡이
+HELL_SIG.dokssawang = function(model, k)
+	local ut = sizeOf(model, "UpperTorso")
+	for q = 0, 5 do
+		local x = (q - 2.5) * 0.55 * k
+		for seg = 0, 3 do
+			wear(model, "UpperTorso", "SerpentArc", Vector3.new(0.12, 0.8, 0.12) * k, CFrame.new(x * (1 + seg * 0.15), ut.Y * 0.4 + seg * 0.65 * k, ut.Z * 0.6 + math.sin(seg * 0.9) * 0.4 * k) * CFrame.Angles(math.rad(-15 + seg * 12), 0, x * 0.15), C3(110, 230, 90), M.Neon)
+		end
+	end
+	wear(model, "RightHand", "VenomStaff", Vector3.new(0.2, 0.2, 6) * k, CFrame.new(0, 0, -2.6 * k), C3(30, 50, 34), M.Wood)
+	wear(model, "RightHand", "VenomOrb", Vector3.new(0.9, 0.9, 0.9) * k, CFrame.new(0, 0, -5.8 * k), C3(140, 255, 100), M.Neon, Ball)
+	eyesGlow(model, C3(140, 255, 100), k)
+	hellAura(model, k, C3(150, 255, 110), C3(40, 90, 40), nil, -1, 12)
+end
+-- 단설귀왕: 갈고리 집게, 핏빛 고리
+HELL_SIG.balseolwang = function(model, k)
+	halo(model, C3(255, 70, 100), k, 1.9, M.Neon)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "RightHand", "TongueHook", Vector3.new(0.12, 0.12, 3.6) * k, CFrame.new(x * 0.3 * k, 0, -2 * k) * CFrame.Angles(0, x * math.rad(8), 0), C3(80, 76, 84), M.Metal)
+		wear(model, "RightHand", "TongueHookTip", Vector3.new(0.12, 0.7, 0.12) * k, CFrame.new(x * 0.55 * k, -0.3 * k, -3.8 * k) * CFrame.Angles(0, 0, x * math.rad(30)), C3(255, 80, 110), M.Neon)
+	end
+	eyesGlow(model, C3(255, 90, 110), k)
+	hellAura(model, k, C3(255, 100, 120), C3(90, 20, 40), nil, 2, 12)
+end
+-- 무간의 군주: 두건 속 보랏빛 불꽃, 끊어진 사슬 셋, 보랏빛 고리
+HELL_SIG.mugunwang = function(model, k)
+	wear(model, "Head", "VoidFlame", Vector3.new(0.8, 1, 0.3) * k, CFrame.new(0, 0, -0.55 * k), C3(170, 100, 255), M.Neon, Ball)
+	halo(model, C3(170, 100, 255), k, 2.3, M.Neon)
+	for q = 0, 2 do
+		wear(model, "UpperTorso", "BrokenChain", Vector3.new(0.12, 2.2, 0.12) * k, CFrame.new((q - 1) * 0.9 * k, -0.6 * k, -0.6 * k) * CFrame.Angles(math.rad(10), 0, (q - 1) * 0.3), C3(110, 96, 140), M.Metal)
+	end
+	eyesGlow(model, C3(190, 130, 255), k)
+	hellAura(model, k, C3(190, 130, 255), C3(40, 20, 70), nil, -2, 18)
+end
+-- 혈해마왕: 핏빛 관, 내리는 피 기운, 피의 낫
+HELL_SIG.hyeolwang = function(model, k)
+	spikeCrown(model, C3(220, 30, 50), k, 5, 1.6)
+	wear(model, "RightHand", "BloodScytheHaft", Vector3.new(0.2, 0.2, 6.4) * k, CFrame.new(0, 0, -2.8 * k), C3(40, 14, 18), M.Wood)
+	wear(model, "RightHand", "BloodScytheBlade", Vector3.new(0.1, 0.5, 3) * k, CFrame.new(0, 0.8 * k, -6 * k) * CFrame.Angles(math.rad(70), 0, 0), C3(230, 30, 50), M.Neon)
+	eyesGlow(model, C3(255, 50, 70), k)
+	hellAura(model, k, C3(230, 40, 60), C3(90, 10, 20), nil, -3, 18)
+end
+-- 빙옥한왕: 얼음 가시 관, 눈보라 기운, 얼음 창
+HELL_SIG.hanbingwang = function(model, k)
+	spikeCrown(model, C3(170, 230, 255), k, 7, 1.5)
+	wear(model, "RightHand", "IceSpear", Vector3.new(0.2, 0.2, 6.6) * k, CFrame.new(0, 0, -2.8 * k), C3(160, 200, 230), M.Glacier)
+	wear(model, "RightHand", "IceSpearTip", Vector3.new(0.4, 0.4, 1.6) * k, CFrame.new(0, 0, -6.6 * k), C3(190, 240, 255), M.Neon)
+	eyesGlow(model, C3(170, 230, 255), k)
+	hellAura(model, k, C3(230, 245, 255), C3(140, 190, 230), SPARK, -1, 22)
+end
+-- 철쇄옥왕: 허리를 도는 빛나는 사슬 고리, 쇠공 철퇴
+HELL_SIG.cheolhwanwang = function(model, k)
+	local ut = sizeOf(model, "UpperTorso")
+	for i = 0, 15 do
+		local a = i / 16 * math.pi * 2
+		wear(model, "UpperTorso", "WaistChain", Vector3.new(0.18, 0.18, 0.5) * k, CFrame.new(math.cos(a) * (ut.X * 0.62), -ut.Y * 0.45, math.sin(a) * (ut.Z * 0.85)) * CFrame.Angles(0, -a, (i % 2) * math.pi / 2), C3(255, 160, 80), M.Neon)
+	end
+	wear(model, "RightHand", "FlailChain", Vector3.new(0.12, 0.12, 2.6) * k, CFrame.new(0, 0, -1.4 * k), C3(80, 80, 90), M.Metal)
+	wear(model, "RightHand", "FlailBall", Vector3.new(1.6, 1.6, 1.6) * k, CFrame.new(0, 0, -3.2 * k), C3(60, 60, 70), M.Metal, Ball)
+	eyesGlow(model, C3(255, 170, 90), k)
+	hellAura(model, k, C3(255, 180, 90), C3(120, 60, 30), SPARK, 1, 12)
+end
+
 function Dress.enemy(model: Model, typeId: string, def: any, isBoss: boolean)
 	local look = Dress.lookOf(typeId, isBoss)
 	if not partOf(model, "Head") then
@@ -1992,6 +2153,14 @@ function Dress.enemy(model: Model, typeId: string, def: any, isBoss: boolean)
 	end
 	-- 지옥 보스 여덟의 서명 장식 · 망토도 뺀다 (형체가 또렷하도록 몸 + 옷 + 얼굴만)
 	local PLAIN_BOSS: { [string]: boolean } = { talui = true, hwatang = true, dosan = true, agwiwang = true, yeomra = true, dokssawang = true, balseolwang = true, mugunwang = true, hyeolwang = true, hanbingwang = true, cheolhwanwang = true }
+	-- 3.99.60판: 지옥 보스는 새 표식 (HELL_SIG) 을 단다
+	local hs = isBoss and HELL_SIG[typeId]
+	if hs then
+		local ok, err = pcall(hs, model, K)
+		if not ok then
+			warn("[권왕] 지옥 보스 표식 오류:", typeId, err)
+		end
+	end
 	if isBoss and not bossBody and not PLAIN_BOSS[typeId] then
 		local sig = SIG[typeId]
 		if sig then
