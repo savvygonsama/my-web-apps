@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.68" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.69" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -59630,7 +59630,7 @@ VFX.swSky = function(d)
 			local a = it.a0 + t * (it.ring % 2 == 0 and -0.6 or 0.45)
 			local pos = center + V(math.cos(a) * it.R, it.y + math.sin(t * 2 + it.a0) * 0.6, math.sin(a) * it.R)
 			-- 칼끝은 아래 (가운데 쪽으로 조금 기운다)
-			local cf = CFrame.lookAt(pos, pos + V(0, -1, 0), V(math.cos(a), 0, math.sin(a))) * CFrame.Angles(math.rad(-90), 0, 0)
+			local cf = CFrame.lookAt(pos, pos + V(0, -1, 0), V(math.cos(a), 0, math.sin(a))) * CFrame.Angles(math.rad(90), 0, 0)
 			local base = it.parts[3].CFrame
 			for _, pt in ipairs(it.parts) do
 				local rel = base:ToObjectSpace(pt.CFrame)
@@ -59728,7 +59728,7 @@ VFX.swHalo = function(d)
 		for _, it in ipairs(swords) do
 			local a = it.a0 + t * 0.9
 			local pos = c + V(math.cos(a) * 5.5, math.sin(t * 3 + it.a0) * 0.3, math.sin(a) * 5.5)
-			local cf = CFrame.lookAt(pos, pos + V(0, -1, 0), V(math.cos(a), 0, math.sin(a))) * CFrame.Angles(math.rad(-90), 0, 0)
+			local cf = CFrame.lookAt(pos, pos + V(0, -1, 0), V(math.cos(a), 0, math.sin(a))) * CFrame.Angles(math.rad(90), 0, 0)
 			local base = it.parts[3].CFrame
 			for _, pt in ipairs(it.parts) do
 				local rel = base:ToObjectSpace(pt.CFrame)
@@ -59925,7 +59925,7 @@ VFX.phRebirthX = function(d)
 		end
 		local q = math.min(1, t / 0.32)
 		local pos = top:Lerp(g + V(0, 4, 0), q * q)
-		return CFrame.lookAt(pos, pos + V(0, -1, -0.3)) * CFrame.Angles(math.rad(-60), 0, 0)
+		return CFrame.lookAt(pos, pos + V(0, -1, -0.3)) -- 머리 (-Z) 가 아래로: 내리꽂힌다
 	end, 0.35, 5, PH_K, PH_G, { per = 3, w = 0.9, glow = true, amp = 0.8 })
 	task.delay(0.33, function()
 		blackFire(g + V(0, 2, 0), 90, 7, 34, 1.2)
