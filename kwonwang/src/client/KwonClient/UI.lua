@@ -3866,13 +3866,19 @@ local function placeMap()
 		mapChip.Visible = hidden and not mapBig and not Config.BATTLE_MODE
 		mapChip.Position = V.device ~= "pc" and UDim2.new(1, -6, 0, 52) or UDim2.new(1, -16, 0, 160)
 	end
+	-- 3.99.74판: 휴대폰은 큰 지도의 땅 이름 글자를 키우고, 단추도 손가락 크기로
+	local phoneK = V.device == "phone" and 1.35 or 1
 	for _, list in ipairs({ mapTexts, skyTexts, hellTexts }) do
 		for _, t in ipairs(list) do
-			t.label.TextSize = mapBig and t.big or t.small
+			t.label.TextSize = mapBig and math.floor(t.big * phoneK) or t.small
 		end
 	end
-	for _, b in ipairs(zoomBtns) do
+	for i, b in ipairs(zoomBtns) do
 		b.Visible = mapBig
+		if V.device ~= "pc" and b:IsA("TextButton") and b.Text ~= "X" then
+			b.Size = UDim2.new(0, 56, 0, 56)
+			b.Position = UDim2.new(1, -10, 0, 10 + (i - 1) * 62)
+		end
 	end
 	refreshRec()
 	applyView(myPos())
@@ -3984,9 +3990,14 @@ function UI.toggleMap()
 	end
 	mapBig = not mapBig
 	if mapBig then
-		-- 큰 지도는 온 세상부터
-		bigZoom = 1
-		bigCenter = (mapFrameOf(mapSky))
+		-- 큰 지도는 온 세상부터. 3.99.74판: 터치 기기는 내 둘레를 확대해서 연다 (온 세상은 휴대폰 화면에서 너무 작았다)
+		if V.device ~= "pc" and myPos() then
+			bigZoom = 2.6
+			bigCenter = myPos() or Vector3.zero
+		else
+			bigZoom = 1
+			bigCenter = (mapFrameOf(mapSky))
+		end
 		placeMap()
 	elseif mapSky ~= inSkyNow then
 		-- 작은 지도는 늘 내가 서 있는 세상
@@ -4197,7 +4208,7 @@ function UIB.buildMap()
 	mapGuide = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, Visible = false, ZIndex = 11, Parent = canvas }, { corner(99), stroke(Color3.fromRGB(255, 240, 120), 3) })
 	storyMark = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 14, 0, 14), Rotation = 45, BackgroundColor3 = Color3.fromRGB(255, 170, 60), BorderSizePixel = 0, Visible = false, ZIndex = 11, Parent = canvas }, { stroke(Color3.new(0, 0, 0), 1.5) })
 	mapMe = text({ AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 20, 0, 20), Text = "▲", TextSize = 18, TextColor3 = Color3.fromRGB(255, 255, 255), TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0, TextWrapped = false, ZIndex = 12, Parent = canvas })
-	text({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -8, 1, -6), Size = UDim2.new(0, 220, 0, 18), Text = UIB.isTouch() and "＋－: 확대 · 끌기: 이동 · X: 닫기" or "M: 지도 크게 · 휠: 확대", TextSize = 13, TextColor3 = C.text, TextXAlignment = Enum.TextXAlignment.Right, TextStrokeTransparency = 0.2, ZIndex = 12, Parent = mapFrame })
+	text({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -8, 1, -6), Size = UDim2.new(0, 220, 0, 18), Text = UIB.isTouch() and "두 손가락 · ＋－: 확대 · 끌기: 이동 · X: 닫기" or "M: 지도 크게 · 휠: 확대", TextSize = 13, TextColor3 = C.text, TextXAlignment = Enum.TextXAlignment.Right, TextStrokeTransparency = 0.2, ZIndex = 12, Parent = mapFrame })
 	-- 큰 지도: 확대·축소·내 자리 단추, 휠과 끌기
 	for i, spec in ipairs({ { "＋", 1.4 }, { "－", 1 / 1.4 }, { "◎", 0 } }) do
 		local b = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 10 + (i - 1) * 46), Size = UDim2.new(0, 40, 0, 40), Text = spec[1], TextSize = 22, BackgroundColor3 = C.panel2, ZIndex = 13, Visible = false, Parent = mapFrame }, function()
@@ -4249,6 +4260,25 @@ function UIB.buildMap()
 		UserInputService.InputEnded:Connect(function(input: InputObject)
 			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 				dragging = false
+			end
+		end)
+		-- 3.99.74판: 두 손가락으로 벌리고 오므려 확대 · 축소 (큰 지도)
+		local lastPinch = 1
+		UserInputService.TouchPinch:Connect(function(_touches, scale: number, _vel, state: Enum.UserInputState)
+			if not mapBig then
+				return
+			end
+			if state == Enum.UserInputState.Begin then
+				lastPinch = scale
+				dragging = false
+				return
+			end
+			local k = scale / math.max(0.01, lastPinch)
+			lastPinch = scale
+			if math.abs(k - 1) > 0.01 then
+				bigZoom = math.clamp(bigZoom * k, 1, 6)
+				applyView(nil)
+				declutter()
 			end
 		end)
 		UserInputService.InputChanged:Connect(function(input: InputObject)
