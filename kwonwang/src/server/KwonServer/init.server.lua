@@ -7474,7 +7474,9 @@ do
 						local best, bestD = nil, math.huge
 						for _, e in ipairs(Npc.list) do
 							local ef = e.f
-							if ef and not ef.dead and ef.root.Parent and Combat.hostile(f, ef) and not (ef :: any).trialOwner and not (ef :: any).karmaOwner then
+							-- 혼자 넘어야 하는 싸움 (시험 · 업경 · 탑 · 관문 · 심마 · 미궁) 의 적은 치지 않는다
+							local efa = ef :: any
+							if ef and not ef.dead and ef.root.Parent and Combat.hostile(f, ef) and not efa.trialOwner and not efa.karmaOwner and not efa.towerOwner and not efa.gateOwner and not efa.simmaOwner and not efa.mazeOwner then
 								local ep = ef.root.Position
 								if (ep - me).Magnitude <= CP.fight then
 									local dd = (ep - rp).Magnitude
@@ -7504,12 +7506,12 @@ do
 									c.combo = c.combo % math.max(1, #combo) + 1
 									local mv = combo[c.combo]
 									Push:FireAllClients("act", { m = m, pose = mv and mv.pose or "palm_r", dur = 0.38, seq = -2 })
-									local k = 0.25 + 0.03 * ((d.lv or 1) - 1)
+									local k = 0.15 + 0.02 * ((d.lv or 1) - 1) -- 3.99.63판: 0.25 + 0.03 → 0.15 + 0.02 (약한 권법을 쓰는 사람에겐 제자가 내 연타의 40% 가까이 쳤다)
 									task.delay(0.14, function()
 										if best.dead or not best.root.Parent or f.dead then
 											return
 										end
-										Combat.applyHit(f, best, { dmg = 12 * k, posture = 10 * k, stun = 0.3, kb = 6, range = reach, radius = 5 }, { chain = true, byModel = m, byStyle = d.style, move = { name = (mv and mv.name) or "제자의 주먹", pose = mv and mv.pose } })
+										Combat.applyHit(f, best, { dmg = 12 * k, posture = 6 * k, stun = 0.1, kb = 2, range = reach, radius = 5 }, { chain = true, byModel = m, byStyle = d.style, move = { name = (mv and mv.name) or "제자의 주먹", pose = mv and mv.pose } })
 									end)
 									d.xp = (d.xp or 0) + CP.xp
 									discipleLevelUp(player, d)
