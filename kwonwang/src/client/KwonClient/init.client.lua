@@ -2892,6 +2892,15 @@ function handlers.rebirth(data: any)
 		UI.toast(string.format("♻ %s, %s 환생!", data.name or "", Config.REBIRTH.names[data.n or 1] or ""))
 	end
 end
+-- 3.99.71판: 극 무형검성 (만검귀종) · 극 불사조권 (불사조 화신) 이 극을 채웠다 (모두에게 알림)
+function handlers.geukCustom(data: any)
+	if data.style == "geuksword" then
+		UI.banner(string.format("🗡 만검귀종 · %s", data.name or ""), "머리 위에 검의 고리가 서고 둘레에 검이 비처럼 내린다. 기술이 모두 바뀐다", Color3.fromRGB(190, 225, 255))
+	elseif data.style == "geukphoenix" then
+		UI.banner(string.format("🐦 불사조 화신 · %s", data.name or ""), "등에 검은 불꽃 날개가 돋는다. 걸음이 빨라지고 지나는 자리가 타오른다. 기술이 모두 바뀐다", Color3.fromRGB(255, 180, 90))
+	end
+	shake(0.8)
+end
 -- 3.1판: 극 패시브 일월극변 (서버 전체 컷씬)
 function handlers.geukTwilight(data: any)
 	Geuk.init({ shake = shake, tint = tint, flash = UI.flash })

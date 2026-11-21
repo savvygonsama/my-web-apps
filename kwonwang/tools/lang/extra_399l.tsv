@@ -546,3 +546,26 @@
 ...그래, 받았다. 생각보다 빨리 왔구나. 시험을 내마.	...Good, I have it. You came sooner than I thought. I will give you the trial.
 ...왔구나. 부탁을 들어주었으니 이제 네 차례다. 시험을 내마.	...You came. You did what I asked, so now it is your turn. I will give you the trial.
 📜 %s의 부탁을 받았다 · %s	📜 Accepted %s's request · %s
+🗡 만검귀종 · %s	🗡 Ten Thousand Swords Return · %s
+머리 위에 검의 고리가 서고 둘레에 검이 비처럼 내린다. 기술이 모두 바뀐다	A ring of swords stands overhead and swords rain all around. All skills change
+🐦 불사조 화신 · %s	🐦 Phoenix Avatar · %s
+등에 검은 불꽃 날개가 돋는다. 걸음이 빨라지고 지나는 자리가 타오른다. 기술이 모두 바뀐다	Black flame wings sprout on the back. Faster steps, and the ground behind burns. All skills change
+🗡 만검귀종	🗡 Ten Thousand Swords Return
+극을 채우면 25초 동안 머리 위에 검의 고리가 서고 둘레의 적에게 검이 비처럼 내리며 기술이 모두 바뀐다	Fill Ultimate and for 25s a ring of swords stands overhead, swords rain on nearby foes, and all skills change
+🐦 불사조 화신	🐦 Phoenix Avatar
+극을 채우면 25초 동안 등에 검은 불꽃 날개가 돋고 걸음이 빨라지며 지나는 자리를 태우고 기술이 모두 바뀐다	Fill Ultimate and for 25s black flame wings sprout on your back, you move faster, your path burns, and all skills change
+검우행	Sword Rain March
+만검귀종의 기술. 앞으로 40칸에 걸쳐 빛의 검 여덟 자루가 차례로 내리꽂히며 길을 낸다	A Ten Thousand Swords skill. Eight swords of light strike down one after another over 40 studs ahead, carving a path
+검영보	Sword Shadow Step
+만검귀종의 기술 (그동안 무적). 검의 그림자가 되어 세 번 앞으로 꺾어 달리며 지나는 자리를 열십자로 벤다	A Ten Thousand Swords skill (invincible meanwhile). Become a sword's shadow and dash forward three times, cutting a cross wherever you pass
+만검진	Myriad Sword Formation
+만검귀종의 기술. 발밑에 검의 진이 그려지며 둘레 28칸의 적을 끌어모으고, 진 안을 보이지 않는 검이 네 번 휘몰아친 뒤 진째 터진다	A Ten Thousand Swords skill. A sword formation is drawn underfoot, pulling in foes within 28 studs; invisible swords storm inside it four times, then the whole formation bursts
+만검귀종의 초 오의 (그동안 무적). 하늘의 검 고리가 갈라지며 하늘만 한 검 세 자루가 가장 가까운 적 셋에게 차례로 내리꽂히고, 마지막에 둘레 50칸이 검기의 폭풍에 베인다	Ten Thousand Swords Super Ultimate (invincible meanwhile). The sky's sword ring splits, three sky-sized swords strike the nearest three foes in turn, and finally a storm of sword qi cuts everything within 50 studs
+화조연탄	Fire Bird Barrage
+불사조 화신의 기술. 검은 불꽃 깃털이 세 번 부채꼴로 쏟아져 앞으로 32칸을 태운다	A Phoenix Avatar skill. Black flame feathers pour out in a fan three times, burning 32 studs ahead
+불새돌진	Fire Bird Charge
+불사조 화신의 기술 (그동안 무적). 날개를 접고 불새가 되어 네 번 내리꽂히듯 내달리고, 마지막에 금빛으로 터진다	A Phoenix Avatar skill (invincible meanwhile). Fold your wings and become a fire bird, diving forward four times, then burst in gold
+겁화륜	Kalpa Fire Ring
+불사조 화신의 기술. 불새가 둘레를 크게 돌아 불의 고리로 둘레 34칸의 적을 끌어모으고, 고리가 세 번 조였다가 겁화로 터진다	A Phoenix Avatar skill. A fire bird circles wide, gathering foes within 34 studs into a ring of fire; the ring tightens three times, then bursts into kalpa fire
+열반재생	Nirvana Rebirth
+불사조 화신의 초 오의 (그동안 무적). 하늘의 불사조가 세 번 내리꽂히며 적 셋을 차례로 태우고, 마지막에 잿더미에서 금빛 기둥으로 다시 태어나며 둘레 50칸을 태운다	Phoenix Avatar Super Ultimate (invincible meanwhile). The sky's phoenix dives three times, burning three foes in turn, then is reborn from the ashes as a golden pillar, burning everything within 50 studs

@@ -4289,6 +4289,7 @@ function Geuk.trigger(f: any, st: any)
 	-- 3.99.68판 극 무형검성 · 만검귀종: 머리 위 하늘에 검의 고리가 서고, every 초마다 둘레의 적 n 에게 검이 내리꽂힌다 (막을 수 없다)
 	local RN = st.geukRain
 	if RN then
+		Push:FireAllClients("geukCustom", { m = f.model, name = name, style = st.id })
 		Push:FireAllClients("skillfx", { kind = "forgeStep", vfx = "swHalo", m = f.model, at = f.root.Position, life = G.cut + G.dur, style = st.id })
 		task.spawn(function()
 			task.wait(G.cut)
@@ -4323,6 +4324,8 @@ function Geuk.trigger(f: any, st: any)
 	-- 3.99.68판 극 불사조권 · 불사조 화신: 걸음이 빨라지고 지나는 자리에 검은 불길이 남아 둘레를 태운다 (몸의 날개는 화면이 Twilight 표시를 보고 그린다)
 	local PF = st.phoenixForm
 	if PF then
+		Push:FireAllClients("geukCustom", { m = f.model, name = name, style = st.id })
+		Push:FireAllClients("skillfx", { kind = "forgeStep", vfx = "phRebirth", m = f.model, at = f.root.Position, radius = 14, style = st.id })
 		f.hasteMul = PF.walk
 		task.spawn(function()
 			task.wait(G.cut)

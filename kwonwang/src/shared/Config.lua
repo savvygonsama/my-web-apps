@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.70" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.71" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -5201,6 +5201,10 @@ function Config.geukForm(style: any): (string, string, string)
 		return "🌠 초가속", "극을 채우면 잠시 초가속 (걸음 ×1.6 · 잔상 타격) 이 되고 기술이 모두 바뀐다", "극"
 	elseif style.geukDomain then
 		return "⬜ 격자 전개", "극을 채우면 3D 격자 공간이 펼쳐지고 기술이 모두 바뀐다", "극"
+	elseif style.geukRain then
+		return "🗡 만검귀종", "극을 채우면 25초 동안 머리 위에 검의 고리가 서고 둘레의 적에게 검이 비처럼 내리며 기술이 모두 바뀐다", "극"
+	elseif style.phoenixForm then
+		return "🐦 불사조 화신", "극을 채우면 25초 동안 등에 검은 불꽃 날개가 돋고 걸음이 빨라지며 지나는 자리를 태우고 기술이 모두 바뀐다", "극"
 	end
 	return "🌇 황혼 (일월극변)", "극을 채우면 40초 동안 세상이 황혼에 멈추고 기술이 바뀐다", "극"
 end
@@ -7840,34 +7844,6 @@ do
 	local function seq(steps: { any }, iframes: boolean?): any
 		return { kind = "forgeSeq", iframes = iframes, steps = steps }
 	end
-	local function copyUp(skills: any, tag: string): any
-		local out = {}
-		for slot, mv in pairs(skills) do
-			local c = deepCopy(mv)
-			c.id = string.sub(mv.id, 1, -2) .. "T" .. string.sub(mv.id, -1)
-			c.name = mv.name .. " · " .. tag
-			local function up(t: any)
-				if type(t) ~= "table" then
-					return
-				end
-				if type(t.dmg) == "number" then
-					t.dmg *= 1.15
-				end
-				if type(t.radius) == "number" and t.radius > 2 then
-					t.radius *= 1.15
-				end
-				for _, v in pairs(t) do
-					if type(v) == "table" then
-						up(v)
-					end
-				end
-			end
-			up(c.mech)
-			c.cd = (mv.cd or 10) * 0.8
-			out[slot] = c
-		end
-		return out
-	end
 	-- 기술 피해를 k 배로 (극 등급 안에 맞춘다: 다른 극 권법 합 120 ~ 155)
 	local function cutSkills(skills: any, k: number)
 		local function walk(t: any)
@@ -7949,9 +7925,45 @@ do
 		},
 	}
 	cutSkills(SW.skills, 0.75)
+	-- 3.99.71판: 만검귀종 동안의 기술은 원래 기술의 복사본이 아니라 전혀 다른 기술 넷 (예전엔 피해만 조금 올라 바뀐 줄 몰랐다)
+	local function swLine(n: number, gap: number, t0: number, dt: number, h: any): { any }
+		local out = {}
+		for i = 1, n do
+			table.insert(out, { t = t0 + (i - 1) * dt, shape = "circle", at = "front", dist = i * gap, radius = 6, vfx = "swFall", hit = h })
+		end
+		return out
+	end
+	local eSteps = swLine(8, 5, 0.12, 0.06, hit(0, 0, 0, 46, 40, 0.5, 6, 4))
 	SW.twilight = { name = "만검귀종", color = Color3.fromRGB(235, 245, 255), color2 = Color3.fromRGB(120, 200, 255), dmg = 1.3,
 		pulse = { every = 2, kind = "swordQi", radius = 10, delay = 0.18, name = "검기 · 검성", dmg = 66, posture = 50, stun = 0.45, kb = 8, up = 3 },
-		skills = copyUp(SW.skills, "검성") }
+		skills = {
+			E = { id = "gsTE", name = "검우행", desc = "만검귀종의 기술. 앞으로 40칸에 걸쳐 빛의 검 여덟 자루가 차례로 내리꽂히며 길을 낸다", pose = "push_palm", dur = 0.8, cd = 6, chi = 20,
+				mech = seq(eSteps) },
+			R = { id = "gsTR", name = "검영보", desc = "만검귀종의 기술 (그동안 무적). 검의 그림자가 되어 세 번 앞으로 꺾어 달리며 지나는 자리를 열십자로 벤다", pose = "back_spin_kick", dur = 0.9, cd = 8, chi = 22,
+				mech = seq({
+					{ t = 0.1, dash = 12, shape = "line", at = "self", length = 14, width = 8, vfx = "swCross", hit = hit(0, 0, 0, 52, 40, 0.5, 8) },
+					{ t = 0.35, dash = 12, shape = "line", at = "self", length = 14, width = 8, vfx = "swCross", hit = hit(0, 0, 0, 52, 40, 0.5, 8) },
+					{ t = 0.6, dash = 12, shape = "line", at = "self", length = 14, width = 8, vfx = "swCross", hit = hit(0, 0, 0, 52, 40, 0.5, 8) },
+					{ t = 0.8, shape = "circle", at = "self", radius = 16, vfx = "swBurst", hit = hit(0, 0, 0, 60, 60, 0.6, 30, 8) },
+				}, true) },
+			G = { id = "gsTG", name = "만검진", desc = "만검귀종의 기술. 발밑에 검의 진이 그려지며 둘레 28칸의 적을 끌어모으고, 진 안을 보이지 않는 검이 네 번 휘몰아친 뒤 진째 터진다", pose = "ult_star", dur = 2.2, cd = 22, chi = 90, armor = true,
+				mech = seq({
+					{ t = 0.2, shape = "circle", at = "self", radius = 28, pull = 40, vfx = "swArray", hit = hit(0, 0, 0, 60, 50, 0.5, 0) },
+					{ t = 0.7, shape = "circle", at = "self", radius = 20, vfx = "swStorm", hit = hit(0, 0, 0, 40, 30, 0.4, 0) },
+					{ t = 0.95, shape = "circle", at = "self", radius = 20, vfx = "swStorm", hit = hit(0, 0, 0, 40, 30, 0.4, 0) },
+					{ t = 1.2, shape = "circle", at = "self", radius = 20, vfx = "swStorm", hit = hit(0, 0, 0, 40, 30, 0.4, 0) },
+					{ t = 1.45, shape = "circle", at = "self", radius = 20, vfx = "swStorm", hit = hit(0, 0, 0, 40, 30, 0.4, 0) },
+					{ t = 1.8, shape = "circle", at = "self", radius = 28, vfx = "swBurst", big = true, hit = hit(0, 0, 0, 230, 240, 1.4, 50, 16) },
+				}) },
+			X = { id = "gsTX", name = "천검강림", desc = "만검귀종의 초 오의 (그동안 무적). 하늘의 검 고리가 갈라지며 하늘만 한 검 세 자루가 가장 가까운 적 셋에게 차례로 내리꽂히고, 마지막에 둘레 50칸이 검기의 폭풍에 베인다", pose = "ult_star", dur = 3.6, cd = 45, chi = 140, armor = true,
+				mech = seq({
+					{ t = 0.05, shape = "circle", at = "self", radius = 50, life = 3.4, vfx = "swSky" },
+					{ t = 0.8, at = "each", n = 1, range = 45, radius = 18, vfx = "swOne", hit = hit(0, 0, 0, 200, 200, 1.2, 40, 16) },
+					{ t = 1.6, at = "each", n = 1, range = 45, radius = 18, vfx = "swOne", hit = hit(0, 0, 0, 200, 200, 1.2, 40, 16) },
+					{ t = 2.4, at = "each", n = 1, range = 45, radius = 18, vfx = "swOne", hit = hit(0, 0, 0, 200, 200, 1.2, 40, 16) },
+					{ t = 3.2, shape = "circle", at = "self", radius = 50, vfx = "swBurst", big = true, hit = hit(0, 0, 0, 300, 320, 1.8, 70, 26) },
+				}, true) },
+		} }
 	addStyle(SW)
 	Config.MASTERS.geuksword = { name = "무형검성", at = Vector3.new(-4400, 1.6, -1700), region = "세상 서쪽 끝 빈 들 (만검총)", regionId = "swordgrave", secret = true,
 		quote = "칼을 찾느냐. 여기 만 자루가 꽂혀 있다만, 그 어느 것도 칼이 아니다.", rumor = "세상 서쪽 끝 아무것도 없는 들판에 녹슨 칼 만 자루가 꽂힌 무덤이 있고, 칼 없이 칼을 쓰는 노인이 산다더라" }
@@ -8012,7 +8024,38 @@ do
 	cutSkills(PH.skills, 0.72) -- 열반 (되살아남) 이 있어 조금 더 낮게
 	PH.twilight = { name = "불사조 화신", color = Color3.fromRGB(30, 14, 22), color2 = Color3.fromRGB(255, 190, 80), dmg = 1.3,
 		pulse = { every = 2, kind = "blackFlame", radius = 11, delay = 0.12, name = "업염 · 화신", dmg = 68, posture = 50, stun = 0.45, kb = 14, up = 5 },
-		skills = copyUp(PH.skills, "화신") }
+		skills = {
+			E = { id = "gpTE", name = "화조연탄", desc = "불사조 화신의 기술. 검은 불꽃 깃털이 세 번 부채꼴로 쏟아져 앞으로 32칸을 태운다", pose = "push_palm", dur = 0.8, cd = 6, chi = 20,
+				mech = seq({
+					{ t = 0.1, shape = "cone", at = "self", length = 32, angle = 70, vfx = "phFeathers", hit = hit(0, 0, 0, 40, 30, 0.4, 8) },
+					{ t = 0.3, shape = "cone", at = "self", length = 32, angle = 70, vfx = "phFeathers", hit = hit(0, 0, 0, 40, 30, 0.4, 8) },
+					{ t = 0.5, shape = "cone", at = "self", length = 32, angle = 70, vfx = "phFeathers", hit = hit(0, 0, 0, 40, 30, 0.4, 12) },
+				}) },
+			R = { id = "gpTR", name = "불새돌진", desc = "불사조 화신의 기술 (그동안 무적). 날개를 접고 불새가 되어 네 번 내리꽂히듯 내달리고, 마지막에 금빛으로 터진다", pose = "flame_dash", dur = 1.1, cd = 8, chi = 22,
+				mech = seq({
+					{ t = 0.1, dash = 11, shape = "circle", at = "self", radius = 10, vfx = "phDive", hit = hit(0, 0, 0, 40, 30, 0.4, 12) },
+					{ t = 0.32, dash = 11, shape = "circle", at = "self", radius = 10, vfx = "phDive", hit = hit(0, 0, 0, 40, 30, 0.4, 12) },
+					{ t = 0.54, dash = 11, shape = "circle", at = "self", radius = 10, vfx = "phDive", hit = hit(0, 0, 0, 40, 30, 0.4, 12) },
+					{ t = 0.76, dash = 11, shape = "circle", at = "self", radius = 10, vfx = "phDive", hit = hit(0, 0, 0, 40, 30, 0.4, 12) },
+					{ t = 0.98, shape = "circle", at = "self", radius = 18, vfx = "phNova", hit = hit(0, 0, 0, 70, 70, 0.7, 30, 10) },
+				}, true) },
+			G = { id = "gpTG", name = "겁화륜", desc = "불사조 화신의 기술. 불새가 둘레를 크게 돌아 불의 고리로 둘레 34칸의 적을 끌어모으고, 고리가 세 번 조였다가 겁화로 터진다", pose = "ult_star", dur = 2.2, cd = 22, chi = 90, armor = true,
+				mech = seq({
+					{ t = 0.2, shape = "circle", at = "self", radius = 34, pull = 40, vfx = "phCircle", hit = hit(0, 0, 0, 60, 50, 0.5, 0) },
+					{ t = 0.8, shape = "circle", at = "self", radius = 20, vfx = "blackFlame", hit = hit(0, 0, 0, 50, 40, 0.4, 0) },
+					{ t = 1.1, shape = "circle", at = "self", radius = 20, vfx = "blackFlame", hit = hit(0, 0, 0, 50, 40, 0.4, 0) },
+					{ t = 1.4, shape = "circle", at = "self", radius = 20, vfx = "blackFlame", hit = hit(0, 0, 0, 50, 40, 0.4, 0) },
+					{ t = 1.8, shape = "circle", at = "self", radius = 30, vfx = "phNova", big = true, hit = hit(0, 0, 0, 230, 240, 1.4, 50, 16) },
+				}) },
+			X = { id = "gpTX", name = "열반재생", desc = "불사조 화신의 초 오의 (그동안 무적). 하늘의 불사조가 세 번 내리꽂히며 적 셋을 차례로 태우고, 마지막에 잿더미에서 금빛 기둥으로 다시 태어나며 둘레 50칸을 태운다", pose = "ult_star", dur = 3.6, cd = 45, chi = 140, armor = true,
+				mech = seq({
+					{ t = 0.05, shape = "circle", at = "self", radius = 50, life = 3.4, vfx = "phSky" },
+					{ t = 0.8, at = "each", n = 1, range = 45, radius = 18, vfx = "phRebirthX", hit = hit(0, 0, 0, 200, 200, 1.2, 40, 16) },
+					{ t = 1.6, at = "each", n = 1, range = 45, radius = 18, vfx = "phRebirthX", hit = hit(0, 0, 0, 200, 200, 1.2, 40, 16) },
+					{ t = 2.4, at = "each", n = 1, range = 45, radius = 18, vfx = "phRebirthX", hit = hit(0, 0, 0, 200, 200, 1.2, 40, 16) },
+					{ t = 3.2, shape = "circle", at = "self", radius = 50, vfx = "phNova", big = true, hit = hit(0, 0, 0, 300, 320, 1.8, 70, 26) },
+				}, true) },
+		} }
 	addStyle(PH)
 	Config.MASTERS.geukphoenix = { name = "불사조", at = Vector3.new(3250, 1.6, -1400), region = "화염산 남동쪽 끝 (잿더미 둥지)", regionId = "volcano", secret = true,
 		quote = "나는 이미 아흔아홉 번 죽었다. 백 번째는 네 주먹으로 오겠느냐.", rumor = "화염산 남동쪽 끝, 꺼지지 않는 잿더미 둥지에 몇 번을 타 죽어도 다시 일어나는 자가 산다더라" }
