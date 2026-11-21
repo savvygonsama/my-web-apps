@@ -7427,7 +7427,26 @@ end
 --   피해는 주인의 힘 × (0.25 + 경지 × 0.03) 몫 (경지 16이면 주인 연타 한 대의 약 70%), 처치와 보상은 주인 몫. 적은 제자를 노리지 않는다
 --   제자는 칠 때마다 수련이 쌓여 경지가 오른다
 do
-	local CP = { tick = 0.2, leash = 70, fight = 34, reach = 6.5, every = 0.85, xp = 0.35 }
+	local CP = { tick = 0.2, leash = 70, fight = 34, reach = 6.5, every = 0.85, xp = 0.35, share = 0.25 }
+	-- 3.99.64판: 제자는 어느 권법 · 어느 경지든 내 연타의 25% 를 친다 (내 지금 권법의 연타 한 바퀴: 피해 합 ÷ 걸리는 시간)
+	local comboRate: { [string]: number } = {}
+	local function rawComboDps(styleId: string): number
+		local r = comboRate[styleId]
+		if r then
+			return r
+		end
+		local st = Config.STYLE_BY_ID[styleId]
+		local dmg, dur = 0, 0
+		for _, mv in ipairs((st and st.combo) or {}) do
+			dur += mv.dur or 0.3
+			for _, h in ipairs(mv.hits or {}) do
+				dmg += h.dmg or 0
+			end
+		end
+		r = dur > 0 and dmg / dur or 30
+		comboRate[styleId] = r
+		return r
+	end
 	local function discipleLevelUp(player: Player, d: any)
 		local D = Config.DISCIPLE
 		local ups = 0
@@ -7506,12 +7525,13 @@ do
 									c.combo = c.combo % math.max(1, #combo) + 1
 									local mv = combo[c.combo]
 									Push:FireAllClients("act", { m = m, pose = mv and mv.pose or "palm_r", dur = 0.38, seq = -2 })
-									local k = 0.15 + 0.02 * ((d.lv or 1) - 1) -- 3.99.63판: 0.25 + 0.03 → 0.15 + 0.02 (약한 권법을 쓰는 사람에겐 제자가 내 연타의 40% 가까이 쳤다)
+									-- 한 대 = 내 연타 초당 피해 × 25% × 치는 간격 (내 힘 · 권법 배율은 applyHit 이 곱한다)
+									local per = rawComboDps(p.style) * CP.share * CP.every
 									task.delay(0.14, function()
 										if best.dead or not best.root.Parent or f.dead then
 											return
 										end
-										Combat.applyHit(f, best, { dmg = 12 * k, posture = 6 * k, stun = 0.1, kb = 2, range = reach, radius = 5 }, { chain = true, byModel = m, byStyle = d.style, move = { name = (mv and mv.name) or "제자의 주먹", pose = mv and mv.pose } })
+										Combat.applyHit(f, best, { dmg = per, posture = per * 0.5, stun = 0.1, kb = 2, range = reach, radius = 5 }, { chain = true, byModel = m, byStyle = d.style, move = { name = (mv and mv.name) or "제자의 주먹", pose = mv and mv.pose } })
 									end)
 									d.xp = (d.xp or 0) + CP.xp
 									discipleLevelUp(player, d)
