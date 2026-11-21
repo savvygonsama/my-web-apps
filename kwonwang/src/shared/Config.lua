@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.71" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.72" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7883,7 +7883,9 @@ do
 		deflect = 0.3, dodgeChance = 0.12, postureMult = 1.4, speed = 1.25, cdMult = 0.8, stance = "stance_muyeong",
 		pulse = { every = 3, kind = "swordQi", radius = 8, delay = 0.2, name = "검기", dmg = 54, posture = 40, stun = 0.4, kb = 6, up = 2 },
 		geukGauge = { max = 100, hit = 2, skillHit = 1, hurt = 4, cut = 1.0, dur = 25 },
-		geukRain = { every = 0.6, n = 4, range = 40, delay = 0.25, hit = hit(0, 0, 0, 46, 40, 0.4, 4) },
+		geukRain = { every = 0.6, n = 4, range = 40, delay = 0.25, hit = hit(0, 0, 0, 46, 40, 0.4, 4),
+			-- 3.99.72판 검역 (영역 전개): 극을 채운 자리에 반지름 45칸의 검역이 8초 펼쳐져, 안의 적을 0.2초마다 벤다 (막을 수 없다 · 걸음 ×0.6)
+			domain = { radius = 45, dur = 8, every = 0.2, slow = 0.6, hit = hit(0, 0, 0, 10, 8, 0.12, 0) } },
 		combo = {
 			{ id = "gs1", name = "무형일섬", pose = "palm_r", dur = 0.26, lunge = 4, hits = { hit(0.1, 7, 5, 26, 18, 0.3, 8) } },
 			{ id = "gs2", name = "역섬", pose = "palm_l", dur = 0.26, lunge = 4, hits = { hit(0.1, 7, 5, 26, 18, 0.3, 8) } },

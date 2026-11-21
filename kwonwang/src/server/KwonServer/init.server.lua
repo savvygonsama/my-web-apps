@@ -4291,6 +4291,29 @@ function Geuk.trigger(f: any, st: any)
 	if RN then
 		Push:FireAllClients("geukCustom", { m = f.model, name = name, style = st.id })
 		Push:FireAllClients("skillfx", { kind = "forgeStep", vfx = "swHalo", m = f.model, at = f.root.Position, life = G.cut + G.dur, style = st.id })
+		-- 3.99.72판 검역: 선 자리에 영역이 펼쳐져 안의 모든 적을 쉴 새 없이 벤다
+		local DM = RN.domain
+		if DM then
+			local center = f.root.Position
+			Push:FireAllClients("skillfx", { kind = "forgeStep", vfx = "swDomain", m = f.model, at = center, radius = DM.radius, life = G.cut + DM.dur, cut = G.cut, name = name, style = st.id })
+			task.spawn(function()
+				task.wait(G.cut)
+				local tEnd = os.clock() + DM.dur
+				while os.clock() < tEnd and f.twilightUntil == token and f.model.Parent and not f.dead do
+					for _, o in pairs(Combat.fighters) do
+						if o ~= f and not o.dead and Combat.hostile(f, o) and o.root.Parent then
+							local d = o.root.Position - center
+							if Vector3.new(d.X, 0, d.Z).Magnitude <= DM.radius and math.abs(d.Y) < 40 then
+								o.slowUntil = os.clock() + 0.5
+								o.slowMul = DM.slow
+								Combat.applyHit(f, o, DM.hit, { chain = true, isSkill = true, unblockable = true, move = { name = "검역" } })
+							end
+						end
+					end
+					task.wait(DM.every)
+				end
+			end)
+		end
 		task.spawn(function()
 			task.wait(G.cut)
 			while f.twilightUntil == token and os.clock() < token and f.model.Parent and not f.dead do

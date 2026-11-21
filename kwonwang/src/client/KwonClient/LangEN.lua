@@ -5265,4 +5265,6 @@ return {
 	["불사조 화신의 기술. 불새가 둘레를 크게 돌아 불의 고리로 둘레 34칸의 적을 끌어모으고, 고리가 세 번 조였다가 겁화로 터진다"] = "A Phoenix Avatar skill. A fire bird circles wide, gathering foes within 34 studs into a ring of fire; the ring tightens three times, then bursts into kalpa fire",
 	["열반재생"] = "Nirvana Rebirth",
 	["불사조 화신의 초 오의 (그동안 무적). 하늘의 불사조가 세 번 내리꽂히며 적 셋을 차례로 태우고, 마지막에 잿더미에서 금빛 기둥으로 다시 태어나며 둘레 50칸을 태운다"] = "Phoenix Avatar Super Ultimate (invincible meanwhile). The sky's phoenix dives three times, burning three foes in turn, then is reborn from the ashes as a golden pillar, burning everything within 50 studs",
+	["검역 전개"] = "Sword Domain Expansion",
+	["검역"] = "Sword Domain",
 }

@@ -1841,6 +1841,15 @@ function ForgeFx.watchAvatar(model: Model)
 	end
 	model:GetAttributeChangedSignal("Twilight"):Connect(check)
 	check()
+	-- 3.99.72판 평소의 기운 (권법을 바꾸면 따라 바뀐다)
+	local function idle()
+		local fn = (ForgeFx :: any).idleAura
+		if fn then
+			pcall(fn, model)
+		end
+	end
+	model:GetAttributeChangedSignal("Style"):Connect(idle)
+	idle()
 end
 
 ------------------------------------------------------------------------
@@ -2895,6 +2904,60 @@ VFX.mgKingFist = function(d)
 end
 
 ------------------------------------------------------------------------
+-- 3.99.72판 큰 장면 도구: 화면 번짐 (Bloom), 뼈대를 따라 타오르는 불의 몸 (입자로 채운다: 선만 그리면 막대기처럼 보였다)
+------------------------------------------------------------------------
+local function bloom(intensity: number, dur: number)
+	local b = Instance.new("BloomEffect")
+	b.Intensity = 0
+	b.Size = 40
+	b.Threshold = 0.75
+	b.Parent = Lighting
+	tween(b, 0.08, { Intensity = intensity })
+	task.delay(0.08, function()
+		tween(b, dur, { Intensity = 0 })
+		Debris:AddItem(b, dur + 0.1)
+	end)
+end
+local function fireBody(bones: { { Vector3 } }, place: (number) -> CFrame?, life: number, k: number, c1: Color3, c2: Color3, rate: number?, size: number?)
+	local holders = {}
+	for _, b in ipairs(bones) do
+		for j = 0, 1 do
+			local h = piece(V(0.1, 0.1, 0.1), CF(), WHITE, 1)
+			local e = Instance.new("ParticleEmitter")
+			e.Texture = TEX_FIRE
+			e.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, c2), ColorSequenceKeypoint.new(0.4, c1), ColorSequenceKeypoint.new(1, c1) })
+			e.LightEmission = 0.7
+			e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, (size or 1.4) * k), NumberSequenceKeypoint.new(1, 0) })
+			e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.15), NumberSequenceKeypoint.new(1, 1) })
+			e.Lifetime = NumberRange.new(0.35, 0.6)
+			e.Rate = rate or 40
+			e.Speed = NumberRange.new(0.5 * k, 1.5 * k)
+			e.SpreadAngle = Vector2.new(180, 180)
+			e.Acceleration = V(0, 2 * k, 0)
+			e.Parent = h
+			table.insert(holders, { h = h, e = e, a = b[1], b = b[2], u = (j + 0.5) / 2 })
+		end
+	end
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		local body = place(t)
+		if not body or t > life then
+			conn:Disconnect()
+			for _, it in ipairs(holders) do
+				it.e.Enabled = false
+				Debris:AddItem(it.h, 0.8)
+			end
+			return
+		end
+		for _, it in ipairs(holders) do
+			it.h.CFrame = body * CF(it.a:Lerp(it.b, it.u) * k)
+		end
+	end)
+end
+
+------------------------------------------------------------------------
 -- 3.99.68판 극 무형검성: 보이지 않는 검기 (한 박자 늦게 빛나는 베인 자리) · 빛의 검 · 만 자루 검의 하늘
 ------------------------------------------------------------------------
 local SW_W, SW_B, SW_G = Color3.fromRGB(240, 248, 255), Color3.fromRGB(120, 200, 255), Color3.fromRGB(255, 226, 150)
@@ -3002,10 +3065,30 @@ local function swordDrop(at: Vector3, len: number, k: number, height: number, de
 		tween(pt, delay * 0.8, { Transparency = t0 })
 	end
 	gEmit(g + V(0, height + len * 0.5, 0), TEX_SPARK, SW_W, SW_B, 8, 0.5, 6, 0.5)
+	-- 3.99.72판: 떨어지는 칼날 뒤로 빛 꼬리, 꽂히는 자리에 하늘로 솟는 빛기둥
+	local blade = parts[1]
+	local a0 = Instance.new("Attachment")
+	a0.Position = V(0, len * 0.45, 0)
+	a0.Parent = blade
+	local a1 = Instance.new("Attachment")
+	a1.Position = V(0, -len * 0.45, 0)
+	a1.Parent = blade
+	local tr = Instance.new("Trail")
+	tr.Attachment0 = a0
+	tr.Attachment1 = a1
+	tr.Lifetime = 0.25
+	tr.LightEmission = 1
+	tr.Color = ColorSequence.new(SW_W, SW_B)
+	tr.Transparency = NumberSequence.new(0.2, 1)
+	tr.FaceCamera = true
+	tr.Parent = blade
 	task.delay(delay, function()
 		local hit = CF(g + V(0, len * 0.82, 0))
 		moveParts(parts, top, hit, fall, Enum.EasingStyle.Quart)
 		task.delay(fall, function()
+			local pillar = piece(V(len * 4, 0.6 * k, 0.6 * k), CF(g + V(0, len * 2, 0)) * CFrame.Angles(0, 0, math.rad(90)), SW_W, 0.1, Enum.PartType.Cylinder)
+			tween(pillar, 0.35, { Size = V(len * 4, 0.05, 0.05), Transparency = 1 })
+			Debris:AddItem(pillar, 0.4)
 			Fx.ring(g + V(0, 0.4, 0), SW_B, 1.5, len * 0.9, 0.3)
 			gEmit(g + V(0, 1, 0), TEX_SPARK, SW_W, SW_G, 14, 0.6, 14, 0.45)
 			for i = 1, 4 do
@@ -3104,6 +3187,7 @@ VFX.swSky = function(d)
 		end
 	end)
 	Fx.flash(center, SW_W, 60, 3, 0.4)
+	bloom(1, 0.8)
 	pcall(Fx.sound, "slash", 1, 0.6, g)
 	shake(0.6)
 end
@@ -3144,6 +3228,7 @@ VFX.swOne = function(d)
 		Fx.ring(g + V(0, 0.5, 0), SW_W, 6, r * 2.4, 0.6)
 		Fx.ring(g + V(0, 6, 0), SW_B, 4, r * 1.8, 0.5)
 		Fx.flash(g + V(0, 10, 0), SW_W, r * 3, 9, 0.5)
+		bloom(1.6, 0.8)
 		gEmit(g + V(0, 4, 0), TEX_SPARK, SW_W, SW_G, 90, 1.4, 40, 1)
 		Fx.debris(g, 18, 40)
 		shake(2)
@@ -3355,6 +3440,17 @@ VFX.phSky = function(d)
 		local tang = V(-math.sin(a), 0, math.cos(a))
 		return CFrame.lookAt(pos, pos + tang) * CFrame.Angles(0, 0, math.rad(-25))
 	end, life, bird, PH_K, PH_R, { per = 3, w = 0.8, gold = { 1, 4, 7, 10 }, goldColor = PH_G, glow = true, amp = 1.4, legs = PH_WING, gallop = 7 })
+	-- 3.99.72판: 뼈대를 불꽃 입자로 채운다 (선만 있던 새가 타오르는 새가 된다)
+	fireBody(PHOENIX, function(t)
+		if t > life - 0.4 then
+			return nil
+		end
+		local a = t * 1.6
+		local pos = c + V(math.cos(a) * 30, math.sin(t * 2) * 3, math.sin(a) * 30)
+		local tang = V(-math.sin(a), 0, math.cos(a))
+		return CFrame.lookAt(pos, pos + tang) * CFrame.Angles(0, 0, math.rad(-25))
+	end, life, bird, PH_K, PH_G, 55, 1.6)
+	bloom(0.8, life)
 	task.delay(life, function()
 		tween(cc, 0.6, { Brightness = 0, Contrast = 0, Saturation = 0, TintColor = WHITE })
 		Debris:AddItem(cc, 0.7)
@@ -3392,7 +3488,16 @@ VFX.phRebirthX = function(d)
 		local pos = top:Lerp(g + V(0, 4, 0), q * q)
 		return CFrame.lookAt(pos, pos + V(0, -1, -0.3)) -- 머리 (-Z) 가 아래로: 내리꽂힌다
 	end, 0.35, 5, PH_K, PH_G, { per = 3, w = 0.9, glow = true, amp = 0.8 })
+	fireBody(PHOENIX, function(t)
+		if t > 0.35 then
+			return nil
+		end
+		local q = math.min(1, t / 0.32)
+		local pos = top:Lerp(g + V(0, 4, 0), q * q)
+		return CFrame.lookAt(pos, pos + V(0, -1, -0.3))
+	end, 0.35, 5, PH_K, PH_G, 80, 1.8)
 	task.delay(0.33, function()
+		bloom(1.8, 0.9)
 		blackFire(g + V(0, 2, 0), 90, 7, 34, 1.2)
 		for i = 1, 20 do
 			local a = i / 20 * math.pi * 2
@@ -3463,6 +3568,12 @@ local function phoenixAvatar(model: Model)
 		end
 		return rootP.CFrame * CFrame.Angles(0, 0, math.sin(t * 4) * 0.04)
 	end, 60, 1, PH_K, PH_R, { per = 2, w = 0.7, gold = { 3, 7 }, goldColor = PH_G, glow = true, amp = 1.2 })
+	fireBody(wing, function(t)
+		if not rootP.Parent or model:GetAttribute("Twilight") ~= true then
+			return nil
+		end
+		return rootP.CFrame * CFrame.Angles(0, 0, math.sin(t * 4) * 0.04)
+	end, 60, 1, PH_K, PH_G, 30, 1.2)
 	local holder = piece(V(0.1, 0.1, 0.1), rootP.CFrame, WHITE, 1)
 	local e = Instance.new("ParticleEmitter")
 	e.Texture = TEX_FIRE
@@ -3486,6 +3597,228 @@ local function phoenixAvatar(model: Model)
 	end)
 end
 ForgeFx.phoenixAvatar = phoenixAvatar
+
+------------------------------------------------------------------------
+-- 3.99.72판 검역 (극 무형검성 · 만검귀종의 영역 전개): 세상이 흑백으로 얼어붙고 이름이 찍힌 뒤, 둘레에 검의 벽이 솟고
+--   하늘에 검 고리가 돌며, 영역 안 모든 곳을 보이지 않는 검기가 쉴 새 없이 긋는다. 땅엔 베인 금이 쌓이고, 끝나면 검이 모두 산산이 흩어진다
+------------------------------------------------------------------------
+VFX.swDomain = function(d)
+	local g = ground(d.at)
+	local R = d.radius or 45
+	local cut = d.cut or 1
+	local life = d.life or 9
+	local cam = workspace.CurrentCamera
+	local near = cam and (cam.CFrame.Position - g).Magnitude < R * 3
+	-- 1) 펼쳐지는 순간: 흑백 · 강한 대비, 가운데 이름
+	local cc = Instance.new("ColorCorrectionEffect")
+	cc.Parent = Lighting
+	if near then
+		tween(cc, 0.25, { Saturation = -1, Contrast = 0.6, Brightness = -0.05, TintColor = Color3.fromRGB(220, 232, 255) })
+		pcall(domainTitle, "만검귀종", "검역 전개", math.max(1.6, cut + 0.8))
+	end
+	bloom(2.2, 1)
+	shake(1.4)
+	-- 바닥: 검의 진 (세 겹 고리 · 여덟 갈래) 이 퍼지며 그려진다
+	local floor = piece(V(0.2, 1, 1), CF(g + V(0, 0.12, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(14, 16, 24), 0.2, Enum.PartType.Cylinder)
+	floor.Material = Enum.Material.SmoothPlastic
+	tween(floor, cut, { Size = V(0.2, R * 2, R * 2) })
+	local rings = {}
+	for i, rr in ipairs({ R, R * 0.7, R * 0.4 }) do
+		local ring = piece(V(0.25, 1, 1), CF(g + V(0, 0.15 + i * 0.01, 0)) * CFrame.Angles(0, 0, math.rad(90)), SW_B, 0.35, Enum.PartType.Cylinder)
+		tween(ring, cut * (0.6 + i * 0.15), { Size = V(0.25, rr * 2, rr * 2) })
+		local hole = piece(V(0.27, 1, 1), CF(g + V(0, 0.16 + i * 0.01, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(14, 16, 24), 0.2, Enum.PartType.Cylinder)
+		tween(hole, cut * (0.6 + i * 0.15), { Size = V(0.27, rr * 2 - 1.4, rr * 2 - 1.4) })
+		table.insert(rings, ring)
+		table.insert(rings, hole)
+	end
+	for i = 1, 8 do
+		local a = i / 8 * math.pi * 2
+		task.delay(cut * 0.4, function()
+			qiSlash(g + V(0, 0.3, 0), g + V(math.cos(a) * R, 0.3, math.sin(a) * R), 0.7, life - cut * 0.4)
+		end)
+	end
+	-- 2) 둘레에 솟는 검의 벽 (큰 칼 마흔이 칼끝을 하늘로, 안쪽으로 기울어)
+	local wall = {}
+	task.delay(cut * 0.5, function()
+		for i = 1, 40 do
+			local a = i / 40 * math.pi * 2
+			local at = g + V(math.cos(a) * R, 0, math.sin(a) * R)
+			local len = 14 + (i % 3) * 4
+			local cf = CFrame.lookAt(at, g) * CFrame.Angles(math.rad(-20), 0, 0) * CFrame.Angles(math.rad(180), 0, 0)
+			local parts = lightSword(cf * CF(0, -0.5, 0), len, 2.2) -- 뒤집어 칼끝이 하늘로, 날밑이 땅에
+			for _, pt in ipairs(parts) do
+				local t0 = pt.Transparency
+				local goal = pt.CFrame
+				pt.CFrame = goal * CF(0, len, 0) -- 땅 밑에서 솟아오른다 (뒤집힌 틀이라 +Y 가 아래)
+				pt.Transparency = 1
+				tween(pt, 0.35 + (i % 5) * 0.04, { CFrame = goal, Transparency = t0 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+			end
+			table.insert(wall, parts)
+		end
+		shake(0.8)
+	end)
+	-- 3) 하늘의 검 고리 (기존 만검귀종 하늘을 그대로 쓴다)
+	VFX.swSky({ at = d.at, life = life, m = d.m }, SW_W, SW_B, {})
+	-- 4) 검기의 폭풍: 영역 안 어디서나 쉴 새 없이 (가끔 영역을 가로지르는 큰 검기)
+	task.delay(cut, function()
+		local t0 = os.clock()
+		local nextBig = 0
+		local cracks = 0
+		while os.clock() - t0 < life - cut do
+			for _ = 1, 7 do
+				local p0 = g + V((math.random() - 0.5) * R * 1.6, 1 + math.random() * 12, (math.random() - 0.5) * R * 1.6)
+				local dir = V(math.random() - 0.5, (math.random() - 0.5) * 0.8, math.random() - 0.5).Unit
+				local L = 6 + math.random() * 10
+				qiSlash(p0 - dir * L, p0 + dir * L, 0.9 + math.random() * 0.8, 0.12 + math.random() * 0.1)
+			end
+			gEmit(g + V((math.random() - 0.5) * R, 2, (math.random() - 0.5) * R), TEX_SPARK, SW_W, SW_B, 4, 0.5, 10, 0.3)
+			if os.clock() >= nextBig then
+				nextBig = os.clock() + 0.45
+				local a = math.random() * math.pi * 2
+				local u = V(math.cos(a), 0, math.sin(a))
+				qiSlash(g - u * R + V(0, 3 + math.random() * 6, 0), g + u * R + V(0, 3 + math.random() * 6, 0), 3.2, 0.3)
+				shake(0.25)
+			end
+			-- 땅에 남는 베인 금
+			if cracks < 60 then
+				cracks += 1
+				local c0 = g + V((math.random() - 0.5) * R * 1.4, 0.25, (math.random() - 0.5) * R * 1.4)
+				local a = math.random() * math.pi
+				local u = V(math.cos(a), 0, math.sin(a)) * (3 + math.random() * 6)
+				local crack = piece(V(0.25, 0.05, u.Magnitude * 2), CFrame.lookAt(c0, c0 + u), SW_W, 0.2)
+				task.delay(life - cut - (os.clock() - t0), function()
+					fadeOut(crack, 0.5)
+				end)
+			end
+			task.wait(0.06)
+		end
+		-- 5) 끝: 벽의 검이 모두 산산이 흩어지고 세상의 빛깔이 돌아온다
+		for _, parts in ipairs(wall) do
+			for _, pt in ipairs(parts) do
+				tween(pt, 0.4, { CFrame = pt.CFrame * CF(0, 6 + math.random() * 10, (math.random() - 0.5) * 20) * CFrame.Angles(math.random() * 3, math.random() * 3, 0), Transparency = 1 })
+				Debris:AddItem(pt, 0.45)
+			end
+		end
+		gEmit(g + V(0, 6, 0), TEX_SPARK, SW_W, SW_B, 120, 1.2, 50, 1)
+		Fx.flash(g + V(0, 8, 0), SW_W, R * 3, 8, 0.4)
+		bloom(1.6, 0.8)
+		shake(1.2)
+		for _, rp in ipairs(rings) do
+			fadeOut(rp, 0.6)
+		end
+		fadeOut(floor, 0.6)
+		tween(cc, 0.6, { Saturation = 0, Contrast = 0, Brightness = 0, TintColor = WHITE })
+		Debris:AddItem(cc, 0.7)
+	end)
+end
+
+-- 3.99.72판 연타 · 강타가 맞을 때의 이 권법만의 타격
+local function geukHitFx(styleId: string, pos: Vector3, big: boolean): boolean
+	if styleId == "geuksword" then
+		-- 맞은 자리를 보이지 않는 검기가 두세 줄 가로지르고, 한 박자 뒤 빛난다
+		for i = 1, big and 3 or 2 do
+			local a = math.random() * math.pi
+			local u = V(math.cos(a), (math.random() - 0.5) * 0.9, math.sin(a)).Unit
+			local L = big and 7 or 5
+			task.delay((i - 1) * 0.03, function()
+				qiSlash(pos - u * L, pos + u * L, big and 1.6 or 1.1, 0.2)
+			end)
+		end
+		gEmit(pos, TEX_SPARK, SW_W, SW_B, big and 14 or 6, 0.5, 12, 0.35)
+		if big then
+			Fx.ring(pos, SW_B, 1, 10, 0.25)
+			bloom(0.5, 0.25)
+		end
+		return true
+	elseif styleId == "geukphoenix" then
+		blackFire(pos, big and 18 or 8, big and 2.6 or 1.6, big and 12 or 7, 0.5)
+		gEmit(pos, TEX_SPARK, PH_G, WHITE, big and 12 or 5, 0.5, 10, 0.4)
+		if big then
+			for i = 1, 4 do
+				local a = i / 4 * math.pi * 2 + math.random()
+				gStroke(pos, pos + V(math.cos(a) * 6, 2 + math.random() * 3, math.sin(a) * 6), 0.12, 0.9, 0.6, PH_K, PH_G, true, 0.3)
+			end
+			bloom(0.5, 0.25)
+		end
+		return true
+	end
+	return false
+end
+ForgeFx.geukHitFx = geukHitFx
+
+-- 3.99.72판 평소의 기운: 극 무형검성은 등 뒤에 빛의 검 셋이 부채처럼 떠 있고, 극 불사조권은 두 주먹에서 검은 불꽃이 타오른다
+local idleOn: { [Model]: string } = {}
+local function idleAura(model: Model)
+	local sid = model:GetAttribute("Style")
+	if sid ~= "geuksword" and sid ~= "geukphoenix" then
+		return
+	end
+	if idleOn[model] == sid then
+		return
+	end
+	idleOn[model] = sid
+	local root = model:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		idleOn[model] = nil
+		return
+	end
+	local rootP = root :: BasePart
+	local stuff: { any } = {}
+	local swords = {}
+	if sid == "geuksword" then
+		for i = 1, 3 do
+			local parts = lightSword(rootP.CFrame, 3.6, 0.7)
+			for _, pt in ipairs(parts) do
+				pt.Transparency = math.max(pt.Transparency, 0.25)
+			end
+			table.insert(swords, { parts = parts, i = i })
+		end
+	else
+		for _, hand in ipairs({ "RightHand", "LeftHand" }) do
+			local hp = model:FindFirstChild(hand)
+			if hp and hp:IsA("BasePart") then
+				local e = Instance.new("ParticleEmitter")
+				e.Name = "KwonPhoenixHand"
+				e.Texture = TEX_FIRE
+				e.Color = ColorSequence.new(PH_K, PH_R)
+				e.LightEmission = 0.5
+				e.Size = NumberSequence.new(0.9, 0)
+				e.Lifetime = NumberRange.new(0.3, 0.5)
+				e.Rate = 30
+				e.Speed = NumberRange.new(1, 2)
+				e.Acceleration = V(0, 4, 0)
+				e.Parent = hp
+				table.insert(stuff, e)
+			end
+		end
+	end
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local now = model:GetAttribute("Style")
+		if not rootP.Parent or now ~= sid or model:GetAttribute("Dead") == true then
+			conn:Disconnect()
+			idleOn[model] = nil
+			for _, it in ipairs(swords) do
+				fadeParts(it.parts, 0.2)
+			end
+			for _, e in ipairs(stuff) do
+				e:Destroy()
+			end
+			return
+		end
+		local t = os.clock()
+		for _, it in ipairs(swords) do
+			local off = (it.i - 2) * 0.55
+			local cf = rootP.CFrame * CF(off * 3.2, 2.6 + math.abs(off) * -0.8 + math.sin(t * 2 + it.i) * 0.2, 2.2) * CFrame.Angles(0, 0, -off) * CFrame.Angles(math.rad(180), 0, 0)
+			local base = it.parts[3].CFrame
+			for _, pt in ipairs(it.parts) do
+				local rel = base:ToObjectSpace(pt.CFrame)
+				pt.CFrame = cf * CF(0, 0.15, 0) * rel
+			end
+		end
+	end)
+end
+ForgeFx.idleAura = idleAura
 
 function ForgeFx.handles(data: any): boolean
 	return data.kind == "forgeStart" or data.kind == "forgeStep" or (data.kind == "pulse" and OWN_PULSE[data.fx or ""] == true)
