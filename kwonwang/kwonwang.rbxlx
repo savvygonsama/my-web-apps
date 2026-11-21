@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.64" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.65" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4673,9 +4673,9 @@ Config.TOWER = {
 	arena = Vector3.new(-1700, 1800, 1700), -- 첫 시련장 (사람마다 옆으로 비켜 놓는다)
 	slotGap = 520, -- 3.99.10판: 360 → 520 (시련장이 넓어졌다)
 	slots = 10,
-	radius = 80, -- 3.99.10판: 46 → 80 (좁았다). 열 층마다 무대가 바뀐다
+	radius = 160, -- 3.99.10판: 46 → 80 (좁았다). 3.99.65판: 80 → 160 (아직 좁았다). 열 층마다 무대가 바뀐다
 	-- 3.99.10판: 층의 갈래 (보스 층이 아닐 때): 10층 단위로 3 · 7번째 층은 졸병 떼 (약하고 많다), 5번째 층은 정예 하나 (크고 질기다)
-	swarm = { at = { 3, 7 }, n = 8, power = 0.45 },
+	swarm = { at = { 3, 7 }, n = 12, power = 0.4 }, -- 3.99.65판: 넓어진 만큼 떼를 8 → 12 (하나하나는 0.45 → 0.4)
 	elite = { at = { 5 }, power = 2.2, hp = 3, scale = 1.5 },
 	bossEvery = 10,
 	-- 층의 세기는 정해져 있다 (누가 오르든 같다): 1층 전투력 60, 층마다 ×1.07 (1.9.1판: ×1.06 → ×1.07, 위로 갈수록 더 가파르게)
@@ -15892,7 +15892,7 @@ function Tower.start(player: Player, back: Vector3?, mode: any?)
 	activeTower[player] = run
 	local char = player.Character
 	if char then
-		local at = center + Vector3.new(0, 4, Config.TOWER.radius * 0.6)
+		local at = center + Vector3.new(0, 4, Config.TOWER.radius * 0.35) -- 3.99.65판: 넓어져서 0.6 → 0.35 (적까지 너무 멀었다)
 		char:PivotTo(CFrame.lookAt(at, Vector3.new(center.X, at.Y, center.Z)))
 	end
 	f.hp = f.maxHp
@@ -16015,7 +16015,7 @@ function Tower.next(player: Player, run: any)
 		local want = run.geop and (Config.realmRefPower(#Config.Realms) * GP.startPower * GP.growth ^ (floor - 1)) or (run.nm and (NM.powerStart * NM.powerGrowth ^ (floor - 1)) or (T.powerStart * T.powerGrowth ^ (floor - 1)))
 		for i, item in ipairs(list) do
 			local a = i / #list * math.pi * 2
-			local at = run.center + Vector3.new(math.cos(a), 0, math.sin(a)) * (T.radius * (item[2] and 0.2 or 0.45))
+			local at = run.center + Vector3.new(math.cos(a), 0, math.sin(a)) * (T.radius * (item[2] and 0.12 or 0.3))
 			local e = Npc.spawn(item[1], item[2], at, "trial")
 			if e then
 				local ef = e.f :: any
@@ -41465,14 +41465,14 @@ function World.towerArena(slot: number): Vector3
 	local core = disc("ArenaCore", center + Vector3.new(0, 0.1, 0), R * 0.5, 0.2, Color3.fromRGB(150, 140, 125), Enum.Material.Slate, f, false)
 	disc("ArenaTrim", center - Vector3.new(0, 0.2, 0), R + 0.8, 0.6, GOLD, Enum.Material.Metal, f)
 	-- 둘레의 낮은 난간과 열두 기둥 (꼭대기에 불)
-	local n = 40
+	local n = 72 -- 3.99.65판: 시련장이 두 배라 난간 조각도 40 → 72
 	for k = 0, n - 1 do
 		local a = k / n * math.pi * 2
 		local p = center + Vector3.new(math.cos(a) * (R - 1), 1.5, math.sin(a) * (R - 1))
 		part({ Name = "ArenaRail", Size = Vector3.new(2 * math.pi * R / n + 0.4, 3, 1.2), CFrame = CFrame.lookAt(p, Vector3.new(center.X, p.Y, center.Z)) * CFrame.Angles(0, math.rad(90), 0), Color = STONE, Material = Enum.Material.Marble, Parent = f })
 	end
-	for k = 0, 11 do
-		local a = k / 12 * math.pi * 2
+	for k = 0, 15 do
+		local a = k / 16 * math.pi * 2
 		local p = center + Vector3.new(math.cos(a) * (R + 2), 0, math.sin(a) * (R + 2))
 		part({ Name = "ArenaPillar", Size = Vector3.new(3.4, 20, 3.4), Position = p + Vector3.new(0, 10, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
 		brazier(p + Vector3.new(0, 20, 0), 1, f)

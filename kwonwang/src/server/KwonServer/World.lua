@@ -7782,14 +7782,14 @@ function World.towerArena(slot: number): Vector3
 	local core = disc("ArenaCore", center + Vector3.new(0, 0.1, 0), R * 0.5, 0.2, Color3.fromRGB(150, 140, 125), Enum.Material.Slate, f, false)
 	disc("ArenaTrim", center - Vector3.new(0, 0.2, 0), R + 0.8, 0.6, GOLD, Enum.Material.Metal, f)
 	-- 둘레의 낮은 난간과 열두 기둥 (꼭대기에 불)
-	local n = 40
+	local n = 72 -- 3.99.65판: 시련장이 두 배라 난간 조각도 40 → 72
 	for k = 0, n - 1 do
 		local a = k / n * math.pi * 2
 		local p = center + Vector3.new(math.cos(a) * (R - 1), 1.5, math.sin(a) * (R - 1))
 		part({ Name = "ArenaRail", Size = Vector3.new(2 * math.pi * R / n + 0.4, 3, 1.2), CFrame = CFrame.lookAt(p, Vector3.new(center.X, p.Y, center.Z)) * CFrame.Angles(0, math.rad(90), 0), Color = STONE, Material = Enum.Material.Marble, Parent = f })
 	end
-	for k = 0, 11 do
-		local a = k / 12 * math.pi * 2
+	for k = 0, 15 do
+		local a = k / 16 * math.pi * 2
 		local p = center + Vector3.new(math.cos(a) * (R + 2), 0, math.sin(a) * (R + 2))
 		part({ Name = "ArenaPillar", Size = Vector3.new(3.4, 20, 3.4), Position = p + Vector3.new(0, 10, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
 		brazier(p + Vector3.new(0, 20, 0), 1, f)

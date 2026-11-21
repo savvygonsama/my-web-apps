@@ -4683,7 +4683,7 @@ function Tower.start(player: Player, back: Vector3?, mode: any?)
 	activeTower[player] = run
 	local char = player.Character
 	if char then
-		local at = center + Vector3.new(0, 4, Config.TOWER.radius * 0.6)
+		local at = center + Vector3.new(0, 4, Config.TOWER.radius * 0.35) -- 3.99.65판: 넓어져서 0.6 → 0.35 (적까지 너무 멀었다)
 		char:PivotTo(CFrame.lookAt(at, Vector3.new(center.X, at.Y, center.Z)))
 	end
 	f.hp = f.maxHp
@@ -4806,7 +4806,7 @@ function Tower.next(player: Player, run: any)
 		local want = run.geop and (Config.realmRefPower(#Config.Realms) * GP.startPower * GP.growth ^ (floor - 1)) or (run.nm and (NM.powerStart * NM.powerGrowth ^ (floor - 1)) or (T.powerStart * T.powerGrowth ^ (floor - 1)))
 		for i, item in ipairs(list) do
 			local a = i / #list * math.pi * 2
-			local at = run.center + Vector3.new(math.cos(a), 0, math.sin(a)) * (T.radius * (item[2] and 0.2 or 0.45))
+			local at = run.center + Vector3.new(math.cos(a), 0, math.sin(a)) * (T.radius * (item[2] and 0.12 or 0.3))
 			local e = Npc.spawn(item[1], item[2], at, "trial")
 			if e then
 				local ef = e.f :: any
