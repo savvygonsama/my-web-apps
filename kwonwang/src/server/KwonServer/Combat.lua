@@ -938,14 +938,14 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	Combat.sync(att)
 	Combat.sync(tgt)
 	Push:FireAllClients("hit", {
-		a = att.model,
+		a = opt.byModel or att.model, -- 3.99.61판: 제자 (동행) 가 친 것은 제자 몸이 친 것으로 보인다 (내 몸이 멈칫하지 않게)
 		t = tgt.model,
 		kind = "hit",
 		pos = pos,
 		dmg = d,
 		heavy = heavy,
 		crit = crit,
-		style = att.style,
+		style = opt.byStyle or att.style,
 		skill = opt.isSkill == true,
 		strike = move.strike == true,
 		pose = move.pose,

@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.60" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.61" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -12537,6 +12537,7 @@ local function pushState(player: Player)
 			need = Config.discipleNeed(p.disciple.lv),
 			job = p.disciple.job,
 			style = p.disciple.style,
+			follow = (states[player] and (states[player] :: any).companion) and true or nil,
 			away = os.time() - p.disciple.since,
 			rest = math.max(0, (p.disciple.restUntil or 0) - os.time()),
 		} or nil,
@@ -14871,6 +14872,30 @@ function Actions.disciple(player: Player, what: any, arg: any)
 	elseif what == "robe" then
 		p.disciple.robe = p.disciple.robe % #D.robes + 1
 		Npc.spawnDisciple(player, p.disciple)
+		local stc = states[player] :: any
+		if stc and stc.companion then
+			stc.companion = nil
+			toast(player, "🧑‍🎓 옷을 갈아입느라 마당으로 돌아갔어요")
+		end
+	elseif what == "follow" then
+		-- 3.99.61판 동행: 데리고 다니기 / 마당으로 돌려보내기
+		local stc = states[player] :: any
+		local f0 = Combat.fighterOfPlayer(player)
+		if not stc or not f0 then
+			return
+		end
+		if stc.companion then
+			stc.companion = nil
+			Npc.spawnDisciple(player, p.disciple)
+			toast(player, string.format("🏠 %s이(가) 문하생 마당으로 돌아갔어요", p.disciple.name))
+		else
+			local m = Npc.releaseDisciple(player, f0.root.Position - Combat.look(f0) * 4)
+			if not m then
+				return
+			end
+			stc.companion = { model = m, nextAtk = 0, combo = 0 }
+			toast(player, string.format("🚶 %s이(가) 따라나섭니다. 곁의 적과 함께 싸워요", p.disciple.name))
+		end
 	else
 		return
 	end
@@ -18606,6 +18631,116 @@ function Karma.killed(player: Player, f: any)
 	st.dirty = true
 	toast(player, "🪞 업을 끊었다! " .. table.concat(got, " · "))
 	pushState(player)
+end
+-- 3.99.61판 제자 동행: 주인을 따라다니다 주인 곁의 적을 가르친 권법의 연타로 친다.
+--   피해는 주인의 힘 × (0.25 + 경지 × 0.03) 몫 (경지 16이면 주인 연타 한 대의 약 70%), 처치와 보상은 주인 몫. 적은 제자를 노리지 않는다
+--   제자는 칠 때마다 수련이 쌓여 경지가 오른다
+do
+	local CP = { tick = 0.2, leash = 70, fight = 34, reach = 6.5, every = 0.85, xp = 0.35 }
+	local function discipleLevelUp(player: Player, d: any)
+		local D = Config.DISCIPLE
+		local ups = 0
+		while d.lv < D.maxLv and d.xp >= Config.discipleNeed(d.lv) do
+			d.xp -= Config.discipleNeed(d.lv)
+			d.lv += 1
+			ups += 1
+		end
+		if ups > 0 then
+			Npc.labelDisciple(player, d)
+			toast(player, string.format("🧑‍🎓 %s이(가) 함께 싸우며 %s에 올랐어요", d.name, Config.Realms[d.lv].name))
+			pushState(player)
+		end
+	end
+	task.spawn(function()
+		while true do
+			task.wait(CP.tick)
+			for player, st0 in pairs(states) do
+				local st = st0 :: any
+				local c = st.companion
+				local p = profiles[player]
+				if c and p and p.disciple then
+					local ok, err = pcall(function()
+						local m = c.model
+						local f = Combat.fighterOfPlayer(player)
+						local root = m and m.Parent and m:FindFirstChild("HumanoidRootPart")
+						local hum = m and m:FindFirstChildOfClass("Humanoid")
+						if not root or not hum then
+							st.companion = nil
+							return
+						end
+						if not f or f.dead then
+							hum:MoveTo(root.Position)
+							return
+						end
+						local me = f.root.Position
+						local rp = root.Position
+						-- 너무 멀어지면 (순간이동 · 다른 세계) 곁으로
+						if (rp - me).Magnitude > CP.leash then
+							m:PivotTo(CFrame.new(me - Combat.look(f) * 4 + Vector3.new(0, 1, 0)))
+							return
+						end
+						-- 주인 곁의 적 가운데 제자에게 가장 가까운 것
+						local best, bestD = nil, math.huge
+						for _, e in ipairs(Npc.list) do
+							local ef = e.f
+							if ef and not ef.dead and ef.root.Parent and Combat.hostile(f, ef) and not (ef :: any).trialOwner and not (ef :: any).karmaOwner then
+								local ep = ef.root.Position
+								if (ep - me).Magnitude <= CP.fight then
+									local dd = (ep - rp).Magnitude
+									if dd < bestD then
+										best, bestD = ef, dd
+									end
+								end
+							end
+						end
+						if best then
+							local ep = best.root.Position
+							local flat = Vector3.new(ep.X - rp.X, 0, ep.Z - rp.Z)
+							local reach = CP.reach + Combat.bodyPad(best)
+							if bestD > reach then
+								hum:MoveTo(ep - (flat.Magnitude > 0.1 and flat.Unit or Vector3.zero) * (reach - 1.5))
+							else
+								hum:MoveTo(rp)
+								if flat.Magnitude > 0.1 then
+									root.CFrame = CFrame.lookAt(rp, rp + flat)
+								end
+								local t = os.clock()
+								if t >= c.nextAtk then
+									c.nextAtk = t + CP.every
+									local d = p.disciple
+									local style = Config.STYLE_BY_ID[d.style or ""] or Config.STYLE_BY_ID.samjae
+									local combo = style and style.combo or {}
+									c.combo = c.combo % math.max(1, #combo) + 1
+									local mv = combo[c.combo]
+									Push:FireAllClients("act", { m = m, pose = mv and mv.pose or "palm_r", dur = 0.38, seq = -2 })
+									local k = 0.25 + 0.03 * ((d.lv or 1) - 1)
+									task.delay(0.14, function()
+										if best.dead or not best.root.Parent or f.dead then
+											return
+										end
+										Combat.applyHit(f, best, { dmg = 12 * k, posture = 10 * k, stun = 0.3, kb = 6, range = reach, radius = 5 }, { chain = true, byModel = m, byStyle = d.style, move = { name = (mv and mv.name) or "제자의 주먹", pose = mv and mv.pose } })
+									end)
+									d.xp = (d.xp or 0) + CP.xp
+									discipleLevelUp(player, d)
+								end
+							end
+						else
+							-- 주인 오른쪽 뒤를 따라간다
+							local look = Combat.look(f)
+							local right = Vector3.new(-look.Z, 0, look.X)
+							local spot = me - look * 4 + right * 3
+							if (rp - spot).Magnitude > 4 then
+								hum:MoveTo(spot)
+							end
+						end
+					end)
+					if not ok then
+						warn("[권왕] 제자 동행 오류:", err)
+					end
+				end
+			end
+		end
+	end)
 end
 (_G :: any).KwonKarma = Karma
 if W.karmaMirror then
@@ -22463,14 +22598,14 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	Combat.sync(att)
 	Combat.sync(tgt)
 	Push:FireAllClients("hit", {
-		a = att.model,
+		a = opt.byModel or att.model, -- 3.99.61판: 제자 (동행) 가 친 것은 제자 몸이 친 것으로 보인다 (내 몸이 멈칫하지 않게)
 		t = tgt.model,
 		kind = "hit",
 		pos = pos,
 		dmg = d,
 		heavy = heavy,
 		crit = crit,
-		style = att.style,
+		style = opt.byStyle or att.style,
 		skill = opt.isSkill == true,
 		strike = move.strike == true,
 		pose = move.pose,
@@ -26409,6 +26544,33 @@ function Npc.spawnDisciple(owner: Player, d: any)
 	model.Parent = df
 	discipleModels[owner] = model
 	Npc.labelDisciple(owner, d)
+	return model
+end
+-- 3.99.61판 동행: 제자 몸을 마당에서 풀어 주인을 따라다니게 (서버의 동행 고리가 걸음 · 공격을 맡는다)
+function Npc.discipleModelOf(owner: Player): Model?
+	return discipleModels[owner]
+end
+function Npc.releaseDisciple(owner: Player, at: Vector3): Model?
+	local model = discipleModels[owner]
+	if not model then
+		return nil
+	end
+	for k, v in pairs(discipleSpots) do
+		if v == owner then
+			discipleSpots[k] = nil
+		end
+	end
+	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local hum = model:FindFirstChildOfClass("Humanoid")
+	if root and hum then
+		model:PivotTo(CFrame.new(at + Vector3.new(0, hum.HipHeight + root.Size.Y / 2, 0)))
+		root.Anchored = false
+		pcall(function()
+			root:SetNetworkOwner(nil)
+		end)
+		hum.WalkSpeed = 26
+	end
+	model:SetAttribute("Companion", true)
 	return model
 end
 function Npc.labelDisciple(owner: Player, d: any)
@@ -70568,6 +70730,13 @@ return {
 	["삼도천의 주인 삼도귀모를 꺾어라"] = "Defeat the Ghost Crone, master of the Three Crossings River",
 	["북쪽의 현무: 지옥 한빙지옥의 빙옥한왕을 꺾어 현무의 등껍질 조각을 얻어라"] = "Black Tortoise of the north: defeat the Ice Prison King of the Freezing Hell and take a piece of the tortoise's shell",
 	["하늘 끝까지 가 봤다면 이번엔 땅 아래다. 세상 동남쪽 맨 끝, 희미한 풀이 밟히는 곳에서 사신에게 삯을 치르고 원혼을 달래면 지옥이 열린다. 삼도천의 삼도귀모와 화탕지옥의 업화염왕을 꺾어라."] = "You've been to the end of the sky; now it's below the ground. At the far southeast of the world, where faint grass gives underfoot, pay the reaper's fare and soothe the restless spirit, and Hell opens. Defeat the Ghost Crone of the Three Crossings River and the Karmic Flame King of the Boiling Hell.",
+	["🚶 데리고 다니기 (곁의 적과 함께 싸운다)"] = "🚶 Take along (fights the enemies near you)",
+	["🏠 마당으로 돌려보내기"] = "🏠 Send back to the yard",
+	["🧑‍🎓 옷을 갈아입느라 마당으로 돌아갔어요"] = "🧑‍🎓 Went back to the yard to change clothes",
+	["🧑‍🎓 %s이(가) 함께 싸우며 %s에 올랐어요"] = "🧑‍🎓 %s fought by your side and reached %s",
+	["제자의 주먹"] = "Disciple's Fist",
+	["🏠 %s이(가) 문하생 마당으로 돌아갔어요"] = "🏠 %s went back to the disciple yard",
+	["🚶 %s이(가) 따라나섭니다. 곁의 적과 함께 싸워요"] = "🚶 %s comes along and will fight the enemies near you",
 }
 ]]></string>
           </Properties>
@@ -91230,9 +91399,18 @@ function UIB.buildDisciple()
 			Request:FireServer("disciple", "style", state.style)
 		end
 	end)
+	-- 3.99.61판 동행: 데리고 다니기 / 마당으로
+	local followBtn = button({ Position = UDim2.new(0, 4, 0, 352), Size = UDim2.new(1, -8, 0, 50), Text = "🚶 데리고 다니기 (곁의 적과 함께 싸운다)", TextSize = 17, BackgroundColor3 = Color3.fromRGB(70, 110, 160), Parent = page }, function()
+		Request:FireServer("disciple", "follow")
+	end)
 	refreshers.disciple = function()
 		local s = state or {}
 		local d = s.disciple
+		followBtn.Visible = d ~= nil
+		if d then
+			followBtn.Text = d.follow and "🏠 마당으로 돌려보내기" or "🚶 데리고 다니기 (곁의 적과 함께 싸운다)"
+			followBtn.BackgroundColor3 = d.follow and Color3.fromRGB(120, 90, 60) or Color3.fromRGB(70, 110, 160)
+		end
 		hire.Visible = d == nil
 		claim.Visible = d ~= nil
 		nameBtn.Visible, robeBtn.Visible, styleBtn.Visible = d ~= nil, d ~= nil, d ~= nil

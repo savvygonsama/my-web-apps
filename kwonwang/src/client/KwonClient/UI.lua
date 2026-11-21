@@ -2455,9 +2455,18 @@ function UIB.buildDisciple()
 			Request:FireServer("disciple", "style", state.style)
 		end
 	end)
+	-- 3.99.61판 동행: 데리고 다니기 / 마당으로
+	local followBtn = button({ Position = UDim2.new(0, 4, 0, 352), Size = UDim2.new(1, -8, 0, 50), Text = "🚶 데리고 다니기 (곁의 적과 함께 싸운다)", TextSize = 17, BackgroundColor3 = Color3.fromRGB(70, 110, 160), Parent = page }, function()
+		Request:FireServer("disciple", "follow")
+	end)
 	refreshers.disciple = function()
 		local s = state or {}
 		local d = s.disciple
+		followBtn.Visible = d ~= nil
+		if d then
+			followBtn.Text = d.follow and "🏠 마당으로 돌려보내기" or "🚶 데리고 다니기 (곁의 적과 함께 싸운다)"
+			followBtn.BackgroundColor3 = d.follow and Color3.fromRGB(120, 90, 60) or Color3.fromRGB(70, 110, 160)
+		end
 		hire.Visible = d == nil
 		claim.Visible = d ~= nil
 		nameBtn.Visible, robeBtn.Visible, styleBtn.Visible = d ~= nil, d ~= nil, d ~= nil

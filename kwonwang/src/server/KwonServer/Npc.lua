@@ -1069,6 +1069,33 @@ function Npc.spawnDisciple(owner: Player, d: any)
 	Npc.labelDisciple(owner, d)
 	return model
 end
+-- 3.99.61판 동행: 제자 몸을 마당에서 풀어 주인을 따라다니게 (서버의 동행 고리가 걸음 · 공격을 맡는다)
+function Npc.discipleModelOf(owner: Player): Model?
+	return discipleModels[owner]
+end
+function Npc.releaseDisciple(owner: Player, at: Vector3): Model?
+	local model = discipleModels[owner]
+	if not model then
+		return nil
+	end
+	for k, v in pairs(discipleSpots) do
+		if v == owner then
+			discipleSpots[k] = nil
+		end
+	end
+	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local hum = model:FindFirstChildOfClass("Humanoid")
+	if root and hum then
+		model:PivotTo(CFrame.new(at + Vector3.new(0, hum.HipHeight + root.Size.Y / 2, 0)))
+		root.Anchored = false
+		pcall(function()
+			root:SetNetworkOwner(nil)
+		end)
+		hum.WalkSpeed = 26
+	end
+	model:SetAttribute("Companion", true)
+	return model
+end
 function Npc.labelDisciple(owner: Player, d: any)
 	local model = discipleModels[owner]
 	local head = model and model:FindFirstChild("Head")
