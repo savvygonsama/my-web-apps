@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.65" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.66" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4673,7 +4673,7 @@ Config.TOWER = {
 	arena = Vector3.new(-1700, 1800, 1700), -- 첫 시련장 (사람마다 옆으로 비켜 놓는다)
 	slotGap = 520, -- 3.99.10판: 360 → 520 (시련장이 넓어졌다)
 	slots = 10,
-	radius = 160, -- 3.99.10판: 46 → 80 (좁았다). 3.99.65판: 80 → 160 (아직 좁았다). 열 층마다 무대가 바뀐다
+	radius = 200, -- 3.99.10판: 46 → 80 (좁았다). 3.99.65판: 80 → 160 (아직 좁았다). 3.99.66판: 160 → 200. 열 층마다 무대가 바뀐다
 	-- 3.99.10판: 층의 갈래 (보스 층이 아닐 때): 10층 단위로 3 · 7번째 층은 졸병 떼 (약하고 많다), 5번째 층은 정예 하나 (크고 질기다)
 	swarm = { at = { 3, 7 }, n = 12, power = 0.4 }, -- 3.99.65판: 넓어진 만큼 떼를 8 → 12 (하나하나는 0.45 → 0.4)
 	elite = { at = { 5 }, power = 2.2, hp = 3, scale = 1.5 },
