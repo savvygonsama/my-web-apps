@@ -132,6 +132,26 @@ local function rootOfChar(): BasePart?
 end
 
 ------------------------------------------------------------------------
+-- 3.99.73판: 터치 기기는 머리 위 이름표 (경지 · 이름 · 권법) 를 작게, 가까운 사람 것만 (휴대폰 화면을 크게 덮었다)
+task.spawn(function()
+	local done: { [Instance]: boolean } = setmetatable({}, { __mode = "k" }) :: any
+	while true do
+		local ts = Titles.tagScale()
+		if ts < 1 then
+			for _, pl in ipairs(Players:GetPlayers()) do
+				local head = pl.Character and pl.Character:FindFirstChild("Head")
+				local tag = head and head:FindFirstChild("KwonTag")
+				if tag and tag:IsA("BillboardGui") and not done[tag] then
+					done[tag] = true
+					tag.Size = UDim2.new(0, math.floor(300 * ts), 0, math.floor(60 * ts))
+					tag.MaxDistance = ts < 0.7 and 60 or 100
+				end
+			end
+		end
+		task.wait(1)
+	end
+end)
+
 -- 무인 지켜보기 (사람과 적 모두 몸동작을 그린다)
 ------------------------------------------------------------------------
 local function watchChar(char: Model)

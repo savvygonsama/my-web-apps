@@ -46,6 +46,17 @@ local function clear(model: Model)
 	end
 end
 
+-- 3.99.73판: 터치 기기는 머리 위 칭호를 작게 (글자 크기가 화면 크기와 상관없이 고정이라, 작은 휴대폰 화면을 크게 덮었다)
+local function tagScale(): number
+	local UIS = game:GetService("UserInputService")
+	if not UIS.TouchEnabled or (UIS.KeyboardEnabled and UIS.MouseEnabled) then
+		return 1
+	end
+	local cam = workspace.CurrentCamera
+	local vp = cam and cam.ViewportSize or Vector2.new(800, 400)
+	return math.min(vp.X, vp.Y) < 600 and 0.55 or 0.8
+end
+Titles.tagScale = tagScale
 local function build(model: Model)
 	clear(model)
 	local id = model:GetAttribute("TitleId")
@@ -72,6 +83,12 @@ local function build(model: Model)
 	L.gui = gui
 	-- 판 (영웅부터): 글씨 길이에 맞춰 늘어난다
 	local holder = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -2), Size = UDim2.new(0, 0, 0, tier >= 3 and 34 or 30), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1 }, gui)
+	local ts = tagScale()
+	if ts < 1 then
+		gui.Size = UDim2.new(0, math.floor(420 * ts), 0, math.floor((tier >= 5 and 74 or 56) * ts))
+		gui.MaxDistance = ts < 0.7 and 60 or 100
+		new("UIScale", { Scale = ts }, holder)
+	end
 	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, holder)
 	if tier >= 3 then
 		holder.BackgroundTransparency = tier >= 5 and 0.12 or 0.22
