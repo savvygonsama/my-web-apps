@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2b4d63">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BUILD-UP">
+<meta name="description" content="기본 문형에서 출발해 덩어리를 하나씩 붙여 두세 문장까지 늘려 가며 따라 읽는 영어 쉐도잉. ROUNDTABLE 수준(B2).">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./icon-192.png">
+<title>BUILD-UP 영어 쉐도잉</title>
+<style>
+/* BUILD-UP — ROUNDTABLE과 같은 종이·잉크 톤. 강조색만 ROUNDTABLE의 빨강 대신 남색. */
+:root{
+  --paper:#f6f2ea; --card:#fffdf8; --line:#e2dacb; --ink:#1a1917; --sub:#6d665c;
+  --accent:#2b4d63; --accent-soft:#dfe7ec; --red:#a4342a; --red-soft:#f0dcd8;
+  --ok:#2f6b4f; --warn:#8a6a1f; --radius:14px;
+  --c-ink:#6d665c; --c-red:#a4342a; --c-blue:#2b6aa3; --c-teal:#1e7f7a; --c-plum:#7d4b94; --c-gold:#a8741a;
+  --serif:"Iowan Old Style","Palatino Linotype",Georgia,"Times New Roman",serif;
+  --sans:"Malgun Gothic","맑은 고딕",-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+html[data-theme="dark"]{
+  --paper:#15171a; --card:#1c1f24; --line:#2e333a; --ink:#e9e5dd; --sub:#9a948a;
+  --accent:#8fb6cd; --accent-soft:#1f2a33; --red:#e0715f; --red-soft:#3a2320;
+  --ok:#6fbf94; --warn:#d6b45c;
+  --c-ink:#9a948a; --c-red:#e0715f; --c-blue:#7fb0e0; --c-teal:#5cc3be; --c-plum:#c79ad6; --c-gold:#e2b55a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.65;-webkit-text-size-adjust:100%}
+button{font-family:inherit;color:inherit}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px 110px}
+
+.byline{background:var(--paper);border-bottom:1px solid var(--line)}
+.bylinein{max-width:860px;margin:0 auto;padding:9px 16px 8px;font-size:12.5px;font-weight:700;
+  line-height:1.7;color:var(--accent);letter-spacing:.01em}
+.bylinein .c{letter-spacing:.16em;margin-right:8px}
+.topbar{position:sticky;top:0;z-index:40;background:var(--paper);border-bottom:1px solid var(--line)}
+.topin{max-width:860px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px}
+.brand{font-family:var(--serif);font-size:19px;letter-spacing:.14em;font-weight:600;cursor:pointer}
+.brand i{display:block;font-family:var(--sans);font-style:normal;font-size:11px;
+  letter-spacing:.02em;color:var(--sub);margin-top:1px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin:14px 0}
+.hd{font-family:var(--serif);font-size:22px;margin:26px 0 2px;line-height:1.3}
+.hd small{display:block;font-family:var(--sans);font-size:12px;color:var(--sub);
+  letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
+.sub{color:var(--sub);font-size:13.5px}
+.rule{height:1px;background:var(--line);margin:16px 0}
+.btn{background:var(--ink);color:var(--paper);border:none;padding:11px 18px;border-radius:999px;
+  font-size:14px;font-weight:700;cursor:pointer}
+.btn:hover{opacity:.87}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+.btn.acc{background:var(--accent);color:#fff}
+html[data-theme="dark"] .btn.acc{color:var(--paper)}
+.btn.sm{padding:6px 12px;font-size:12.5px;font-weight:600}
+.btn.wide{width:100%;padding:14px 18px;font-size:15px}
+.btn:disabled{opacity:.4;cursor:default}
+.btn small{display:block;font-weight:400;font-size:12px;opacity:.85;margin-top:1px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tag{display:inline-block;font-size:11.5px;padding:2px 9px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent);font-weight:700}
+.tag.r{background:var(--red-soft);color:var(--red)}
+
+.today{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:22px;position:relative;overflow:hidden;margin:14px 0}
+.today:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+.today h2{font-family:var(--serif);font-size:26px;margin:8px 0 4px;line-height:1.25}
+.today .kotitle{color:var(--sub);font-size:14px;margin-bottom:12px}
+.today .seed{font-family:var(--serif);font-size:17px;margin:0 0 4px}
+.today .grow{font-family:var(--serif);font-size:14.5px;color:var(--sub);margin:0 0 14px}
+.resume{border-color:var(--red)}
+.streak{display:flex;gap:18px;margin:14px 0 0;flex-wrap:wrap}
+.streak div{text-align:center}
+.streak b{display:block;font-family:var(--serif);font-size:25px;line-height:1.1}
+.streak span{font-size:11.5px;color:var(--sub)}
+
+/* 회차 목록 — 대표 문장(완성 문장)이 위에서 아래로 */
+.dlist{display:grid;gap:8px;margin-top:10px}
+.ditem{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--card);
+  border:1px solid var(--line);border-radius:11px;cursor:pointer}
+.ditem:hover{border-color:var(--accent)}
+.ditem.locked{cursor:default;opacity:.55}
+.ditem.locked:hover{border-color:var(--line)}
+.ditem .num{font-family:var(--serif);font-size:16px;width:26px;color:var(--sub);flex:none;margin-top:1px}
+.ditem .t{flex:1;min-width:0}
+.ditem .t b{font-size:14.5px;font-weight:600}
+.ditem .t .tk{font-size:12px;color:var(--sub)}
+.ditem .t .fin{display:block;font-family:var(--serif);font-size:14.5px;line-height:1.55;margin-top:5px}
+.ditem .st{font-size:12px;font-weight:700;flex:none;margin-top:2px;white-space:nowrap}
+.st.ok{color:var(--ok)} .st.next{color:var(--red)} .st.now{color:var(--accent)} .st.lock{color:var(--sub);font-weight:400}
+.ditem .play{flex:none;border:1px solid var(--line);background:var(--paper);border-radius:999px;width:34px;height:34px;cursor:pointer;align-self:center}
+
+/* 세션 */
+.steps{display:flex;gap:4px;margin:14px 0 4px}
+.steps div{flex:1;height:5px;border-radius:3px;background:var(--line)}
+.steps div.on{background:var(--red)}
+.steps div.past{background:var(--ok)}
+.sesshead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+.stepname{font-size:13px;font-weight:700}
+.stepname em{font-style:normal;color:var(--sub);font-weight:400;margin-left:6px;font-size:12px}
+.shadowbox{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px 18px;margin:12px 0}
+.lbl{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--accent)}
+.bigen{font-family:var(--serif);font-size:clamp(19px,4.6vw,26px);line-height:1.6;margin:10px 0 4px}
+.bigko{font-size:14px;color:var(--sub);margin-top:8px}
+.chunks{display:flex;flex-direction:column;gap:6px;margin:12px 0 4px}
+.chunks .sub{font-size:12px}
+.chunk{font-family:var(--serif);font-size:clamp(16px,3.6vw,20px);padding:7px 12px;
+  border-left:3px solid var(--line);cursor:pointer;border-radius:0 8px 8px 0}
+.chunk:hover{background:var(--paper)}
+.chunk.on{border-left-color:var(--red);background:var(--red-soft)}
+.counter{display:flex;gap:5px;align-items:center}
+.dot{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--line)}
+.dot.on{background:var(--red);border-color:var(--red)}
+.speedbar{display:flex;gap:4px;align-items:center;font-size:12px;color:var(--sub);flex-wrap:wrap}
+.speedbar button{border:1px solid var(--line);background:none;border-radius:999px;
+  padding:3px 9px;font-size:12px;cursor:pointer}
+.speedbar button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.guide{font-size:13.5px;color:var(--sub);margin:12px 0 8px}
+.guide b{color:var(--accent);margin-right:4px}
+
+/* 새로 붙은 덩어리 */
+.c-ink{--c:var(--c-ink)} .c-red{--c:var(--c-red)} .c-blue{--c:var(--c-blue)} .c-teal{--c:var(--c-teal)} .c-plum{--c:var(--c-plum)} .c-gold{--c:var(--c-gold)}
+.blk{background:color-mix(in srgb, var(--c) 14%, transparent);border-bottom:2.5px solid var(--c);
+  border-radius:4px 4px 1px 1px;padding:0;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.blk.grow{animation:grow .5s ease-out}
+@keyframes grow{from{background:color-mix(in srgb, var(--c) 40%, transparent)}to{background:color-mix(in srgb, var(--c) 14%, transparent)}}
+.chip{display:inline-block;font-size:12px;padding:2px 9px;border-radius:999px;color:var(--c);
+  border:1px solid var(--c);background:color-mix(in srgb, var(--c) 8%, var(--card));font-weight:700}
+.chip i{font-style:normal;font-family:var(--serif);font-weight:400;margin-left:4px}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px}
+
+/* 해설 */
+.expl{margin:6px 0 0}
+.expl h4{font-family:var(--serif);font-size:18px;margin:20px 0 8px}
+.gram{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:12px 14px;margin:8px 0}
+.gram b{font-size:14.5px}
+.gram p{margin:4px 0 0;font-size:14px;color:var(--sub);line-height:1.7}
+.notes{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 14px;margin:8px 0}
+.note{margin:10px 0;font-size:13.5px}
+.note b{font-family:var(--serif);font-size:15.5px}
+.note .k{font-size:10.5px;padding:1px 7px;border-radius:999px;background:var(--accent-soft);
+  color:var(--accent);margin-left:6px;font-weight:700;vertical-align:2px}
+.note .tip{display:block;color:var(--sub);font-size:12.5px;margin-top:2px}
+.trap{background:var(--red-soft);border-radius:10px;padding:12px 14px;margin:8px 0}
+.trap .ng{margin:0;font-family:var(--serif);font-size:15px;color:var(--red);text-decoration:line-through;text-decoration-thickness:1px}
+.trap p{margin:4px 0 0;font-size:13.5px;color:var(--sub)}
+
+/* 조립 */
+.slots{min-height:64px;margin-top:10px;padding:12px;border:2px dashed var(--line);border-radius:12px;
+  font-family:var(--serif);font-size:17px;line-height:1.7;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.slots span{background:var(--paper);border-radius:6px;padding:0 8px}
+.slots .ph{background:none;font-family:var(--sans);font-size:13px;color:var(--sub)}
+.slots.ok{border-style:solid;border-color:var(--ok)}
+.pool{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.opt{border:1.5px solid var(--line);background:var(--card);border-radius:10px;padding:8px 12px;
+  font-family:var(--serif);font-size:16px;cursor:pointer;text-align:left}
+.opt:disabled{opacity:.25;cursor:default}
+.opt.ng{border-color:var(--red);animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+.from{font-family:var(--serif);font-size:16px;color:var(--sub);margin:6px 0 0}
+.arrow{font-size:12.5px;color:var(--sub);margin:2px 0 0}
+
+.toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);background:var(--ink);
+  color:var(--paper);padding:10px 20px;border-radius:999px;font-size:13.5px;z-index:99;
+  opacity:0;pointer-events:none;transition:opacity .2s;max-width:calc(100% - 32px);text-align:center}
+.toast.on{opacity:1}
+.footbar{position:fixed;left:0;right:0;bottom:0;background:var(--card);
+  border-top:1px solid var(--line);padding:9px 16px calc(9px + env(safe-area-inset-bottom));z-index:30;display:none}
+.footbar.on{display:block}
+.footin{max-width:860px;margin:0 auto;display:flex;gap:8px;align-items:center}
+.footin .sp{flex:1}
+.credit{max-width:860px;margin:0 auto;padding:0 16px 30px;font-size:11.5px;color:var(--sub);
+  letter-spacing:.02em;text-align:center;opacity:.8}
+.credit b{font-family:var(--serif);font-weight:600;letter-spacing:.06em}
+@media(max-width:560px){ .brand i{display:none} }
+
+/* ---- 앱으로 설치하기 (ROUNDTABLE과 같다) ---- */
+.instbtn{background:var(--accent);color:#fff;border:none;padding:6px 12px;margin-left:auto;
+  border-radius:999px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+html[data-theme="dark"] .instbtn{color:var(--paper)}
+.instbtn[hidden]{display:none}
+#installBig[hidden]{display:none}
+#openChrome{position:fixed;inset:auto 12px 12px;max-width:520px;margin:0 auto;z-index:60;
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  background:var(--accent);color:#fff;border-radius:14px;padding:16px 18px;
+  box-shadow:0 12px 40px -8px rgba(0,0,0,.45)}
+#openChrome[hidden]{display:none}
+#openChrome .oc-body{flex:1 1 240px;font-size:13.5px;line-height:1.7}
+#openChrome .oc-body b{display:block;font-size:15px;margin-bottom:3px}
+#openChrome button{border:none;border-radius:9px;padding:10px 16px;cursor:pointer;
+  font-weight:700;font-size:14px;background:var(--paper);color:var(--accent)}
+#openChrome button.ghost{background:transparent;color:inherit;font-weight:400;opacity:.85;padding:10px 8px}
+#installNote{position:fixed;inset:auto 16px 16px;max-width:460px;margin:0 auto;z-index:50;
+  background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:14px;
+  padding:20px 22px;box-shadow:0 12px 40px -8px rgba(0,0,0,.4)}
+#installNote[hidden]{display:none}
+#installNote h5{margin:0 0 10px;font-size:15px}
+#installNote p{margin:0 0 10px;font-size:13px;color:var(--sub);line-height:1.8}
+#installNote ol{margin:0 0 12px;padding-left:20px;font-size:13px;color:var(--sub);line-height:1.95}
+#installNote b{color:var(--ink)}
+#installNote button{border:1px solid var(--line);background:var(--paper);color:var(--ink);
+  border-radius:8px;padding:7px 16px;cursor:pointer;font-size:13.5px}
+#installNote .inst-btns{display:flex;gap:8px;flex-wrap:wrap}
+#installNote #installNow{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700}
+@media (prefers-reduced-motion: reduce){ *{animation:none !important;transition:none !important} }
+</style>
+</head>
+<body>
+<div class="byline"><div class="bylinein"><span class="c">&copy; 2026</span>기획과 구성 by 곤사마</div></div>
+<div class="topbar"><div class="topin">
+  <div class="brand" id="brand">BUILD-UP<i>문장을 늘려 가는 영어 쉐도잉</i></div>
+  <button class="instbtn" id="installBtn" hidden>📲 설치</button>
+</div></div>
+
+<div class="wrap"><main id="view"></main></div>
+<div class="credit">BUILD-UP — 문장을 늘려 가는 영어 쉐도잉 &nbsp;·&nbsp; © 2026 <b>곤사마</b> (Gonsama). All rights reserved.</div>
+<div class="footbar" id="footbar"><div class="footin" id="footin"></div></div>
+<div class="toast" id="toast"></div>
+
+<div id="openChrome" hidden>
+  <div class="oc-body">
+    <b id="ocApp">지금은 다른 앱 안에서 열려 있습니다.</b>
+    <span id="ocMsg"></span>
+  </div>
+  <button id="ocGo">브라우저로 열기</button>
+  <button id="ocCopy" class="ghost">주소 복사</button>
+  <button id="ocClose" class="ghost">그냥 보기</button>
+</div>
+
+<div id="installNote" hidden>
+  <h5 id="installTitle">📲 홈 화면에 설치하기</h5>
+  <div id="installSteps"></div>
+  <div class="inst-btns">
+    <button id="installNow" hidden>지금 설치</button>
+    <button id="installNoteClose">알겠습니다</button>
+  </div>
+</div>
+
+<noscript>이 앱은 자바스크립트가 켜져 있어야 열립니다.</noscript>
+<script src="js/data.js"></script>
+<script src="js/days-w1.js"></script>
+<script src="js/days-w2.js"></script>
+<script src="js/days-w3.js"></script>
+<script src="js/days-w4.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
