@@ -20,6 +20,7 @@
 | 🇰🇷 **ハングリンゴ Lite** | 스틸링고 Lite를 뒤집은 앱. **일본인이 한국어를 배웁니다** — 화면 글은 일본어, 한글 위에는 가타카나 | [`hangul-lingo/lite/`](hangul-lingo/lite/) |
 | 📖 **ことば日和** | 일본어 어휘 확장. `index.html`은 중급(N3), `beginner.html`은 초급판 | [`kotoba-biyori/`](kotoba-biyori/) |
 | 🗣️ **ROUNDTABLE** | 토론형 영어 회화 쉐도잉. 하루 20분 | [`roundtable/`](roundtable/) |
+| 🧱 **BUILD-UP** | 문장을 늘려 가는 영어 쉐도잉(B2, ROUNDTABLE 수준). 뼈대 문장 하나에서 이유·조건·양보·관계절·두 번째 문장을 하나씩 붙여 두세 문장(30~50단어)까지 늘리며 단계마다 3번 따라 읽습니다. 읽는 화면 바로 아래에 구조 해설과 표현 노트, 조립 퀴즈, 앞 문장·다음 문장 이동, 여기까지 저장. 음성·속도·끊어 읽기·자동 진행은 ROUNDTABLE과 같습니다. 30회차, 원고는 `js/days-w*.js` | [`buildup/`](buildup/) |
 | 🍵 **茶馆 CHÁGUǍN** | 중국어 일상 회화 쉐도잉. HSK 3~4급, 병음과 성조 색 표시 | [`chaguan/`](chaguan/) |
 | 🧭 **스틸 워크 스타일** | 8축 32문항 자가진단. 결과를 에피소드로 읽고, 코드를 주고받아 1:1 궁합과 팀 지도까지 | [`workstyle/`](workstyle/) |
 | 🏭 **코일센터 경영 시뮬레이터** | 해외 코일센터 사장으로 4년. 호황·공급과잉·불황·회복을 한 번씩 겪으며 발주·재고·증설을 결정 | [`coil-center/`](coil-center/) |
@@ -57,6 +58,7 @@
 | ことば日和 (N3) | https://savvygonsama.github.io/my-web-apps/kotoba-biyori/ |
 | ことば日和 初級 | https://savvygonsama.github.io/my-web-apps/kotoba-biyori/beginner.html |
 | ROUNDTABLE | https://savvygonsama.github.io/my-web-apps/roundtable/ |
+| BUILD-UP | https://savvygonsama.github.io/my-web-apps/buildup/ |
 | 茶馆 CHÁGUǍN | https://savvygonsama.github.io/my-web-apps/chaguan/ |
 | 스틸 워크 스타일 | https://savvygonsama.github.io/my-web-apps/workstyle/ |
 | 코일센터 경영 시뮬레이터 | https://savvygonsama.github.io/my-web-apps/coil-center/ |
