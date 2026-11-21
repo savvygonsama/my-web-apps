@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.61" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.62" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -44602,7 +44602,8 @@ function handlers.hit(data: any)
 			if data.skill then
 				hs = math.max(hs, 0.075)
 			end
-			Fx.hitstop({ a, t }, hs)
+			-- 3.99.62판: 기술로 맞히면 맞은 쪽만 멈칫한다 (기술은 여러 적을 연달아 맞혀 내 몸이 계속 멈췄다 풀렸다 하며 버벅였다)
+			Fx.hitstop(data.skill and { t } or { a, t }, hs)
 			Fx.styleHit(data.style, pos, data.heavy, dir)
 			if data.style == "hondon" or data.style == "janwol" or data.style == "noeun" or data.style == "gwihwa" or data.style == "sashin" then
 				pcall(ForgeFx.hit, data.style, pos, data.heavy == true, data.skill == true)
@@ -61362,9 +61363,18 @@ function Fx.hitFlash(m: Model?, color: Color3?, secs: number?)
 	end)
 end
 
+-- 3.99.62판: 내 몸은 0.25초에 한 번만 멈칫한다 (여러 적을 한꺼번에 맞히면 멈춤이 겹쳐 버벅였다)
+local myStopAt = 0
 function Fx.hitstop(models: { Model }, secs: number)
 	local me = Players.LocalPlayer.Character
 	for _, m in ipairs(models) do
+		if m == me then
+			local t = os.clock()
+			if t - myStopAt < 0.25 then
+				continue
+			end
+			myStopAt = t
+		end
 		if Anim then
 			Anim.freeze(m, secs)
 		end
@@ -70753,6 +70763,7 @@ return {
 	["제자의 주먹"] = "Disciple's Fist",
 	["🏠 %s이(가) 문하생 마당으로 돌아갔어요"] = "🏠 %s went back to the disciple yard",
 	["🚶 %s이(가) 따라나섭니다. 곁의 적과 함께 싸워요"] = "🚶 %s comes along and will fight the enemies near you",
+	["🏠 제자 돌려보내기"] = "🏠 Send disciple back",
 }
 ]]></string>
           </Properties>
@@ -92494,8 +92505,23 @@ end
 -- 상태 받기
 ------------------------------------------------------------------------
 local topInfo: TextLabel
+local companionChip: TextButton? = nil
 function UI.setState(s: any)
 	state = s
+	-- 3.99.62판: 제자를 데리고 다니는 동안은 어디서나 돌려보낼 수 있게 (오른쪽 위, 지도 아래)
+	pcall(function()
+		local follow = s.disciple and s.disciple.follow and not Config.BATTLE_MODE
+		if follow and not companionChip then
+			companionChip = button({ AnchorPoint = Vector2.new(1, 0), Size = UDim2.new(0, 170, 0, 38), Text = "🏠 제자 돌려보내기", TextSize = 15, BackgroundColor3 = Color3.fromRGB(120, 90, 60), ZIndex = 6, Parent = gui }, function()
+				Request:FireServer("disciple", "follow")
+			end)
+		end
+		if companionChip then
+			local touch = V.device ~= "pc"
+			companionChip.Position = touch and UDim2.new(1, -6, 0, 262) or UDim2.new(1, -16, 0, 420) -- 작은 지도 (터치 52 + 200, PC 160 + 250) 바로 아래
+			companionChip.Visible = follow == true
+		end
+	end)
 	local realm = Config.Realms[s.realm]
 	if Config.BATTLE_MODE then
 		local st = Config.STYLE_BY_ID[s.style or ""]

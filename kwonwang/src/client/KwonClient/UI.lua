@@ -3534,8 +3534,23 @@ end
 -- 상태 받기
 ------------------------------------------------------------------------
 local topInfo: TextLabel
+local companionChip: TextButton? = nil
 function UI.setState(s: any)
 	state = s
+	-- 3.99.62판: 제자를 데리고 다니는 동안은 어디서나 돌려보낼 수 있게 (오른쪽 위, 지도 아래)
+	pcall(function()
+		local follow = s.disciple and s.disciple.follow and not Config.BATTLE_MODE
+		if follow and not companionChip then
+			companionChip = button({ AnchorPoint = Vector2.new(1, 0), Size = UDim2.new(0, 170, 0, 38), Text = "🏠 제자 돌려보내기", TextSize = 15, BackgroundColor3 = Color3.fromRGB(120, 90, 60), ZIndex = 6, Parent = gui }, function()
+				Request:FireServer("disciple", "follow")
+			end)
+		end
+		if companionChip then
+			local touch = V.device ~= "pc"
+			companionChip.Position = touch and UDim2.new(1, -6, 0, 262) or UDim2.new(1, -16, 0, 420) -- 작은 지도 (터치 52 + 200, PC 160 + 250) 바로 아래
+			companionChip.Visible = follow == true
+		end
+	end)
 	local realm = Config.Realms[s.realm]
 	if Config.BATTLE_MODE then
 		local st = Config.STYLE_BY_ID[s.style or ""]

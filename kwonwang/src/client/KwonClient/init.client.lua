@@ -1989,7 +1989,8 @@ function handlers.hit(data: any)
 			if data.skill then
 				hs = math.max(hs, 0.075)
 			end
-			Fx.hitstop({ a, t }, hs)
+			-- 3.99.62판: 기술로 맞히면 맞은 쪽만 멈칫한다 (기술은 여러 적을 연달아 맞혀 내 몸이 계속 멈췄다 풀렸다 하며 버벅였다)
+			Fx.hitstop(data.skill and { t } or { a, t }, hs)
 			Fx.styleHit(data.style, pos, data.heavy, dir)
 			if data.style == "hondon" or data.style == "janwol" or data.style == "noeun" or data.style == "gwihwa" or data.style == "sashin" then
 				pcall(ForgeFx.hit, data.style, pos, data.heavy == true, data.skill == true)

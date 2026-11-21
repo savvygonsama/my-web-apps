@@ -2226,9 +2226,18 @@ function Fx.hitFlash(m: Model?, color: Color3?, secs: number?)
 	end)
 end
 
+-- 3.99.62판: 내 몸은 0.25초에 한 번만 멈칫한다 (여러 적을 한꺼번에 맞히면 멈춤이 겹쳐 버벅였다)
+local myStopAt = 0
 function Fx.hitstop(models: { Model }, secs: number)
 	local me = Players.LocalPlayer.Character
 	for _, m in ipairs(models) do
+		if m == me then
+			local t = os.clock()
+			if t - myStopAt < 0.25 then
+				continue
+			end
+			myStopAt = t
+		end
 		if Anim then
 			Anim.freeze(m, secs)
 		end
