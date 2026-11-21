@@ -8300,6 +8300,71 @@ ART_SITES.mugan = function(g: Vector3, back: Vector3, f: Folder)
 	ember.Transparency = 1
 	light(ember, RED, 26, 1.2)
 end
+-- 3.99.68판 무형검성 (극 무형검성): 세상 서쪽 끝 빈 들의 만검총. 녹슨 칼 수백 자루가 제각각 기울어 꽂혀 있고, 가운데 이끼 낀 비석
+ART_SITES.geuksword = function(g: Vector3, back: Vector3, f: Folder)
+	local RUST = { Color3.fromRGB(120, 90, 70), Color3.fromRGB(96, 80, 72), Color3.fromRGB(140, 130, 120), Color3.fromRGB(80, 70, 66) }
+	disc("SwordGraveGround", g + Vector3.new(0, 0.08, 0), 46, 0.15, Color3.fromRGB(118, 112, 96), Enum.Material.Ground, f, false)
+	for i = 1, 220 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local r = 6 + math.sqrt(rng:NextNumber()) * 40
+		local at = g + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
+		local len = rng:NextNumber(3, 6)
+		local tilt = CFrame.Angles(rng:NextNumber(-0.35, 0.35), rng:NextNumber(0, 6), rng:NextNumber(-0.35, 0.35))
+		local base = CFrame.new(at) * tilt
+		local col = RUST[(i % #RUST) + 1]
+		P(f, "GraveBlade", Vector3.new(0.12, len, 0.5), base * CFrame.new(0, len / 2 - 0.6, 0), col, Enum.Material.Metal, false)
+		P(f, "GraveGuard", Vector3.new(0.3, 0.22, 1.5), base * CFrame.new(0, len - 0.6, 0), Color3.fromRGB(70, 60, 50), Enum.Material.Metal, false)
+		P(f, "GraveGrip", Vector3.new(0.22, 1, 0.22), base * CFrame.new(0, len - 0.05, 0), Color3.fromRGB(50, 40, 34), Enum.Material.Wood, false)
+	end
+	-- 등 뒤 이끼 낀 비석 (「劍」 대신 빈 비석: 글자 없이)
+	local st = g + back * 9
+	P(f, "SwordStele", Vector3.new(5, 10, 1.6), CFrame.lookAt(st + Vector3.new(0, 5, 0), st + Vector3.new(0, 5, 0) - back), Color3.fromRGB(110, 112, 104), Enum.Material.Slate)
+	P(f, "SteleMoss", Vector3.new(5.2, 1.2, 1.7), CFrame.lookAt(st + Vector3.new(0, 10, 0), st + Vector3.new(0, 10, 0) - back), Color3.fromRGB(80, 110, 70), Enum.Material.Grass, false)
+	-- 사부 앞 맨땅에 꽂힌 빛나는 한 자루
+	local fg = g - back * 5
+	local glow = P(f, "TrueBlade", Vector3.new(0.14, 5, 0.6), CFrame.new(fg + Vector3.new(0, 2.2, 0)), Color3.fromRGB(230, 245, 255), Enum.Material.Neon, false)
+	light(glow, Color3.fromRGB(170, 215, 255), 22, 1.2)
+end
+-- 3.99.68판 불사조 (극 불사조권): 화염산 남동쪽 끝 잿더미 둥지. 검은 돌로 엮은 둥지, 둘레의 잿더미, 꺼지지 않는 검붉은 불씨
+ART_SITES.geukphoenix = function(g: Vector3, back: Vector3, f: Folder)
+	local ASH, EMBERC = Color3.fromRGB(90, 84, 86), Color3.fromRGB(255, 110, 40)
+	disc("AshField", g + Vector3.new(0, 0.08, 0), 30, 0.15, Color3.fromRGB(70, 64, 66), Enum.Material.Ground, f, false)
+	-- 둥지: 검은 돌덩이를 둥글게 엮었다
+	for k = 0, 27 do
+		local a = k / 28 * math.pi * 2
+		local at = g + Vector3.new(math.cos(a) * 9, 0, math.sin(a) * 9)
+		local s0 = rng:NextNumber(1.6, 2.6)
+		P(f, "NestStone", Vector3.new(s0 * 1.6, s0, s0), CFrame.new(at + Vector3.new(0, s0 * 0.45, 0)) * CFrame.Angles(rng:NextNumber(-0.3, 0.3), a, rng:NextNumber(-0.3, 0.3)), Color3.fromRGB(34, 28, 30), Enum.Material.Basalt)
+	end
+	disc("NestBed", g + Vector3.new(0, 0.3, 0), 8, 0.6, Color3.fromRGB(46, 40, 42), Enum.Material.Basalt, f, true)
+	local ember = disc("NestEmber", g + Vector3.new(0, 0.62, 0), 5, 0.1, EMBERC, Enum.Material.Neon, f, false)
+	ember.Transparency = 0.25
+	light(ember, EMBERC, 30, 1.6)
+	local fire = Instance.new("Fire")
+	fire.Size = 8
+	fire.Heat = 10
+	fire.Color = Color3.fromRGB(60, 20, 30)
+	fire.SecondaryColor = EMBERC
+	fire.Parent = ember
+	-- 둘레 잿더미 (낮은 언덕) 와 거기서 피어오르는 연기
+	for k = 0, 9 do
+		local a = k / 10 * math.pi * 2 + rng:NextNumber(-0.2, 0.2)
+		local at = g + Vector3.new(math.cos(a), 0, math.sin(a)) * rng:NextNumber(16, 26)
+		local mound = P(f, "AshMound", Vector3.new(rng:NextNumber(6, 10), rng:NextNumber(1.5, 3), rng:NextNumber(6, 10)), CFrame.new(at) * CFrame.Angles(0, rng:NextNumber(0, 6), 0), ASH, Enum.Material.Sand)
+		mound.Shape = Enum.PartType.Ball
+		if k % 3 == 0 then
+			local smoke = Instance.new("Smoke")
+			smoke.Color = Color3.fromRGB(60, 56, 58)
+			smoke.Opacity = 0.15
+			smoke.Size = 6
+			smoke.RiseVelocity = 4
+			smoke.Parent = mound
+		end
+	end
+	-- 둥지에 꽂힌 금빛 깃털 하나
+	local feather = P(f, "GoldFeather", Vector3.new(0.2, 4, 1), CFrame.new(g + back * 3 + Vector3.new(0, 2.4, 0)) * CFrame.Angles(0.3, 0.6, 0.2), Color3.fromRGB(255, 205, 110), Enum.Material.Neon, false)
+	light(feather, Color3.fromRGB(255, 200, 110), 14, 1)
+end
 -- 3.99.48판 사부들의 집: 소품만 두고 들판에 서 있던 사부들에게 들어가 볼 수 있는 집을 지어 준다
 --   보이는 집 (누구나 찾는 사부): 사부 등 뒤에, 문이 사부 쪽을 본다
 --   숨은 집 (숨은 사부): 더 멀리, 대숲 · 덤불 · 바위가 둘러싸고 틈은 뒤쪽에 하나뿐이라 돌아 들어가야 보인다

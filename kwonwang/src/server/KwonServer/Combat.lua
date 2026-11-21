@@ -361,6 +361,32 @@ function Combat.kill(f: Fighter, by: Fighter?)
 		Combat.sync(f)
 		return
 	end
+	-- 3.99.68판 극 불사조권 · 열반: 쓰러지는 순간 한 번 잿더미에서 되살아난다 (cd 초에 한 번, 배틀그라운드 제외)
+	do
+		local pst = f.player and Combat.styleOf(f)
+		local RV = pst and (pst :: any).phoenixRevive
+		local fa = f :: any
+		if RV and not Config.BATTLE_MODE and now() >= (fa.phoenixReadyAt or 0) then
+			fa.phoenixReadyAt = now() + RV.cd
+			f.hp = math.max(1, f.maxHp * RV.hp)
+			f.iframeUntil = math.max(f.iframeUntil, now() + RV.iframes)
+			f.act = nil
+			Combat.sync(f)
+			local at = f.root.Position
+			Push:FireAllClients("skillfx", { kind = "forgeStep", vfx = "phRebirth", m = f.model, at = at, radius = RV.radius, style = pst.id })
+			task.delay(0.35, function()
+				if f.dead then
+					return
+				end
+				for _, o in pairs(Combat.fighters) do
+					if o ~= f and not o.dead and Combat.hostile(f, o) and (o.root.Position - at).Magnitude <= RV.radius then
+						Combat.applyHit(f, o, RV.hit, { chain = true, isSkill = true, unblockable = true, move = { name = "열반" } })
+					end
+				end
+			end)
+			return
+		end
+	end
 	Combat.dismount(f)
 	f.dead = true
 	f.hp = 0

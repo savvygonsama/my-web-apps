@@ -4286,6 +4286,66 @@ function Geuk.trigger(f: any, st: any)
 		end
 	end)
 	local name = f.player and f.player.DisplayName or f.name
+	-- 3.99.68판 극 무형검성 · 만검귀종: 머리 위 하늘에 검의 고리가 서고, every 초마다 둘레의 적 n 에게 검이 내리꽂힌다 (막을 수 없다)
+	local RN = st.geukRain
+	if RN then
+		Push:FireAllClients("skillfx", { kind = "forgeStep", vfx = "swHalo", m = f.model, at = f.root.Position, life = G.cut + G.dur, style = st.id })
+		task.spawn(function()
+			task.wait(G.cut)
+			while f.twilightUntil == token and os.clock() < token and f.model.Parent and not f.dead do
+				local at = f.root.Position
+				local list = {}
+				for _, o in pairs(Combat.fighters) do
+					if o ~= f and not o.dead and Combat.hostile(f, o) and o.root.Parent then
+						local d = (o.root.Position - at).Magnitude
+						if d <= RN.range then
+							table.insert(list, { o = o, d = d })
+						end
+					end
+				end
+				table.sort(list, function(a, b)
+					return a.d < b.d
+				end)
+				for i = 1, math.min(RN.n, #list) do
+					local o = list[i].o
+					Push:FireAllClients("skillfx", { kind = "forgeStep", vfx = "swRainOne", m = f.model, at = o.root.Position, from = at, style = st.id })
+					task.delay(RN.delay, function()
+						if not o.dead and not f.dead and o.root.Parent then
+							Combat.applyHit(f, o, RN.hit, { chain = true, isSkill = true, unblockable = true, move = { name = "만검귀종" } })
+						end
+					end)
+				end
+				task.wait(RN.every)
+			end
+		end)
+		return
+	end
+	-- 3.99.68판 극 불사조권 · 불사조 화신: 걸음이 빨라지고 지나는 자리에 검은 불길이 남아 둘레를 태운다 (몸의 날개는 화면이 Twilight 표시를 보고 그린다)
+	local PF = st.phoenixForm
+	if PF then
+		f.hasteMul = PF.walk
+		task.spawn(function()
+			task.wait(G.cut)
+			local i = 0
+			while f.twilightUntil == token and os.clock() < token and f.model.Parent and not f.dead do
+				i += 1
+				local at = f.root.Position
+				if i % 2 == 1 then
+					Push:FireAllClients("skillfx", { kind = "forgeStep", vfx = "phWake", m = f.model, at = at, radius = PF.radius, style = st.id })
+				end
+				for _, o in pairs(Combat.fighters) do
+					if o ~= f and not o.dead and Combat.hostile(f, o) and (o.root.Position - at).Magnitude <= PF.radius then
+						Combat.applyHit(f, o, PF.hit, { chain = true, isSkill = true, move = { name = "불사조 화신" } })
+					end
+				end
+				task.wait(PF.every)
+			end
+			if f.hasteMul == PF.walk then
+				f.hasteMul = nil
+			end
+		end)
+		return
+	end
 	local D = st.geukDomain
 	if D then
 		-- 3.16판 극 공백권 · 격자 전개: 선 자리에서 흰 3차원 격자가 한 점에서 천천히 펼쳐져 머문다 (세상은 그대로)
