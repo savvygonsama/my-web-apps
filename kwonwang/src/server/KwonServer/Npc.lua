@@ -434,6 +434,11 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 	local cp = Config.enemyPower(f.dmgMult * Config.enemyMoveFactor(def, isBoss), f.maxHp, isBoss)
 	;(f :: any).power = cp
 	model:SetAttribute("Power", cp)
+	-- 3.99.67판: 모든 보스 체력을 조금 줄인다 (전투력 숫자 · 권장 전투력은 그대로, 싸움만 짧게. 천층탑 보스도 이 체력에서 층 세기를 맞춘다)
+	if isBoss and not def.dummy then
+		f.maxHp = math.max(1, math.floor(f.maxHp * Config.BOSS_HP_FINAL))
+		f.hp = f.maxHp
+	end
 	-- 2.7.2판: 어느 땅의 적인지 (권장 전투력 표와 같은 이름). 후반 보스의 처치 몫을 그 땅 졸병에 견준다
 	local skyIsl = region == "sky" and Config.skyIslandAt(at) or nil
 	;(f :: any).regionKey = skyIsl and ("sky_" .. skyIsl.id) or region
