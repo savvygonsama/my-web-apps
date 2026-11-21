@@ -5238,4 +5238,8 @@ return {
 	["화익비상 · 화신"] = "Flame Wing Soar · Avatar",
 	["열반익 · 화신"] = "Nirvana Wings · Avatar",
 	["불사강림 · 화신"] = "Phoenix Descends · Avatar",
+	["📜 부탁 받기"] = "📜 Accept request",
+	["...그래, 받았다. 생각보다 빨리 왔구나. 시험을 내마."] = "...Good, I have it. You came sooner than I thought. I will give you the trial.",
+	["...왔구나. 부탁을 들어주었으니 이제 네 차례다. 시험을 내마."] = "...You came. You did what I asked, so now it is your turn. I will give you the trial.",
+	["📜 %s의 부탁을 받았다 · %s"] = "📜 Accepted %s's request · %s",
 }

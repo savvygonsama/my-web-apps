@@ -4676,6 +4676,7 @@ local dialogText: TextLabel
 local dialogAct: TextButton
 local dialogTrial: string? = nil
 local dialogAccept = false
+local dialogMq: string? = nil
 local dialogSeq = 0
 function UI.dialog(data: any)
 	if not dialogFrame then
@@ -4689,9 +4690,10 @@ function UI.dialog(data: any)
 	dialogTrial = data.trial
 	dialogAccept = data.accept == true
 	dialogLine = data.line
-	dialogAct.Visible = dialogTrial ~= nil or dialogAccept
-	dialogAct.Text = dialogAccept and "📜 받기" or "⚔ 시험 받기"
-	dialogAct.BackgroundColor3 = dialogAccept and Color3.fromRGB(190, 130, 50) or C.red
+	dialogMq = type(data.mq) == "string" and data.mq or nil
+	dialogAct.Visible = dialogTrial ~= nil or dialogAccept or dialogMq ~= nil
+	dialogAct.Text = dialogMq and "📜 부탁 받기" or (dialogAccept and "📜 받기" or "⚔ 시험 받기")
+	dialogAct.BackgroundColor3 = (dialogAccept or dialogMq) and Color3.fromRGB(190, 130, 50) or C.red
 	dialogFrame.Visible = true
 	local n = utf8.len(dialogText.Text) or 0
 	pcall(function()
@@ -4765,7 +4767,9 @@ function UIB.buildStory(topLeft: Frame)
 		dialogFrame.Visible = false
 	end)
 	dialogAct = button({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -168, 1, -12), Size = UDim2.new(0, 180, 0, 42), Text = "⚔ 시험 받기", TextSize = 18, BackgroundColor3 = C.red, ZIndex = 21, Visible = false, Parent = dialogFrame }, function()
-		if dialogAccept then
+		if dialogMq then
+			Request:FireServer("mqAccept", dialogMq)
+		elseif dialogAccept then
 			Request:FireServer("storyAccept", dialogLine)
 		elseif dialogTrial then
 			Request:FireServer("learn", dialogTrial)

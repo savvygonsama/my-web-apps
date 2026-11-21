@@ -6392,6 +6392,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		end
 	elseif action == "talkElder" then
 		Story.talk(player)
+	elseif action == "mqAccept" then
+		MiniQuest.accept(player, tostring(a1 or ""))
 	elseif action == "storyAccept" then
 		Story.accept(player, type(a1) == "string" and a1 or nil)
 	elseif action == "premiumBuy" then

@@ -71,6 +71,21 @@ local function advance(player: Player, sid: string)
 	ctx.pushState(player)
 end
 
+-- 3.99.70판: 대화 창의 '📜 부탁 받기'
+function MiniQuest.accept(player: Player, sid: string)
+	local p, st = ctx.profiles[player], ctx.states[player]
+	local q = quest(sid)
+	if not q or not p or not st or (p.mq[sid] or 0) ~= 0 or p.styles[sid] then
+		return
+	end
+	p.mq[sid] = 1
+	p.mqn[sid] = 0
+	st.dirty = true
+	local m = Config.MASTERS[sid]
+	ctx.toast(player, string.format("📜 %s의 부탁을 받았다 · %s", m and m.name or "사부", q.steps[1].text))
+	ctx.pushState(player)
+end
+
 -- 사부에게 말을 걸었다: 부탁을 시작하거나, 지금 단계를 알려 주거나, 돌아왔음을 받는다.
 -- true면 사부가 시험을 낼 수 있다 (부탁을 다 들어주었다)
 function MiniQuest.talk(player: Player, sid: string): boolean
@@ -82,12 +97,9 @@ function MiniQuest.talk(player: Player, sid: string): boolean
 	local m = Config.MASTERS[sid]
 	local who = m and m.name or "사부"
 	local title = m and ("‘" .. m.quote .. "’") or ""
+	-- 3.99.70판: 처음엔 부탁을 들려주고 '📜 부탁 받기' 를 눌러야 시작한다 (예전엔 말을 걸면 몰래 시작되고 대화 창엔 '알겠다' 뿐이라, 받았는지 알 수 없었다)
 	if (p.mq[sid] or 0) == 0 then
-		p.mq[sid] = 1
-		p.mqn[sid] = 0
-		st.dirty = true
-		ctx.dialog(player, { who = who, title = title, text = "시험을 청하기 전에, 부탁이 하나 있다. ‘" .. q.title .. "’\n" .. q.steps[1].text .. progressText(p, sid, q.steps[1]) })
-		ctx.pushState(player)
+		ctx.dialog(player, { who = who, title = title, text = "시험을 청하기 전에, 부탁이 하나 있다. ‘" .. q.title .. "’\n" .. q.steps[1].text .. progressText(p, sid, q.steps[1]), mq = sid })
 		return false
 	end
 	local step = q.steps[p.mq[sid]]
@@ -96,7 +108,7 @@ function MiniQuest.talk(player: Player, sid: string): boolean
 	end
 	if step.kind == "return" then
 		advance(player, sid)
-		ctx.dialog(player, { who = who, title = title, text = "...왔구나. 부탁을 들어주었으니 이제 네 차례다. 시험을 내마. (다시 T를 누르면 시험이 시작된다)" })
+		ctx.dialog(player, { who = who, title = title, text = "...왔구나. 부탁을 들어주었으니 이제 네 차례다. 시험을 내마.", trial = sid })
 		return false
 	end
 	-- 3.74판: 사부에게 은자를 바친다 (마지막 단계)
@@ -106,7 +118,7 @@ function MiniQuest.talk(player: Player, sid: string): boolean
 			p.coins -= need
 			st.dirty = true
 			advance(player, sid)
-			ctx.dialog(player, { who = who, title = title, text = "...그래, 받았다. 생각보다 빨리 왔구나. 시험을 내마. (다시 T를 누르면 시험이 시작된다)" })
+			ctx.dialog(player, { who = who, title = title, text = "...그래, 받았다. 생각보다 빨리 왔구나. 시험을 내마.", trial = sid })
 		else
 			ctx.dialog(player, { who = who, title = title, text = string.format("...아직이다. 💰 %s을 가져오너라. (지금 💰 %s)", Config.formatNumber(need), Config.formatNumber(p.coins)) })
 		end
