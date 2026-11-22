@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.81" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.82" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7864,8 +7864,8 @@ do
 			return seq(s)
 		end)()
 		local skills: any = {
-			E = { id = p .. "E", name = "북두칠보", desc = o.dE, pose = "dash_punch", dur = 0.9, cd = 8, chi = 20, mech = E },
-			R = { id = p .. "R", name = "칠성연주", desc = o.dR, pose = "point_sky", dur = 0.6 + t * 0.3, cd = 10, chi = 24, mech = R },
+			E = o.E or { id = p .. "E", name = "북두칠보", desc = o.dE, pose = "dash_punch", dur = 0.9, cd = 8, chi = 20, mech = E },
+			R = o.R or { id = p .. "R", name = "칠성연주", desc = o.dR, pose = "point_sky", dur = 0.6 + t * 0.3, cd = 10, chi = 24, mech = R },
 			G = { id = p .. "G", name = o.gName or "북두낙성", desc = o.dG, pose = "ult_star", dur = 2.3, cd = 30, chi = 100, armor = true, mech = G },
 		}
 		if t >= 3 then
@@ -7885,19 +7885,21 @@ do
 			desc = o.desc, gimmick = o.gimmick, unlockHint = o.hint,
 			deflect = 0.22, speed = ({ 1.12, 1.15, 1.18 })[t], stance = "stance_sunmoon",
 			pulse = { every = 7, kind = "starFall", radius = 8 + t, delay = 0.35, name = "낙성", dmg = 22 + (t - 1) * 6, posture = 20, stun = 0.5, kb = 6, up = 0 },
+			-- 연타 · 강타 · 띄우기: 단계마다 이름과 몸짓이 다르다 (o.cn = 이름 일곱, o.cp = 몸짓 일곱)
 			combo = {
-				{ id = p .. "1", name = "천추", pose = "palm_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 7, 4.5, 8, 8, 0.3, 8) } },
-				{ id = p .. "2", name = "천선", pose = "moon_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 7, 4.5, 8, 8, 0.3, 8) } },
-				{ id = p .. "3", name = "천기각", pose = "crescent_kick", dur = 0.42, lunge = 2, hits = { hit(0.15, 6, 6, 7, 7, 0.3, 8, 8, true), hit(0.28, 6, 6, 8, 8, 0.35, 10, 10, true) } },
-				{ id = p .. "4", name = "천권", pose = "push_palm", dur = 0.5, lunge = 3, hits = { hit(0.24, 9, 7, 13, 16, 0.5, 30, nil, true) } },
+				{ id = p .. "1", name = o.cn[1], pose = o.cp[1], dur = 0.28, lunge = 3, hits = { hit(0.11, 7, 4.5, 8, 8, 0.3, 8) } },
+				{ id = p .. "2", name = o.cn[2], pose = o.cp[2], dur = 0.3, lunge = 3, hits = { hit(0.12, 7, 4.5, 8, 8, 0.3, 8) } },
+				{ id = p .. "3", name = o.cn[3], pose = o.cp[3], dur = 0.42, lunge = 2, hits = { hit(0.15, 6, 6, 7, 7, 0.3, 8, 8, true), hit(0.28, 6, 6, 8, 8, 0.35, 10, 10, true) } },
+				{ id = p .. "4", name = o.cn[4], pose = o.cp[4], dur = 0.5, lunge = 3, hits = { hit(0.24, 9, 7, 13, 16, 0.5, 30, nil, true) } },
 			},
-			heavy = { id = p .. "H", name = "옥형추", pose = "moon_throw", dur = 0.6, lunge = 2, hits = { hit(0.28, 13, 5, 22, 26, 0.6, 34) } },
-			finisher = { id = p .. "F", name = "요광승천", pose = "crescent_kick", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+			heavy = { id = p .. "H", name = o.cn[5], pose = o.cp[5], dur = 0.6, lunge = 2, hits = { hit(0.28, 13, 5, 22, 26, 0.6, 34) } },
+			finisher = { id = p .. "F", name = o.cn[6], pose = o.cp[6], dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
 			skills = skills,
 		})
 	end
 	chil({
-		tier = 1, idp = "cs", id = "chilseong", name = "칠성보권", hanja = "七星步拳", icon = "🌟", grade = "전설", attend = 7,
+		tier = 1, idp = "cs", id = "chilseong",
+		cn = { "천추", "천선", "천기각", "천권", "옥형추", "요광승천" }, cp = { "palm_r", "moon_palm_l", "crescent_kick", "push_palm", "moon_throw", "crescent_kick" }, name = "칠성보권", hanja = "七星步拳", icon = "🌟", grade = "전설", attend = 7,
 		color = Color3.fromRGB(150, 190, 255), color2 = Color3.fromRGB(255, 236, 170),
 		desc = "밤하늘 북두칠성의 일곱 별을 차례로 밟아 나가는 보법 권. 한 걸음마다 별이 박히고, 일곱 별이 이어지면 하늘의 국자가 그려진다. 끝에는 그 별들이 하나씩 떨어진다.",
 		gimmick = "칠성: 일곱 번 맞힐 때마다 상대 머리 위로 별 하나가 떨어진다. 몸이 가볍고 빠르다",
@@ -7907,23 +7909,45 @@ do
 		dG = "하늘이 밤으로 바뀌고 머리 위에 커다란 북두칠성이 걸린다. 일곱 별이 하나씩 떨어져 적을 내리찍고, 마지막에 국자 전체가 땅으로 쏟아지며 둘레 22칸이 별빛으로 터진다",
 	})
 	chil({
-		tier = 2, idp = "cv", id = "chilseong2", name = "진 칠성보권", hanja = "眞七星步拳", icon = "💫", grade = "신화", attend = 21,
+		tier = 2, idp = "cv", id = "chilseong2",
+		cn = { "성광", "성환", "유성각", "성운장", "북극추", "은하승천" }, cp = { "jab_l", "hook_r", "front_kick", "circle_palm", "grav_hammer", "front_kick" },
+		R = { id = "cvR", name = "칠성환", desc = "별 일곱이 몸 둘레를 돈다. 돌던 별이 하나씩 가까운 적에게 날아가 꽂히며 터진다 (일곱 발)", pose = "point_sky", dur = 1.7, cd = 10, chi = 24,
+			mech = (function()
+				local t = { { t = 0.1, shape = "circle", at = "self", radius = 1, life = 1.6, vfx = "starHalo" } }
+				for k = 0, 6 do
+					table.insert(t, { t = 0.35 + k * 0.2, at = "target", range = 26, shape = "circle", radius = 5, col = k + 1, vfx = "starShot", hit = hit(0, 0, 0, 12, 12, 0.3, 6, 4) })
+				end
+				return seq(t)
+			end)() }, name = "진 칠성보권", hanja = "眞七星步拳", icon = "💫", grade = "신화", attend = 21,
 		color = Color3.fromRGB(130, 170, 255), color2 = Color3.fromRGB(255, 220, 130),
 		desc = "세 이레를 밟아 별자리가 둘이 된 칠성보권. 걸음마다 박히는 별이 더 밝고, 북두칠성이 두 번 떨어진다.",
-		gimmick = "칠성: 일곱 번 맞힐 때마다 별이 떨어진다 (더 세고 넓다). 칠성연주가 두 번 터진다",
+		gimmick = "칠성: 일곱 번 맞힐 때마다 별이 떨어진다 (더 세고 넓다). 금빛 별. R 칠성환: 몸 둘레를 도는 별 일곱을 하나씩 쏜다",
 		hint = "누적 출석 21일째 (세 이레를 채운 자에게 별이 한 번 더 내린다)",
 		dE = "별에서 별로 일곱 걸음을 내딛는다. 밟은 자리마다 별이 터지고, 일곱째 걸음에 이어진 일곱 별이 크게 번쩍인다",
-		dR = "가까운 적 일곱의 몸에 별이 박히고, 빛의 실로 이어진 별이 두 번 잇달아 터진다",
 		dG = "하늘이 밤으로 바뀌고 북두칠성이 걸린다. 별 열넷이 잇달아 떨어져 적을 내리찍고, 마지막에 국자 전체가 쏟아지며 둘레 24칸이 별빛으로 터진다",
 	})
 	chil({
-		tier = 3, idp = "cx", id = "chilseong3", name = "초 칠성보권", hanja = "超七星步拳", icon = "🌠", grade = "초월", attend = 45, scale = 0.76,
+		tier = 3, idp = "sx", id = "chilseong3",
+		cn = { "천강", "지살", "은하각", "개천장", "천랑추", "자미승천" }, cp = { "punch_r", "void_palm_l", "crescent_kick", "push_palm", "grav_hammer", "crescent_kick" },
+		E = { id = "sxE", name = "유성낙각", desc = "별처럼 하늘로 뛰어올라 앞으로 16칸을 날아가 내리찍는다. 떨어진 자리가 별빛으로 터지고, 둘레의 적 다섯에게 잔별이 쏟아진다", pose = "dash_punch", dur = 0.9, cd = 8, chi = 20,
+			mech = seq({
+				{ t = 0.1, dash = 8, shape = "circle", at = "self", radius = 5, vfx = "starStep", hit = hit(0, 0, 0, 8, 8, 0.2, 3) },
+				{ t = 0.3, dash = 8, shape = "circle", at = "self", radius = 11, vfx = "meteorKick", big = true, hit = hit(0, 0, 0, 34, 34, 0.7, 20, 10) },
+				{ t = 0.55, at = "each", n = 5, range = 20, radius = 5, vfx = "starDrop", hit = hit(0, 0, 0, 10, 10, 0.3, 4, 4) },
+			}) },
+		R = { id = "sxR", name = "칠성환", desc = "별 일곱이 몸 둘레를 돈다. 돌던 별이 하나씩 가까운 적에게 날아가 꽂히며 크게 터지고, 마지막 별은 둘레 12칸을 터뜨린다", pose = "point_sky", dur = 1.8, cd = 10, chi = 24,
+			mech = (function()
+				local t = { { t = 0.1, shape = "circle", at = "self", radius = 1, life = 1.6, vfx = "starHalo" } }
+				for k = 0, 6 do
+					table.insert(t, { t = 0.35 + k * 0.18, at = "target", range = 28, shape = "circle", radius = 6, col = k + 1, vfx = "starShot", hit = hit(0, 0, 0, 12, 12, 0.3, 6, 4) })
+				end
+				table.insert(t, { t = 1.6, shape = "circle", at = "self", radius = 12, vfx = "starNova", big = true, hit = hit(0, 0, 0, 24, 24, 0.6, 16, 8) })
+				return seq(t)
+			end)() }, name = "초 칠성보권", hanja = "超七星步拳", icon = "🌠", grade = "초월", attend = 45, scale = 0.76,
 		color = Color3.fromRGB(190, 160, 255), color2 = Color3.fromRGB(255, 245, 200),
 		desc = "마흔닷새를 밟아 하늘 전체를 걸음판으로 삼는 칠성보권. 북두칠성이 세 번 떨어지고, 초 오의에서는 일곱 별이 한 줄로 서서 하늘을 연다.",
-		gimmick = "칠성: 일곱 번 맞힐 때마다 별이 떨어진다 (가장 세고 넓다). 초 오의(X) 북두개천이 있다",
+		gimmick = "칠성: 일곱 번 맞힐 때마다 별이 떨어진다 (가장 세고 넓다). 보랏빛 별. E 유성낙각 · R 칠성환 · 초 오의(X) 북두개천",
 		hint = "누적 출석 45일째 (마흔닷새를 채운 자에게 하늘이 열린다)",
-		dE = "별에서 별로 일곱 걸음을 내딛는다. 밟은 자리마다 큰 별이 터지고, 일곱째 걸음에 이어진 일곱 별이 크게 번쩍인다",
-		dR = "가까운 적 일곱의 몸에 별이 박히고, 빛의 실로 이어진 별이 세 번 잇달아 터진다",
 		dG = "하늘이 밤으로 바뀌고 북두칠성이 걸린다. 별 스물하나가 비처럼 떨어져 적을 내리찍고, 마지막에 국자 전체가 쏟아지며 둘레 26칸이 별빛으로 터진다",
 		dX = "초 오의 (그동안 무적). 하늘이 깊은 밤이 되고 북두칠성이 하늘을 가득 채운다. 별이 네 번 비처럼 쏟아져 적 여덟을 내리찍고, 마지막에 일곱 별이 한 줄로 서서 하늘을 가르는 빛기둥이 되어 내리꽂힌다 (둘레 36칸)",
 	})
@@ -7976,30 +8000,30 @@ do
 		color = Color3.fromRGB(255, 200, 110), color2 = Color3.fromRGB(240, 252, 255),
 		palette = { Color3.fromRGB(255, 200, 110), Color3.fromRGB(240, 252, 255), Color3.fromRGB(16, 34, 44) },
 		desc = "세월을 한 번 더 깨친 광음신권. 조금 전의 나만이 아니라 어제의 나, 지난달의 나까지 불러낸다. 끝에는 하늘과 땅에 해시계가 하나씩 떠 만 년을 한순간에 몰아친다.",
-		gimmick = "잔상: 네 번 맞힐 때마다 조금 전의 내가 나타나 같은 자리를 한 번 더 친다. 잔상이 더 세고, 기술마다 잔상이 더 많이 나온다",
+		gimmick = "잔상: 네 번 맞힐 때마다 조금 전의 내가 나타나 같은 자리를 한 번 더 친다. 은빛 시간. R 회귀참: 내달렸다가 되감겨 돌아오며 한 번 더 벤다",
 		unlockHint = "누적 출석 60일째 (두 달을 채운 자에게 세월이 한 번 더 내린다)",
 		deflect = 0.28, speed = 1.1, stance = "stance_mugeuk",
 		pulse = { every = 4, kind = "timeEcho", radius = 9, delay = 0.3, name = "잔상", dmg = 30, posture = 26, stun = 0.5, kb = 8, up = 0 },
 		combo = {
-			{ id = "gf1", name = "초침", pose = "jab_l", dur = 0.3, lunge = 4, hits = { hit(0.12, 6, 5, 18, 15, 0.35, 10) } },
-			{ id = "gf2", name = "분침", pose = "punch_r", dur = 0.34, lunge = 3, hits = { hit(0.15, 6, 5, 18, 15, 0.35, 12) } },
-			{ id = "gf3", name = "시침선", pose = "circle_palm", dur = 0.46, lunge = 2, hits = { hit(0.24, 0, 8, 20, 24, 0.5, 14, 10, true) } },
-			{ id = "gf4", name = "정오권", pose = "push_palm", dur = 0.48, lunge = 6, hits = { hit(0.22, 9, 6, 30, 34, 0.6, 38) } },
+			{ id = "gf1", name = "찰나", pose = "jab_l", dur = 0.3, lunge = 4, hits = { hit(0.12, 6, 5, 18, 15, 0.35, 10) } },
+			{ id = "gf2", name = "순식", pose = "hook_r", dur = 0.34, lunge = 3, hits = { hit(0.15, 6, 5, 18, 15, 0.35, 12) } },
+			{ id = "gf3", name = "탄지각", pose = "front_kick", dur = 0.46, lunge = 2, hits = { hit(0.24, 0, 8, 20, 24, 0.5, 14, 10, true) } },
+			{ id = "gf4", name = "수유장", pose = "push_palm", dur = 0.48, lunge = 6, hits = { hit(0.22, 9, 6, 30, 34, 0.6, 38) } },
 		},
-		heavy = { id = "gfH", name = "자정추", pose = "grav_hammer", dur = 0.72, lunge = 4, hits = { hit(0.36, 6, 9, 50, 76, 1.0, 40, 12, true) } },
-		finisher = { id = "gfF", name = "여명승천", pose = "push_palm", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		heavy = { id = "gfH", name = "삭망추", pose = "grav_hammer", dur = 0.72, lunge = 4, hits = { hit(0.36, 6, 9, 50, 76, 1.0, 40, 12, true) } },
+		finisher = { id = "gfF", name = "백야승천", pose = "front_kick", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
 		skills = {
 			E = { id = "gfE", name = "광음여전", desc = "빛의 화살이 앞으로 32칸을 꿰뚫고, 그 길을 따라 지난날의 내 잔상 다섯이 늦게 뒤쫓아 가까운 적을 다시 친다", pose = "push_palm", dur = 0.8, cd = 8, chi = 20,
 				mech = seq({
 					{ t = 0.15, shape = "line", at = "self", length = 32, width = 6, vfx = "timeArrow", hit = hit(0, 0, 0, 30, 30, 0.5, 14) },
 					{ t = 0.5, at = "each", n = 5, range = 30, radius = 6, vfx = "timeGhost", hit = hit(0, 0, 0, 22, 24, 0.5, 10, 6) },
 				}) },
-			R = { id = "gfR", name = "역류일순", desc = "시간을 찢고 앞으로 두 번 내달려 지나는 적을 벤다 (그동안 무적). 발밑의 시계판이 거꾸로 돌며 둘레의 적을 끌어와 되감긴 시간에 한 번 더 친다", pose = "dash_punch", dur = 1.1, cd = 11, chi = 26,
+			R = { id = "gfR", name = "회귀참", desc = "선 자리에 시간의 닻을 박고 앞으로 14칸을 베며 내달린 뒤, 시간이 되감기듯 닻으로 끌려 돌아오며 같은 길을 한 번 더 벤다 (그동안 무적). 돌아온 자리에서 시계판이 터진다", pose = "dash_punch", dur = 1.2, cd = 11, chi = 26,
 				mech = { kind = "forgeSeq", iframes = true, steps = {
-					{ t = 0.1, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "timeDash", hit = hit(0, 0, 0, 18, 18, 0.4, 4) },
-					{ t = 0.3, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "timeDash", hit = hit(0, 0, 0, 18, 18, 0.4, 4) },
-					{ t = 0.55, shape = "circle", at = "self", radius = 15, pull = 18, life = 0.45, vfx = "timeDial", hit = hit(0, 0, 0, 14, 16, 0.4, 0) },
-					{ t = 0.95, shape = "circle", at = "self", radius = 15, vfx = "timeSnap", hit = hit(0, 0, 0, 36, 40, 0.8, 24, 10) },
+					{ t = 0.05, shape = "circle", at = "self", radius = 1, life = 1.0, vfx = "timeAnchor" },
+					{ t = 0.15, dash = 14, shape = "circle", at = "self", radius = 7, vfx = "timeDash", hit = hit(0, 0, 0, 24, 24, 0.45, 6) },
+					{ t = 0.65, dash = -14, shape = "circle", at = "self", radius = 7, vfx = "timeReturn", hit = hit(0, 0, 0, 24, 24, 0.45, 6) },
+					{ t = 0.95, shape = "circle", at = "self", radius = 14, vfx = "timeSnap", hit = hit(0, 0, 0, 34, 38, 0.8, 22, 10) },
 				} } },
 			G = { id = "gfG", name = "만년일순", desc = "하늘과 땅에 해시계가 하나씩 떠오르고 둘레 30칸의 시간이 멈춘다. 열두 시진의 빛 기둥이 두 바퀴 내리꽂히고, 두 바늘이 열두 시에 닿는 순간 멈췄던 만 년이 한꺼번에 흘러 터진다", pose = "ult_taiji", dur = 2.8, cd = 32, chi = 100, armor = true,
 				mech = (function()
@@ -8019,33 +8043,36 @@ do
 		color = Color3.fromRGB(255, 236, 190), color2 = Color3.fromRGB(190, 230, 255),
 		palette = { Color3.fromRGB(255, 236, 190), Color3.fromRGB(190, 230, 255), Color3.fromRGB(10, 20, 36) },
 		desc = "백 날을 쌓아 시간의 끝에 닿은 주먹. 지나간 모든 날의 내가 한 자리에 모여 같은 주먹을 지른다. 초 오의에서는 하늘의 시계가 깨지고 시간 자체가 끝난다.",
-		gimmick = "잔상: 네 번 맞힐 때마다 조금 전의 내가 나타나 한 번 더 친다. 초 오의(X) 종겁귀원이 있다",
+		gimmick = "잔상: 네 번 맞힐 때마다 조금 전의 내가 나타나 한 번 더 친다. 새벽빛 시간. E 천시전 · R 회귀참 두 번 · 초 오의(X) 종겁귀원",
 		unlockHint = "누적 출석 100일째 (백 날을 채운 자에게 시간의 끝이 내린다)",
 		deflect = 0.3, speed = 1.12, stance = "stance_mugeuk",
 		pulse = { every = 4, kind = "timeEcho", radius = 10, delay = 0.3, name = "잔상", dmg = 34, posture = 28, stun = 0.55, kb = 9, up = 0 },
 		combo = {
-			{ id = "gt1", name = "초침", pose = "jab_l", dur = 0.3, lunge = 4, hits = { hit(0.12, 6, 5, 18, 15, 0.35, 10) } },
-			{ id = "gt2", name = "분침", pose = "punch_r", dur = 0.34, lunge = 3, hits = { hit(0.15, 6, 5, 18, 15, 0.35, 12) } },
-			{ id = "gt3", name = "시침선", pose = "circle_palm", dur = 0.46, lunge = 2, hits = { hit(0.24, 0, 8, 20, 24, 0.5, 14, 10, true) } },
-			{ id = "gt4", name = "정오권", pose = "push_palm", dur = 0.48, lunge = 6, hits = { hit(0.22, 9, 6, 30, 34, 0.6, 38) } },
+			{ id = "gq1", name = "일겁권", pose = "punch_r", dur = 0.3, lunge = 4, hits = { hit(0.12, 6, 5, 18, 15, 0.35, 10) } },
+			{ id = "gq2", name = "항사장", pose = "void_palm_l", dur = 0.34, lunge = 3, hits = { hit(0.15, 6, 5, 18, 15, 0.35, 12) } },
+			{ id = "gq3", name = "아승기각", pose = "crescent_kick", dur = 0.46, lunge = 2, hits = { hit(0.24, 0, 8, 20, 24, 0.5, 14, 10, true) } },
+			{ id = "gq4", name = "무량권", pose = "circle_palm", dur = 0.48, lunge = 6, hits = { hit(0.22, 9, 6, 30, 34, 0.6, 38) } },
 		},
-		heavy = { id = "gtH", name = "자정추", pose = "grav_hammer", dur = 0.72, lunge = 4, hits = { hit(0.36, 6, 9, 50, 76, 1.0, 40, 12, true) } },
-		finisher = { id = "gtF", name = "여명승천", pose = "push_palm", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		heavy = { id = "gqH", name = "윤겁추", pose = "grav_hammer", dur = 0.72, lunge = 4, hits = { hit(0.36, 6, 9, 50, 76, 1.0, 40, 12, true) } },
+		finisher = { id = "gqF", name = "개벽승천", pose = "push_palm", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
 		skills = {
-			E = { id = "gtE", name = "광음여전", desc = "빛의 화살이 앞으로 34칸을 꿰뚫고, 지나간 날의 내 잔상 일곱이 늦게 뒤쫓아 가까운 적을 다시 친다", pose = "push_palm", dur = 0.8, cd = 8, chi = 20,
+			E = { id = "gqE", name = "천시전", desc = "멈춘 시간 속에 빛의 화살 열둘이 몸 둘레에 떠오른다. 화살이 두 번에 나뉘어 가까운 적 여섯에게 쏟아지고, 마지막 한 발이 앞으로 34칸을 꿰뚫는다", pose = "push_palm", dur = 1.1, cd = 8, chi = 20,
 				mech = seq({
-					{ t = 0.15, shape = "line", at = "self", length = 34, width = 7, vfx = "timeArrow", hit = hit(0, 0, 0, 30, 30, 0.5, 14) },
-					{ t = 0.5, at = "each", n = 7, range = 32, radius = 6, vfx = "timeGhost", hit = hit(0, 0, 0, 18, 20, 0.45, 10, 6) },
+					{ t = 0.1, shape = "circle", at = "self", radius = 1, life = 0.85, vfx = "arrowHalo" },
+					{ t = 0.5, at = "each", n = 6, range = 32, radius = 5, vfx = "arrowVolley", hit = hit(0, 0, 0, 16, 16, 0.35, 6, 4) },
+					{ t = 0.75, at = "each", n = 6, range = 32, radius = 5, vfx = "arrowVolley", hit = hit(0, 0, 0, 16, 16, 0.35, 6, 4) },
+					{ t = 0.95, shape = "line", at = "self", length = 34, width = 7, vfx = "timeArrow", hit = hit(0, 0, 0, 28, 28, 0.5, 14) },
 				}) },
-			R = { id = "gtR", name = "역류일순", desc = "시간을 찢고 앞으로 세 번 내달려 지나는 적을 벤다 (그동안 무적). 시계판이 거꾸로 돌며 둘레의 적을 끌어와 되감긴 시간에 한 번 더 친다", pose = "dash_punch", dur = 1.2, cd = 11, chi = 26,
+			R = { id = "gqR", name = "회귀참", desc = "시간의 닻을 박고 앞으로 베며 내달렸다가 닻으로 되감겨 돌아오기를 두 번 한다 (그동안 무적). 오갈 때마다 같은 길을 벤다. 돌아온 자리에서 시계판이 크게 터진다", pose = "dash_punch", dur = 1.6, cd = 11, chi = 26,
 				mech = { kind = "forgeSeq", iframes = true, steps = {
-					{ t = 0.1, dash = 8, shape = "circle", at = "self", radius = 7, vfx = "timeDash", hit = hit(0, 0, 0, 12, 12, 0.3, 4) },
-					{ t = 0.25, dash = 8, shape = "circle", at = "self", radius = 7, vfx = "timeDash", hit = hit(0, 0, 0, 12, 12, 0.3, 4) },
-					{ t = 0.4, dash = 8, shape = "circle", at = "self", radius = 7, vfx = "timeDash", hit = hit(0, 0, 0, 12, 12, 0.3, 4) },
-					{ t = 0.65, shape = "circle", at = "self", radius = 16, pull = 20, life = 0.45, vfx = "timeDial", hit = hit(0, 0, 0, 14, 16, 0.4, 0) },
-					{ t = 1.05, shape = "circle", at = "self", radius = 16, vfx = "timeSnap", hit = hit(0, 0, 0, 36, 40, 0.8, 24, 10) },
+					{ t = 0.05, shape = "circle", at = "self", radius = 1, life = 1.4, vfx = "timeAnchor" },
+					{ t = 0.15, dash = 14, shape = "circle", at = "self", radius = 7, vfx = "timeDash", hit = hit(0, 0, 0, 14, 14, 0.35, 6) },
+					{ t = 0.5, dash = -14, shape = "circle", at = "self", radius = 7, vfx = "timeReturn", hit = hit(0, 0, 0, 14, 14, 0.35, 6) },
+					{ t = 0.8, dash = 14, shape = "circle", at = "self", radius = 7, vfx = "timeDash", hit = hit(0, 0, 0, 14, 14, 0.35, 6) },
+					{ t = 1.1, dash = -14, shape = "circle", at = "self", radius = 7, vfx = "timeReturn", hit = hit(0, 0, 0, 14, 14, 0.35, 6) },
+					{ t = 1.4, shape = "circle", at = "self", radius = 16, vfx = "timeSnap", big = true, hit = hit(0, 0, 0, 36, 40, 0.8, 24, 10) },
 				} } },
-			G = { id = "gtG", name = "억년일순", desc = "하늘과 땅에 해시계가 떠오르고 둘레 32칸의 시간이 멈춘다. 빛 기둥이 두 바퀴 내리꽂히고, 바늘이 열두 시에 닿는 순간 멈췄던 억 년이 한꺼번에 흘러 터진다", pose = "ult_taiji", dur = 2.8, cd = 30, chi = 100, armor = true,
+			G = { id = "gqG", name = "억년일순", desc = "하늘과 땅에 해시계가 떠오르고 둘레 32칸의 시간이 멈춘다. 빛 기둥이 두 바퀴 내리꽂히고, 바늘이 열두 시에 닿는 순간 멈췄던 억 년이 한꺼번에 흘러 터진다", pose = "ult_taiji", dur = 2.8, cd = 30, chi = 100, armor = true,
 				mech = (function()
 					local t = { { t = 0.25, shape = "circle", at = "self", radius = 32, pull = 34, life = 2.3, vfx = "sunDial", hit = hit(0, 0, 0, 10, 12, 0.3, 0) } }
 					for k = 0, 17 do
@@ -8054,7 +8081,7 @@ do
 					table.insert(t, { t = 2.35, shape = "circle", at = "self", radius = 32, vfx = "timeRelease", big = true, hit = hit(0, 0, 0, 100, 140, 1.4, 60, 18) })
 					return seq(t)
 				end)() },
-			X = { id = "gtX", name = "종겁귀원", desc = "초 오의 (그동안 무적). 세상의 시간이 멈추고 등 뒤에 하늘만 한 시계가 선다. 지나간 백 날의 내가 둘레에서 걸어 나와 적 여덟을 네 번 에워싸 치고, 마지막에 하늘의 시계가 산산이 깨지며 시간 자체가 끝난다 (둘레 40칸)", pose = "ult_star", dur = 3.6, cd = 60, chi = 150, armor = true,
+			X = { id = "gqX", name = "종겁귀원", desc = "초 오의 (그동안 무적). 세상의 시간이 멈추고 등 뒤에 하늘만 한 시계가 선다. 지나간 백 날의 내가 둘레에서 걸어 나와 적 여덟을 네 번 에워싸 치고, 마지막에 하늘의 시계가 산산이 깨지며 시간 자체가 끝난다 (둘레 40칸)", pose = "ult_star", dur = 3.6, cd = 60, chi = 150, armor = true,
 				mech = { kind = "forgeSeq", iframes = true, steps = {
 					{ t = 0.1, shape = "circle", at = "self", radius = 40, pull = 36, life = 3.1, vfx = "eonClock", hit = hit(0, 0, 0, 30, 30, 0.5, 0) },
 					{ t = 0.8, at = "each", n = 8, range = 36, radius = 7, vfx = "pastLegion", hit = hit(0, 0, 0, 30, 30, 0.5, 6, 8) },

@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.81" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.82" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7884,8 +7884,8 @@ do
 			return seq(s)
 		end)()
 		local skills: any = {
-			E = { id = p .. "E", name = "북두칠보", desc = o.dE, pose = "dash_punch", dur = 0.9, cd = 8, chi = 20, mech = E },
-			R = { id = p .. "R", name = "칠성연주", desc = o.dR, pose = "point_sky", dur = 0.6 + t * 0.3, cd = 10, chi = 24, mech = R },
+			E = o.E or { id = p .. "E", name = "북두칠보", desc = o.dE, pose = "dash_punch", dur = 0.9, cd = 8, chi = 20, mech = E },
+			R = o.R or { id = p .. "R", name = "칠성연주", desc = o.dR, pose = "point_sky", dur = 0.6 + t * 0.3, cd = 10, chi = 24, mech = R },
 			G = { id = p .. "G", name = o.gName or "북두낙성", desc = o.dG, pose = "ult_star", dur = 2.3, cd = 30, chi = 100, armor = true, mech = G },
 		}
 		if t >= 3 then
@@ -7905,19 +7905,21 @@ do
 			desc = o.desc, gimmick = o.gimmick, unlockHint = o.hint,
 			deflect = 0.22, speed = ({ 1.12, 1.15, 1.18 })[t], stance = "stance_sunmoon",
 			pulse = { every = 7, kind = "starFall", radius = 8 + t, delay = 0.35, name = "낙성", dmg = 22 + (t - 1) * 6, posture = 20, stun = 0.5, kb = 6, up = 0 },
+			-- 연타 · 강타 · 띄우기: 단계마다 이름과 몸짓이 다르다 (o.cn = 이름 일곱, o.cp = 몸짓 일곱)
 			combo = {
-				{ id = p .. "1", name = "천추", pose = "palm_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 7, 4.5, 8, 8, 0.3, 8) } },
-				{ id = p .. "2", name = "천선", pose = "moon_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 7, 4.5, 8, 8, 0.3, 8) } },
-				{ id = p .. "3", name = "천기각", pose = "crescent_kick", dur = 0.42, lunge = 2, hits = { hit(0.15, 6, 6, 7, 7, 0.3, 8, 8, true), hit(0.28, 6, 6, 8, 8, 0.35, 10, 10, true) } },
-				{ id = p .. "4", name = "천권", pose = "push_palm", dur = 0.5, lunge = 3, hits = { hit(0.24, 9, 7, 13, 16, 0.5, 30, nil, true) } },
+				{ id = p .. "1", name = o.cn[1], pose = o.cp[1], dur = 0.28, lunge = 3, hits = { hit(0.11, 7, 4.5, 8, 8, 0.3, 8) } },
+				{ id = p .. "2", name = o.cn[2], pose = o.cp[2], dur = 0.3, lunge = 3, hits = { hit(0.12, 7, 4.5, 8, 8, 0.3, 8) } },
+				{ id = p .. "3", name = o.cn[3], pose = o.cp[3], dur = 0.42, lunge = 2, hits = { hit(0.15, 6, 6, 7, 7, 0.3, 8, 8, true), hit(0.28, 6, 6, 8, 8, 0.35, 10, 10, true) } },
+				{ id = p .. "4", name = o.cn[4], pose = o.cp[4], dur = 0.5, lunge = 3, hits = { hit(0.24, 9, 7, 13, 16, 0.5, 30, nil, true) } },
 			},
-			heavy = { id = p .. "H", name = "옥형추", pose = "moon_throw", dur = 0.6, lunge = 2, hits = { hit(0.28, 13, 5, 22, 26, 0.6, 34) } },
-			finisher = { id = p .. "F", name = "요광승천", pose = "crescent_kick", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+			heavy = { id = p .. "H", name = o.cn[5], pose = o.cp[5], dur = 0.6, lunge = 2, hits = { hit(0.28, 13, 5, 22, 26, 0.6, 34) } },
+			finisher = { id = p .. "F", name = o.cn[6], pose = o.cp[6], dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
 			skills = skills,
 		})
 	end
 	chil({
-		tier = 1, idp = "cs", id = "chilseong", name = "칠성보권", hanja = "七星步拳", icon = "🌟", grade = "전설", attend = 7,
+		tier = 1, idp = "cs", id = "chilseong",
+		cn = { "천추", "천선", "천기각", "천권", "옥형추", "요광승천" }, cp = { "palm_r", "moon_palm_l", "crescent_kick", "push_palm", "moon_throw", "crescent_kick" }, name = "칠성보권", hanja = "七星步拳", icon = "🌟", grade = "전설", attend = 7,
 		color = Color3.fromRGB(150, 190, 255), color2 = Color3.fromRGB(255, 236, 170),
 		desc = "밤하늘 북두칠성의 일곱 별을 차례로 밟아 나가는 보법 권. 한 걸음마다 별이 박히고, 일곱 별이 이어지면 하늘의 국자가 그려진다. 끝에는 그 별들이 하나씩 떨어진다.",
 		gimmick = "칠성: 일곱 번 맞힐 때마다 상대 머리 위로 별 하나가 떨어진다. 몸이 가볍고 빠르다",
@@ -7927,23 +7929,45 @@ do
 		dG = "하늘이 밤으로 바뀌고 머리 위에 커다란 북두칠성이 걸린다. 일곱 별이 하나씩 떨어져 적을 내리찍고, 마지막에 국자 전체가 땅으로 쏟아지며 둘레 22칸이 별빛으로 터진다",
 	})
 	chil({
-		tier = 2, idp = "cv", id = "chilseong2", name = "진 칠성보권", hanja = "眞七星步拳", icon = "💫", grade = "신화", attend = 21,
+		tier = 2, idp = "cv", id = "chilseong2",
+		cn = { "성광", "성환", "유성각", "성운장", "북극추", "은하승천" }, cp = { "jab_l", "hook_r", "front_kick", "circle_palm", "grav_hammer", "front_kick" },
+		R = { id = "cvR", name = "칠성환", desc = "별 일곱이 몸 둘레를 돈다. 돌던 별이 하나씩 가까운 적에게 날아가 꽂히며 터진다 (일곱 발)", pose = "point_sky", dur = 1.7, cd = 10, chi = 24,
+			mech = (function()
+				local t = { { t = 0.1, shape = "circle", at = "self", radius = 1, life = 1.6, vfx = "starHalo" } }
+				for k = 0, 6 do
+					table.insert(t, { t = 0.35 + k * 0.2, at = "target", range = 26, shape = "circle", radius = 5, col = k + 1, vfx = "starShot", hit = hit(0, 0, 0, 12, 12, 0.3, 6, 4) })
+				end
+				return seq(t)
+			end)() }, name = "진 칠성보권", hanja = "眞七星步拳", icon = "💫", grade = "신화", attend = 21,
 		color = Color3.fromRGB(130, 170, 255), color2 = Color3.fromRGB(255, 220, 130),
 		desc = "세 이레를 밟아 별자리가 둘이 된 칠성보권. 걸음마다 박히는 별이 더 밝고, 북두칠성이 두 번 떨어진다.",
-		gimmick = "칠성: 일곱 번 맞힐 때마다 별이 떨어진다 (더 세고 넓다). 칠성연주가 두 번 터진다",
+		gimmick = "칠성: 일곱 번 맞힐 때마다 별이 떨어진다 (더 세고 넓다). 금빛 별. R 칠성환: 몸 둘레를 도는 별 일곱을 하나씩 쏜다",
 		hint = "누적 출석 21일째 (세 이레를 채운 자에게 별이 한 번 더 내린다)",
 		dE = "별에서 별로 일곱 걸음을 내딛는다. 밟은 자리마다 별이 터지고, 일곱째 걸음에 이어진 일곱 별이 크게 번쩍인다",
-		dR = "가까운 적 일곱의 몸에 별이 박히고, 빛의 실로 이어진 별이 두 번 잇달아 터진다",
 		dG = "하늘이 밤으로 바뀌고 북두칠성이 걸린다. 별 열넷이 잇달아 떨어져 적을 내리찍고, 마지막에 국자 전체가 쏟아지며 둘레 24칸이 별빛으로 터진다",
 	})
 	chil({
-		tier = 3, idp = "cx", id = "chilseong3", name = "초 칠성보권", hanja = "超七星步拳", icon = "🌠", grade = "초월", attend = 45, scale = 0.76,
+		tier = 3, idp = "sx", id = "chilseong3",
+		cn = { "천강", "지살", "은하각", "개천장", "천랑추", "자미승천" }, cp = { "punch_r", "void_palm_l", "crescent_kick", "push_palm", "grav_hammer", "crescent_kick" },
+		E = { id = "sxE", name = "유성낙각", desc = "별처럼 하늘로 뛰어올라 앞으로 16칸을 날아가 내리찍는다. 떨어진 자리가 별빛으로 터지고, 둘레의 적 다섯에게 잔별이 쏟아진다", pose = "dash_punch", dur = 0.9, cd = 8, chi = 20,
+			mech = seq({
+				{ t = 0.1, dash = 8, shape = "circle", at = "self", radius = 5, vfx = "starStep", hit = hit(0, 0, 0, 8, 8, 0.2, 3) },
+				{ t = 0.3, dash = 8, shape = "circle", at = "self", radius = 11, vfx = "meteorKick", big = true, hit = hit(0, 0, 0, 34, 34, 0.7, 20, 10) },
+				{ t = 0.55, at = "each", n = 5, range = 20, radius = 5, vfx = "starDrop", hit = hit(0, 0, 0, 10, 10, 0.3, 4, 4) },
+			}) },
+		R = { id = "sxR", name = "칠성환", desc = "별 일곱이 몸 둘레를 돈다. 돌던 별이 하나씩 가까운 적에게 날아가 꽂히며 크게 터지고, 마지막 별은 둘레 12칸을 터뜨린다", pose = "point_sky", dur = 1.8, cd = 10, chi = 24,
+			mech = (function()
+				local t = { { t = 0.1, shape = "circle", at = "self", radius = 1, life = 1.6, vfx = "starHalo" } }
+				for k = 0, 6 do
+					table.insert(t, { t = 0.35 + k * 0.18, at = "target", range = 28, shape = "circle", radius = 6, col = k + 1, vfx = "starShot", hit = hit(0, 0, 0, 12, 12, 0.3, 6, 4) })
+				end
+				table.insert(t, { t = 1.6, shape = "circle", at = "self", radius = 12, vfx = "starNova", big = true, hit = hit(0, 0, 0, 24, 24, 0.6, 16, 8) })
+				return seq(t)
+			end)() }, name = "초 칠성보권", hanja = "超七星步拳", icon = "🌠", grade = "초월", attend = 45, scale = 0.76,
 		color = Color3.fromRGB(190, 160, 255), color2 = Color3.fromRGB(255, 245, 200),
 		desc = "마흔닷새를 밟아 하늘 전체를 걸음판으로 삼는 칠성보권. 북두칠성이 세 번 떨어지고, 초 오의에서는 일곱 별이 한 줄로 서서 하늘을 연다.",
-		gimmick = "칠성: 일곱 번 맞힐 때마다 별이 떨어진다 (가장 세고 넓다). 초 오의(X) 북두개천이 있다",
+		gimmick = "칠성: 일곱 번 맞힐 때마다 별이 떨어진다 (가장 세고 넓다). 보랏빛 별. E 유성낙각 · R 칠성환 · 초 오의(X) 북두개천",
 		hint = "누적 출석 45일째 (마흔닷새를 채운 자에게 하늘이 열린다)",
-		dE = "별에서 별로 일곱 걸음을 내딛는다. 밟은 자리마다 큰 별이 터지고, 일곱째 걸음에 이어진 일곱 별이 크게 번쩍인다",
-		dR = "가까운 적 일곱의 몸에 별이 박히고, 빛의 실로 이어진 별이 세 번 잇달아 터진다",
 		dG = "하늘이 밤으로 바뀌고 북두칠성이 걸린다. 별 스물하나가 비처럼 떨어져 적을 내리찍고, 마지막에 국자 전체가 쏟아지며 둘레 26칸이 별빛으로 터진다",
 		dX = "초 오의 (그동안 무적). 하늘이 깊은 밤이 되고 북두칠성이 하늘을 가득 채운다. 별이 네 번 비처럼 쏟아져 적 여덟을 내리찍고, 마지막에 일곱 별이 한 줄로 서서 하늘을 가르는 빛기둥이 되어 내리꽂힌다 (둘레 36칸)",
 	})
@@ -7996,30 +8020,30 @@ do
 		color = Color3.fromRGB(255, 200, 110), color2 = Color3.fromRGB(240, 252, 255),
 		palette = { Color3.fromRGB(255, 200, 110), Color3.fromRGB(240, 252, 255), Color3.fromRGB(16, 34, 44) },
 		desc = "세월을 한 번 더 깨친 광음신권. 조금 전의 나만이 아니라 어제의 나, 지난달의 나까지 불러낸다. 끝에는 하늘과 땅에 해시계가 하나씩 떠 만 년을 한순간에 몰아친다.",
-		gimmick = "잔상: 네 번 맞힐 때마다 조금 전의 내가 나타나 같은 자리를 한 번 더 친다. 잔상이 더 세고, 기술마다 잔상이 더 많이 나온다",
+		gimmick = "잔상: 네 번 맞힐 때마다 조금 전의 내가 나타나 같은 자리를 한 번 더 친다. 은빛 시간. R 회귀참: 내달렸다가 되감겨 돌아오며 한 번 더 벤다",
 		unlockHint = "누적 출석 60일째 (두 달을 채운 자에게 세월이 한 번 더 내린다)",
 		deflect = 0.28, speed = 1.1, stance = "stance_mugeuk",
 		pulse = { every = 4, kind = "timeEcho", radius = 9, delay = 0.3, name = "잔상", dmg = 30, posture = 26, stun = 0.5, kb = 8, up = 0 },
 		combo = {
-			{ id = "gf1", name = "초침", pose = "jab_l", dur = 0.3, lunge = 4, hits = { hit(0.12, 6, 5, 18, 15, 0.35, 10) } },
-			{ id = "gf2", name = "분침", pose = "punch_r", dur = 0.34, lunge = 3, hits = { hit(0.15, 6, 5, 18, 15, 0.35, 12) } },
-			{ id = "gf3", name = "시침선", pose = "circle_palm", dur = 0.46, lunge = 2, hits = { hit(0.24, 0, 8, 20, 24, 0.5, 14, 10, true) } },
-			{ id = "gf4", name = "정오권", pose = "push_palm", dur = 0.48, lunge = 6, hits = { hit(0.22, 9, 6, 30, 34, 0.6, 38) } },
+			{ id = "gf1", name = "찰나", pose = "jab_l", dur = 0.3, lunge = 4, hits = { hit(0.12, 6, 5, 18, 15, 0.35, 10) } },
+			{ id = "gf2", name = "순식", pose = "hook_r", dur = 0.34, lunge = 3, hits = { hit(0.15, 6, 5, 18, 15, 0.35, 12) } },
+			{ id = "gf3", name = "탄지각", pose = "front_kick", dur = 0.46, lunge = 2, hits = { hit(0.24, 0, 8, 20, 24, 0.5, 14, 10, true) } },
+			{ id = "gf4", name = "수유장", pose = "push_palm", dur = 0.48, lunge = 6, hits = { hit(0.22, 9, 6, 30, 34, 0.6, 38) } },
 		},
-		heavy = { id = "gfH", name = "자정추", pose = "grav_hammer", dur = 0.72, lunge = 4, hits = { hit(0.36, 6, 9, 50, 76, 1.0, 40, 12, true) } },
-		finisher = { id = "gfF", name = "여명승천", pose = "push_palm", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		heavy = { id = "gfH", name = "삭망추", pose = "grav_hammer", dur = 0.72, lunge = 4, hits = { hit(0.36, 6, 9, 50, 76, 1.0, 40, 12, true) } },
+		finisher = { id = "gfF", name = "백야승천", pose = "front_kick", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
 		skills = {
 			E = { id = "gfE", name = "광음여전", desc = "빛의 화살이 앞으로 32칸을 꿰뚫고, 그 길을 따라 지난날의 내 잔상 다섯이 늦게 뒤쫓아 가까운 적을 다시 친다", pose = "push_palm", dur = 0.8, cd = 8, chi = 20,
 				mech = seq({
 					{ t = 0.15, shape = "line", at = "self", length = 32, width = 6, vfx = "timeArrow", hit = hit(0, 0, 0, 30, 30, 0.5, 14) },
 					{ t = 0.5, at = "each", n = 5, range = 30, radius = 6, vfx = "timeGhost", hit = hit(0, 0, 0, 22, 24, 0.5, 10, 6) },
 				}) },
-			R = { id = "gfR", name = "역류일순", desc = "시간을 찢고 앞으로 두 번 내달려 지나는 적을 벤다 (그동안 무적). 발밑의 시계판이 거꾸로 돌며 둘레의 적을 끌어와 되감긴 시간에 한 번 더 친다", pose = "dash_punch", dur = 1.1, cd = 11, chi = 26,
+			R = { id = "gfR", name = "회귀참", desc = "선 자리에 시간의 닻을 박고 앞으로 14칸을 베며 내달린 뒤, 시간이 되감기듯 닻으로 끌려 돌아오며 같은 길을 한 번 더 벤다 (그동안 무적). 돌아온 자리에서 시계판이 터진다", pose = "dash_punch", dur = 1.2, cd = 11, chi = 26,
 				mech = { kind = "forgeSeq", iframes = true, steps = {
-					{ t = 0.1, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "timeDash", hit = hit(0, 0, 0, 18, 18, 0.4, 4) },
-					{ t = 0.3, dash = 10, shape = "circle", at = "self", radius = 7, vfx = "timeDash", hit = hit(0, 0, 0, 18, 18, 0.4, 4) },
-					{ t = 0.55, shape = "circle", at = "self", radius = 15, pull = 18, life = 0.45, vfx = "timeDial", hit = hit(0, 0, 0, 14, 16, 0.4, 0) },
-					{ t = 0.95, shape = "circle", at = "self", radius = 15, vfx = "timeSnap", hit = hit(0, 0, 0, 36, 40, 0.8, 24, 10) },
+					{ t = 0.05, shape = "circle", at = "self", radius = 1, life = 1.0, vfx = "timeAnchor" },
+					{ t = 0.15, dash = 14, shape = "circle", at = "self", radius = 7, vfx = "timeDash", hit = hit(0, 0, 0, 24, 24, 0.45, 6) },
+					{ t = 0.65, dash = -14, shape = "circle", at = "self", radius = 7, vfx = "timeReturn", hit = hit(0, 0, 0, 24, 24, 0.45, 6) },
+					{ t = 0.95, shape = "circle", at = "self", radius = 14, vfx = "timeSnap", hit = hit(0, 0, 0, 34, 38, 0.8, 22, 10) },
 				} } },
 			G = { id = "gfG", name = "만년일순", desc = "하늘과 땅에 해시계가 하나씩 떠오르고 둘레 30칸의 시간이 멈춘다. 열두 시진의 빛 기둥이 두 바퀴 내리꽂히고, 두 바늘이 열두 시에 닿는 순간 멈췄던 만 년이 한꺼번에 흘러 터진다", pose = "ult_taiji", dur = 2.8, cd = 32, chi = 100, armor = true,
 				mech = (function()
@@ -8039,33 +8063,36 @@ do
 		color = Color3.fromRGB(255, 236, 190), color2 = Color3.fromRGB(190, 230, 255),
 		palette = { Color3.fromRGB(255, 236, 190), Color3.fromRGB(190, 230, 255), Color3.fromRGB(10, 20, 36) },
 		desc = "백 날을 쌓아 시간의 끝에 닿은 주먹. 지나간 모든 날의 내가 한 자리에 모여 같은 주먹을 지른다. 초 오의에서는 하늘의 시계가 깨지고 시간 자체가 끝난다.",
-		gimmick = "잔상: 네 번 맞힐 때마다 조금 전의 내가 나타나 한 번 더 친다. 초 오의(X) 종겁귀원이 있다",
+		gimmick = "잔상: 네 번 맞힐 때마다 조금 전의 내가 나타나 한 번 더 친다. 새벽빛 시간. E 천시전 · R 회귀참 두 번 · 초 오의(X) 종겁귀원",
 		unlockHint = "누적 출석 100일째 (백 날을 채운 자에게 시간의 끝이 내린다)",
 		deflect = 0.3, speed = 1.12, stance = "stance_mugeuk",
 		pulse = { every = 4, kind = "timeEcho", radius = 10, delay = 0.3, name = "잔상", dmg = 34, posture = 28, stun = 0.55, kb = 9, up = 0 },
 		combo = {
-			{ id = "gt1", name = "초침", pose = "jab_l", dur = 0.3, lunge = 4, hits = { hit(0.12, 6, 5, 18, 15, 0.35, 10) } },
-			{ id = "gt2", name = "분침", pose = "punch_r", dur = 0.34, lunge = 3, hits = { hit(0.15, 6, 5, 18, 15, 0.35, 12) } },
-			{ id = "gt3", name = "시침선", pose = "circle_palm", dur = 0.46, lunge = 2, hits = { hit(0.24, 0, 8, 20, 24, 0.5, 14, 10, true) } },
-			{ id = "gt4", name = "정오권", pose = "push_palm", dur = 0.48, lunge = 6, hits = { hit(0.22, 9, 6, 30, 34, 0.6, 38) } },
+			{ id = "gq1", name = "일겁권", pose = "punch_r", dur = 0.3, lunge = 4, hits = { hit(0.12, 6, 5, 18, 15, 0.35, 10) } },
+			{ id = "gq2", name = "항사장", pose = "void_palm_l", dur = 0.34, lunge = 3, hits = { hit(0.15, 6, 5, 18, 15, 0.35, 12) } },
+			{ id = "gq3", name = "아승기각", pose = "crescent_kick", dur = 0.46, lunge = 2, hits = { hit(0.24, 0, 8, 20, 24, 0.5, 14, 10, true) } },
+			{ id = "gq4", name = "무량권", pose = "circle_palm", dur = 0.48, lunge = 6, hits = { hit(0.22, 9, 6, 30, 34, 0.6, 38) } },
 		},
-		heavy = { id = "gtH", name = "자정추", pose = "grav_hammer", dur = 0.72, lunge = 4, hits = { hit(0.36, 6, 9, 50, 76, 1.0, 40, 12, true) } },
-		finisher = { id = "gtF", name = "여명승천", pose = "push_palm", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		heavy = { id = "gqH", name = "윤겁추", pose = "grav_hammer", dur = 0.72, lunge = 4, hits = { hit(0.36, 6, 9, 50, 76, 1.0, 40, 12, true) } },
+		finisher = { id = "gqF", name = "개벽승천", pose = "push_palm", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
 		skills = {
-			E = { id = "gtE", name = "광음여전", desc = "빛의 화살이 앞으로 34칸을 꿰뚫고, 지나간 날의 내 잔상 일곱이 늦게 뒤쫓아 가까운 적을 다시 친다", pose = "push_palm", dur = 0.8, cd = 8, chi = 20,
+			E = { id = "gqE", name = "천시전", desc = "멈춘 시간 속에 빛의 화살 열둘이 몸 둘레에 떠오른다. 화살이 두 번에 나뉘어 가까운 적 여섯에게 쏟아지고, 마지막 한 발이 앞으로 34칸을 꿰뚫는다", pose = "push_palm", dur = 1.1, cd = 8, chi = 20,
 				mech = seq({
-					{ t = 0.15, shape = "line", at = "self", length = 34, width = 7, vfx = "timeArrow", hit = hit(0, 0, 0, 30, 30, 0.5, 14) },
-					{ t = 0.5, at = "each", n = 7, range = 32, radius = 6, vfx = "timeGhost", hit = hit(0, 0, 0, 18, 20, 0.45, 10, 6) },
+					{ t = 0.1, shape = "circle", at = "self", radius = 1, life = 0.85, vfx = "arrowHalo" },
+					{ t = 0.5, at = "each", n = 6, range = 32, radius = 5, vfx = "arrowVolley", hit = hit(0, 0, 0, 16, 16, 0.35, 6, 4) },
+					{ t = 0.75, at = "each", n = 6, range = 32, radius = 5, vfx = "arrowVolley", hit = hit(0, 0, 0, 16, 16, 0.35, 6, 4) },
+					{ t = 0.95, shape = "line", at = "self", length = 34, width = 7, vfx = "timeArrow", hit = hit(0, 0, 0, 28, 28, 0.5, 14) },
 				}) },
-			R = { id = "gtR", name = "역류일순", desc = "시간을 찢고 앞으로 세 번 내달려 지나는 적을 벤다 (그동안 무적). 시계판이 거꾸로 돌며 둘레의 적을 끌어와 되감긴 시간에 한 번 더 친다", pose = "dash_punch", dur = 1.2, cd = 11, chi = 26,
+			R = { id = "gqR", name = "회귀참", desc = "시간의 닻을 박고 앞으로 베며 내달렸다가 닻으로 되감겨 돌아오기를 두 번 한다 (그동안 무적). 오갈 때마다 같은 길을 벤다. 돌아온 자리에서 시계판이 크게 터진다", pose = "dash_punch", dur = 1.6, cd = 11, chi = 26,
 				mech = { kind = "forgeSeq", iframes = true, steps = {
-					{ t = 0.1, dash = 8, shape = "circle", at = "self", radius = 7, vfx = "timeDash", hit = hit(0, 0, 0, 12, 12, 0.3, 4) },
-					{ t = 0.25, dash = 8, shape = "circle", at = "self", radius = 7, vfx = "timeDash", hit = hit(0, 0, 0, 12, 12, 0.3, 4) },
-					{ t = 0.4, dash = 8, shape = "circle", at = "self", radius = 7, vfx = "timeDash", hit = hit(0, 0, 0, 12, 12, 0.3, 4) },
-					{ t = 0.65, shape = "circle", at = "self", radius = 16, pull = 20, life = 0.45, vfx = "timeDial", hit = hit(0, 0, 0, 14, 16, 0.4, 0) },
-					{ t = 1.05, shape = "circle", at = "self", radius = 16, vfx = "timeSnap", hit = hit(0, 0, 0, 36, 40, 0.8, 24, 10) },
+					{ t = 0.05, shape = "circle", at = "self", radius = 1, life = 1.4, vfx = "timeAnchor" },
+					{ t = 0.15, dash = 14, shape = "circle", at = "self", radius = 7, vfx = "timeDash", hit = hit(0, 0, 0, 14, 14, 0.35, 6) },
+					{ t = 0.5, dash = -14, shape = "circle", at = "self", radius = 7, vfx = "timeReturn", hit = hit(0, 0, 0, 14, 14, 0.35, 6) },
+					{ t = 0.8, dash = 14, shape = "circle", at = "self", radius = 7, vfx = "timeDash", hit = hit(0, 0, 0, 14, 14, 0.35, 6) },
+					{ t = 1.1, dash = -14, shape = "circle", at = "self", radius = 7, vfx = "timeReturn", hit = hit(0, 0, 0, 14, 14, 0.35, 6) },
+					{ t = 1.4, shape = "circle", at = "self", radius = 16, vfx = "timeSnap", big = true, hit = hit(0, 0, 0, 36, 40, 0.8, 24, 10) },
 				} } },
-			G = { id = "gtG", name = "억년일순", desc = "하늘과 땅에 해시계가 떠오르고 둘레 32칸의 시간이 멈춘다. 빛 기둥이 두 바퀴 내리꽂히고, 바늘이 열두 시에 닿는 순간 멈췄던 억 년이 한꺼번에 흘러 터진다", pose = "ult_taiji", dur = 2.8, cd = 30, chi = 100, armor = true,
+			G = { id = "gqG", name = "억년일순", desc = "하늘과 땅에 해시계가 떠오르고 둘레 32칸의 시간이 멈춘다. 빛 기둥이 두 바퀴 내리꽂히고, 바늘이 열두 시에 닿는 순간 멈췄던 억 년이 한꺼번에 흘러 터진다", pose = "ult_taiji", dur = 2.8, cd = 30, chi = 100, armor = true,
 				mech = (function()
 					local t = { { t = 0.25, shape = "circle", at = "self", radius = 32, pull = 34, life = 2.3, vfx = "sunDial", hit = hit(0, 0, 0, 10, 12, 0.3, 0) } }
 					for k = 0, 17 do
@@ -8074,7 +8101,7 @@ do
 					table.insert(t, { t = 2.35, shape = "circle", at = "self", radius = 32, vfx = "timeRelease", big = true, hit = hit(0, 0, 0, 100, 140, 1.4, 60, 18) })
 					return seq(t)
 				end)() },
-			X = { id = "gtX", name = "종겁귀원", desc = "초 오의 (그동안 무적). 세상의 시간이 멈추고 등 뒤에 하늘만 한 시계가 선다. 지나간 백 날의 내가 둘레에서 걸어 나와 적 여덟을 네 번 에워싸 치고, 마지막에 하늘의 시계가 산산이 깨지며 시간 자체가 끝난다 (둘레 40칸)", pose = "ult_star", dur = 3.6, cd = 60, chi = 150, armor = true,
+			X = { id = "gqX", name = "종겁귀원", desc = "초 오의 (그동안 무적). 세상의 시간이 멈추고 등 뒤에 하늘만 한 시계가 선다. 지나간 백 날의 내가 둘레에서 걸어 나와 적 여덟을 네 번 에워싸 치고, 마지막에 하늘의 시계가 산산이 깨지며 시간 자체가 끝난다 (둘레 40칸)", pose = "ult_star", dur = 3.6, cd = 60, chi = 150, armor = true,
 				mech = { kind = "forgeSeq", iframes = true, steps = {
 					{ t = 0.1, shape = "circle", at = "self", radius = 40, pull = 36, life = 3.1, vfx = "eonClock", hit = hit(0, 0, 0, 30, 30, 0.5, 0) },
 					{ t = 0.8, at = "each", n = 8, range = 36, radius = 7, vfx = "pastLegion", hit = hit(0, 0, 0, 30, 30, 0.5, 6, 8) },
@@ -61203,6 +61230,18 @@ end
 --   ⏳ 광음신권: 시계판 (눈금 열둘 · 거꾸로 도는 바늘) · 금모래 · 조금 전의 나 (잔상) · 시간이 멈춘 화면
 ------------------------------------------------------------------------
 local STAR, STAR2, STARD = Color3.fromRGB(160, 200, 255), Color3.fromRGB(255, 236, 170), Color3.fromRGB(40, 50, 110)
+-- 3.99.82판 단계마다 빛깔: 칠성 푸른 별 · 진 금빛 별 · 초 보랏빛 별
+local STAR_PAL: { [string]: { Color3 } } = {
+	chilseong2 = { Color3.fromRGB(255, 205, 90), Color3.fromRGB(255, 248, 215) },
+	chilseong3 = { Color3.fromRGB(185, 140, 255), Color3.fromRGB(245, 230, 255) },
+}
+local function starPal(d: any): (Color3, Color3)
+	local pl = STAR_PAL[d.style or ""]
+	if pl then
+		return pl[1], pl[2]
+	end
+	return STAR, STAR2
+end
 local function star(at: Vector3, size: number, life: number, c: Color3?)
 	local col = c or STAR2
 	local core = piece(V(size, size, size), CF(at), WHITE, 0, Enum.PartType.Ball)
@@ -61236,6 +61275,7 @@ local function flatLook(d: any): Vector3
 end
 -- 칠성 (패시브): 머리 위에서 별이 비스듬히 떨어진다
 VFX.starFall = function(d)
+	local STAR, STAR2 = starPal(d)
 	local at = (d.at :: Vector3) + V(0, 2, 0)
 	local from = at + V((math.random() - 0.5) * 16, 34, (math.random() - 0.5) * 16)
 	local b = piece(V(1.6, 1.6, 1.6), CF(from), WHITE, 0, Enum.PartType.Ball)
@@ -61252,19 +61292,21 @@ VFX.starFall = function(d)
 			conn:Disconnect()
 			b:Destroy()
 			dropBrush(tr, 0.35)
-			star(at, 2.2, 0.5)
+			star(at, 2.2, 0.5, STAR2)
 			Fx.ring(ground(at) + V(0, 0.3, 0), STAR, 2, (d.radius or 8) * 2, 0.4)
 		end
 	end)
 end
 VFX.starStep = function(d)
+	local STAR, STAR2 = starPal(d)
 	local g = ground(d.at) + V(0, 0.4, 0)
-	star(g + V(0, 1.2, 0), 1.4, 0.9)
+	star(g + V(0, 1.2, 0), 1.4, 0.9, STAR2)
 	disc(g, 1, STAR, 0.3, 0.5, d.radius or 5)
 	pcall(Fx.sound, "ping", 0.25, 1.6 + math.random() * 0.4, g)
 end
 -- 일곱째 걸음: 밟아 온 별 일곱이 한 줄로 이어져 번쩍인다
 VFX.starChain = function(d)
+	local STAR, STAR2 = starPal(d)
 	local look = flatLook(d)
 	local base = ground(d.at) + V(0, 1.6, 0)
 	local pts = {}
@@ -61278,23 +61320,25 @@ VFX.starChain = function(d)
 	end
 	task.delay(0.22, function()
 		for _, p in ipairs(pts) do
-			star(p, 1.8, 0.5)
+			star(p, 1.8, 0.5, STAR2)
 		end
 		Fx.flash(base, STAR2, 26, 2, 0.25)
 		shake(0.35)
 	end)
 end
 VFX.starMark = function(d)
+	local STAR, STAR2 = starPal(d)
 	local at = d.at + V(0, 5.5, 0)
-	star(at, 1.3, 0.55)
+	star(at, 1.3, 0.55, STAR2)
 	local caster = d.m and d.m:FindFirstChild("HumanoidRootPart")
 	if caster and caster:IsA("BasePart") then
 		gStroke(caster.Position + V(0, 2.5, 0), at, 0.12, 0.14, 0.4, STAR, STAR2, true, 0.5)
 	end
 end
 VFX.starNova = function(d)
+	local STAR, STAR2 = starPal(d)
 	local at = d.at + V(0, 3, 0)
-	star(at, 2.6, 0.6)
+	star(at, 2.6, 0.6, STAR2)
 	Fx.ring(ground(d.at) + V(0, 0.3, 0), STAR2, 2, (d.radius or 6) * 2.2, 0.4)
 	gEmit(at, TEX_SPARK, STAR2, STAR, 18, 0.6, 14, 0.5)
 	shake(0.25)
@@ -61310,6 +61354,7 @@ local function nightSky(dur: number)
 	end)
 end
 VFX.dipperSky = function(d)
+	local STAR, STAR2 = starPal(d)
 	local g = ground(d.at)
 	local r = d.radius or 22
 	local life = d.life or 1.9
@@ -61326,7 +61371,7 @@ VFX.dipperSky = function(d)
 	local pts = dipperPoints(g + V(0, 30, 0), flatLook(d), r * 0.42)
 	for i, p in ipairs(pts) do
 		task.delay(i * 0.06, function()
-			star(p, 2.6, life - i * 0.06)
+			star(p, 2.6, life - i * 0.06, STAR2)
 			if i > 1 then
 				gStroke(pts[i - 1], p, 0.1, 0.35, 0.05, STAR, STAR2, true, life - i * 0.06)
 			end
@@ -61339,11 +61384,12 @@ VFX.dipperSky = function(d)
 	pcall(Fx.sound, "ping", 0.6, 0.6, g)
 end
 VFX.starDrop = function(d)
+	local STAR, STAR2 = starPal(d)
 	local at = d.at + V(0, 2, 0)
 	local from = at + V(0, 30, 0) + flatLook(d) * -6
 	gStroke(from, at, 0.12, 1.1, 0.05, WHITE, STAR2, true, 0.4)
 	task.delay(0.12, function()
-		star(at, 2.2, 0.45)
+		star(at, 2.2, 0.45, STAR2)
 		Fx.ring(ground(d.at) + V(0, 0.3, 0), STAR, 2, (d.radius or 7) * 2, 0.35)
 		Fx.debris(ground(d.at), 4, 10)
 		pcall(Fx.sound, "heavy", 0.35, 1.3, at)
@@ -61351,6 +61397,7 @@ VFX.starDrop = function(d)
 	end)
 end
 VFX.dipperFall = function(d)
+	local STAR, STAR2 = starPal(d)
 	local g = ground(d.at)
 	local r = d.radius or 22
 	local pts = dipperPoints(g + V(0, 30, 0), flatLook(d), r * 0.42)
@@ -61358,7 +61405,7 @@ VFX.dipperFall = function(d)
 		local to = g + (V(p.X, g.Y, p.Z) - g) * 0.5 + V(0, 1, 0)
 		gStroke(p, to, 0.18, 1.4, 0.1, WHITE, STAR2, true, 0.5)
 		task.delay(0.18, function()
-			star(to, 3, 0.6)
+			star(to, 3, 0.6, STAR2)
 		end)
 		if i == 4 then
 			task.delay(0.2, function()
@@ -61376,6 +61423,18 @@ VFX.dipperFall = function(d)
 end
 
 local TIME, TIME2, TIMED = Color3.fromRGB(255, 214, 140), Color3.fromRGB(235, 250, 255), Color3.fromRGB(20, 40, 50)
+-- 3.99.82판 단계마다 빛깔: 광음 금빛 · 진 은빛 · 초 새벽빛 (분홍 노을 · 연금)
+local TIME_PAL: { [string]: { Color3 } } = {
+	gwangeum2 = { Color3.fromRGB(195, 225, 255), Color3.fromRGB(255, 255, 255) },
+	gwangeum3 = { Color3.fromRGB(255, 160, 150), Color3.fromRGB(255, 236, 190) },
+}
+local function timePal(d: any): (Color3, Color3)
+	local pl = TIME_PAL[d.style or ""]
+	if pl then
+		return pl[1], pl[2]
+	end
+	return TIME, TIME2
+end
 -- 조금 전의 나: 몸 부위를 빛으로 떠서 그 자리에 남긴다 (조금 밀려나며 흐려진다)
 local function afterimage(model: Instance?, shift: CFrame?, life: number, c: Color3?, push: Vector3?)
 	if typeof(model) ~= "Instance" or not model:IsA("Model") then
@@ -61400,11 +61459,11 @@ local function afterimage(model: Instance?, shift: CFrame?, life: number, c: Col
 		end
 	end
 end
-local function sand(at: Vector3, n: number, spread: number, life: number)
-	gEmit(at, TEX_SPARK, TIME, TIME:Lerp(TIMED, 0.4), n, 0.25, spread, life, 0.6, V(0, -12, 0))
+local function sand(at: Vector3, n: number, spread: number, life: number, c1: Color3, c2: Color3)
+	gEmit(at, TEX_SPARK, c1, c1:Lerp(TIMED, 0.4), n, 0.25, spread, life, 0.6, V(0, -12, 0))
 end
 -- 시계판: 둘레 고리 · 눈금 열둘 · 거꾸로 (또는 바로) 도는 두 바늘
-local function clockFace(g: Vector3, r: number, life: number, reverse: boolean, tilt: CFrame?)
+local function clockFace(g: Vector3, r: number, life: number, reverse: boolean, tilt: CFrame?, c1: Color3, c2: Color3)
 	local base = CF(g) * (tilt or CFrame.new())
 	local face = piece(V(0.3, r * 2, r * 2), base * CFrame.Angles(0, 0, math.rad(90)), TIMED, 0.5, Enum.PartType.Cylinder)
 	face.Material = Enum.Material.Glass
@@ -61412,7 +61471,7 @@ local function clockFace(g: Vector3, r: number, life: number, reverse: boolean, 
 	task.delay(life, function()
 		fadeOut(face, 0.25)
 	end)
-	local rim = piece(V(0.4, r * 2.04, r * 2.04), base * CFrame.Angles(0, 0, math.rad(90)) * CF(0.1, 0, 0), TIME, 0.2, Enum.PartType.Cylinder)
+	local rim = piece(V(0.4, r * 2.04, r * 2.04), base * CFrame.Angles(0, 0, math.rad(90)) * CF(0.1, 0, 0), c1, 0.2, Enum.PartType.Cylinder)
 	Debris:AddItem(rim, life + 0.3)
 	task.delay(life, function()
 		fadeOut(rim, 0.25)
@@ -61421,11 +61480,11 @@ local function clockFace(g: Vector3, r: number, life: number, reverse: boolean, 
 	for i = 0, 11 do
 		local a = i / 12 * math.pi * 2
 		local big = i % 3 == 0
-		local tick = piece(V(big and 0.9 or 0.5, 0.3, r * (big and 0.22 or 0.14)), base * CF(math.sin(a) * r * 0.86, 0.3, math.cos(a) * r * 0.86) * CFrame.Angles(0, a, 0), TIME2, 0.05)
+		local tick = piece(V(big and 0.9 or 0.5, 0.3, r * (big and 0.22 or 0.14)), base * CF(math.sin(a) * r * 0.86, 0.3, math.cos(a) * r * 0.86) * CFrame.Angles(0, a, 0), c2, 0.05)
 		table.insert(parts, tick)
 	end
-	local hour = piece(V(0.8, 0.35, r * 0.55), base, TIME, 0)
-	local minute = piece(V(0.5, 0.35, r * 0.85), base, TIME2, 0)
+	local hour = piece(V(0.8, 0.35, r * 0.55), base, c1, 0)
+	local minute = piece(V(0.5, 0.35, r * 0.85), base, c2, 0)
 	table.insert(parts, hour)
 	table.insert(parts, minute)
 	local t0 = os.clock()
@@ -61447,6 +61506,7 @@ local function clockFace(g: Vector3, r: number, life: number, reverse: boolean, 
 end
 -- 잔상 (패시브): 조금 전의 내가 나타나 한 번 더 친다
 VFX.timeEcho = function(d)
+	local TIME, TIME2 = timePal(d)
 	local at = (d.at :: Vector3) + V(0, 2.5, 0)
 	local m = d.m
 	if typeof(m) == "Instance" and m:IsA("Model") then
@@ -61461,6 +61521,7 @@ VFX.timeEcho = function(d)
 	end)
 end
 VFX.timeArrow = function(d)
+	local TIME, TIME2 = timePal(d)
 	local from = (d.from :: Vector3) + V(0, 2.6, 0)
 	local dir = d.dir :: Vector3
 	local len = d.length or 28
@@ -61472,12 +61533,13 @@ VFX.timeArrow = function(d)
 	task.delay(0.14, function()
 		fadeOut(tip, 0.2, V(3, 3, 8))
 		Fx.flash(from + dir * len, TIME, 16, 2, 0.2)
-		sand(from + dir * len, 14, 6, 0.8)
+		sand(from + dir * len, 14, 6, 0.8, TIME, TIME2)
 	end)
 	afterimage(d.m, nil, 0.5, TIME2, -dir * 3)
 	pcall(Fx.sound, "swing", 0.6, 1.3, from)
 end
 VFX.timeGhost = function(d)
+	local TIME, TIME2 = timePal(d)
 	local m = d.m
 	local at = d.at :: Vector3
 	if typeof(m) == "Instance" and m:IsA("Model") then
@@ -61497,22 +61559,25 @@ VFX.timeGhost = function(d)
 	end)
 end
 VFX.timeDash = function(d)
+	local TIME, TIME2 = timePal(d)
 	afterimage(d.m, nil, 0.6, TIME2)
 	local g = ground(d.at) + V(0, 0.4, 0)
 	disc(g, 1, TIME, 0.4, 0.4, d.radius or 7)
-	sand(g + V(0, 2, 0), 16, 8, 0.8)
+	sand(g + V(0, 2, 0), 16, 8, 0.8, TIME, TIME2)
 end
 VFX.timeDial = function(d)
+	local TIME, TIME2 = timePal(d)
 	local g = ground(d.at) + V(0, 0.35, 0)
-	clockFace(g, d.radius or 13, d.life or 0.5, true)
+	clockFace(g, d.radius or 13, d.life or 0.5, true, nil, TIME, TIME2)
 	pcall(Fx.sound, "deflect", 0.5, 0.6, g)
 end
 VFX.timeSnap = function(d)
+	local TIME, TIME2 = timePal(d)
 	local g = ground(d.at) + V(0, 1, 0)
 	local r = d.radius or 13
 	Fx.ring(g, TIME2, 3, r * 2.4, 0.4)
 	Fx.flash(g + V(0, 2, 0), TIME, r * 2, 3, 0.25)
-	sand(g + V(0, 4, 0), 40, 18, 1)
+	sand(g + V(0, 4, 0), 40, 18, 1, TIME, TIME2)
 	-- 되감기: 둘레에서 가운데로 빨려드는 바늘 열둘
 	for i = 1, 12 do
 		local a = i / 12 * math.pi * 2
@@ -61531,6 +61596,7 @@ local function timeStop(dur: number)
 	end)
 end
 VFX.sunDial = function(d)
+	local TIME, TIME2 = timePal(d)
 	local g = ground(d.at)
 	local r = d.radius or 26
 	local life = d.life or 2.1
@@ -61546,8 +61612,8 @@ VFX.sunDial = function(d)
 		end
 	end
 	-- 땅의 시계판 (거꾸로) + 하늘의 해시계 (바로, 기울어져 걸린다)
-	clockFace(g + V(0, 0.35, 0), r, life, true)
-	clockFace(g + V(0, 34, 0), r * 0.8, life, false, CFrame.Angles(math.rad(70), 0, 0))
+	clockFace(g + V(0, 0.35, 0), r, life, true, nil, TIME, TIME2)
+	clockFace(g + V(0, 34, 0), r * 0.8, life, false, CFrame.Angles(math.rad(70), 0, 0), TIME, TIME2)
 	-- 공중에 멈춘 금모래
 	gSwirl(function()
 		return g + V(0, 8, 0)
@@ -61555,6 +61621,7 @@ VFX.sunDial = function(d)
 	pcall(Fx.sound, "deflect", 0.8, 0.4, g)
 end
 VFX.hourPillar = function(d)
+	local TIME, TIME2 = timePal(d)
 	local g = ground(d.at)
 	local col = (d.col or 1) % 3 == 0 and TIME2 or TIME
 	local p = piece(V(2.2, 60, 2.2), CF(g + V(0, 30, 0)), col, 0.15, Enum.PartType.Cylinder)
@@ -61565,10 +61632,11 @@ VFX.hourPillar = function(d)
 		fadeOut(p, 0.3, V(60, 0.2, 0.2))
 	end)
 	disc(g + V(0, 0.3, 0), 1, col, 0.2, 0.35, d.radius or 6)
-	sand(g + V(0, 2, 0), 10, 6, 0.6)
+	sand(g + V(0, 2, 0), 10, 6, 0.6, TIME, TIME2)
 	pcall(Fx.sound, "ping", 0.25, 0.9 + (d.col or 1) * 0.06, g)
 end
 VFX.timeRelease = function(d)
+	local TIME, TIME2 = timePal(d)
 	local g = ground(d.at)
 	local r = d.radius or 26
 	bloom(1.6, 0.7)
@@ -61589,6 +61657,7 @@ VFX.timeRelease = function(d)
 end
 -- 종겁귀원 (초 광음신권 X): 세상의 빛이 빠지고, 등 뒤에 하늘만 한 시계가 선다
 VFX.eonClock = function(d)
+	local TIME, TIME2 = timePal(d)
 	local g = ground(d.at)
 	local r = d.radius or 40
 	local life = d.life or 3.1
@@ -61601,8 +61670,8 @@ VFX.eonClock = function(d)
 	local look = flatLook(d)
 	-- 등 뒤에 곧게 선 하늘 시계 (바늘이 미친 듯 거꾸로 돈다)
 	local back = g - look * (r * 0.6) + V(0, r * 0.75, 0)
-	clockFace(back, r * 0.7, life, true, CFrame.lookAt(V(), look).Rotation * CFrame.Angles(math.rad(90), 0, 0))
-	clockFace(g + V(0, 0.35, 0), r, life, false)
+	clockFace(back, r * 0.7, life, true, CFrame.lookAt(V(), look).Rotation * CFrame.Angles(math.rad(90), 0, 0), TIME, TIME2)
+	clockFace(g + V(0, 0.35, 0), r, life, false, nil, TIME, TIME2)
 	-- 멈춘 금모래가 하늘 가득 떠 있다
 	gSwirl(function()
 		return g + V(0, 12, 0)
@@ -61615,6 +61684,7 @@ VFX.eonClock = function(d)
 end
 -- 지나간 날의 나: 적 둘레에 잔상 여섯이 서서 한꺼번에 파고든다
 VFX.pastLegion = function(d)
+	local TIME, TIME2 = timePal(d)
 	local m = d.m
 	local at = d.at :: Vector3
 	if typeof(m) == "Instance" and m:IsA("Model") then
@@ -61638,6 +61708,7 @@ VFX.pastLegion = function(d)
 end
 -- 하늘의 시계가 산산이 깨진다: 유리 조각이 쏟아지고 멈췄던 모든 시간이 한꺼번에 터진다
 VFX.clockShatter = function(d)
+	local TIME, TIME2 = timePal(d)
 	local g = ground(d.at)
 	local r = d.radius or 40
 	local look = flatLook(d)
@@ -61658,6 +61729,154 @@ VFX.clockShatter = function(d)
 		bloom(2, 0.9)
 		shake(2)
 	end)
+end
+-- 3.99.82판 진 · 초 새 기술 연출
+local function rootOf(m: any): BasePart?
+	if typeof(m) == "Instance" and m:IsA("Model") then
+		local r0 = m:FindFirstChild("HumanoidRootPart")
+		if r0 and r0:IsA("BasePart") then
+			return r0
+		end
+	end
+	return nil
+end
+-- 칠성환: 별 일곱이 몸 둘레를 돌다가 하나씩 빠져나간다 (쏠 때마다 하나 줄어든다)
+VFX.starHalo = function(d)
+	local STAR, STAR2 = starPal(d)
+	local r0 = rootOf(d.m)
+	if not r0 then
+		return
+	end
+	local life = d.life or 1.6
+	local balls = {}
+	for i = 1, 7 do
+		local b = piece(V(1.3, 1.3, 1.3), CF(r0.Position), WHITE, 0, Enum.PartType.Ball)
+		local h = piece(V(2.6, 2.6, 2.6), CF(r0.Position), STAR2, 0.55, Enum.PartType.Ball)
+		local tr = gBrush(0.5, 0.25, STAR2, STAR, true)
+		balls[i] = { b = b, h = h, tr = tr, gone = false }
+	end
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		local alive = r0.Parent ~= nil
+		for i, o in ipairs(balls) do
+			-- 0.25초부터 0.2초마다 하나씩 쏘아 보낸다 (서버의 starShot 과 박자를 맞춘다)
+			local leave = 0.25 + (i - 1) * 0.2
+			if not o.gone and (t > leave or t > life or not alive) then
+				o.gone = true
+				fadeOut(o.b, 0.12)
+				fadeOut(o.h, 0.12)
+				dropBrush(o.tr, 0.25)
+			elseif not o.gone then
+				local a = t * 5 + i / 7 * math.pi * 2
+				local p = r0.Position + V(math.cos(a) * 4.5, 2.5 + math.sin(t * 6 + i) * 0.6, math.sin(a) * 4.5)
+				o.b.CFrame = CF(p)
+				o.h.CFrame = CF(p)
+				o.tr.p.CFrame = CF(p)
+			end
+		end
+		if t > life + 0.1 then
+			conn:Disconnect()
+		end
+	end)
+	pcall(Fx.sound, "ping", 0.4, 1.2, r0.Position)
+end
+VFX.starShot = function(d)
+	local STAR, STAR2 = starPal(d)
+	local r0 = rootOf(d.m)
+	local at = (d.at :: Vector3) + V(0, 2.5, 0)
+	local from = r0 and (r0.Position + V((math.random() - 0.5) * 6, 3, (math.random() - 0.5) * 6)) or (at + V(0, 10, 0))
+	gStroke(from, at, 0.1, 0.5, 0.6, STAR2, STAR, true, 0.35)
+	task.delay(0.1, function()
+		star(at, 1.8, 0.4, STAR2)
+		Fx.ring(ground(d.at) + V(0, 0.3, 0), STAR, 1.5, (d.radius or 5) * 2, 0.3)
+		pcall(Fx.sound, "ping", 0.3, 1.5 + math.random() * 0.4, at)
+	end)
+end
+-- 유성낙각: 떨어진 자리에 큰 별이 터지고 땅이 갈라진다
+VFX.meteorKick = function(d)
+	local STAR, STAR2 = starPal(d)
+	local g = ground(d.at)
+	local r = d.radius or 11
+	local r0 = rootOf(d.m)
+	if r0 then
+		gStroke(r0.Position + V(-3, 22, 0), g + V(0, 1, 0), 0.1, 1.6, 0.05, WHITE, STAR2, true, 0.45)
+	end
+	star(g + V(0, 2, 0), 3.6, 0.6, STAR2)
+	disc(g + V(0, 0.3, 0), 2, STAR, 0.2, 0.5, r)
+	Fx.ring(g + V(0, 0.4, 0), STAR2, 3, r * 2.2, 0.45)
+	gEmit(g + V(0, 2, 0), TEX_SPARK, STAR2, STAR, 34, 0.8, 20, 0.7)
+	Fx.debris(g, 10, 20)
+	bloom(0.6, 0.4)
+	pcall(Fx.sound, "heavy", 0.7, 0.9, g)
+	shake(0.9)
+end
+-- 회귀참: 선 자리에 시간의 닻 (멈춘 잔상 + 작은 시계판) 을 남긴다
+VFX.timeAnchor = function(d)
+	local TIME, TIME2 = timePal(d)
+	local g = ground(d.at) + V(0, 0.35, 0)
+	local life = d.life or 1
+	afterimage(d.m, nil, life, TIME2)
+	clockFace(g, 5, life, true, nil, TIME, TIME2)
+	local pin = piece(V(0.6, 8, 0.6), CF(g + V(0, 4, 0)), TIME, 0.1)
+	Debris:AddItem(pin, life + 0.3)
+	task.delay(life, function()
+		fadeOut(pin, 0.25)
+	end)
+	pcall(Fx.sound, "deflect", 0.5, 1.4, g)
+end
+-- 닻으로 되감겨 돌아온다: 지나온 길에 거꾸로 흐르는 빛줄기와 금모래
+VFX.timeReturn = function(d)
+	local TIME, TIME2 = timePal(d)
+	local at = (d.at :: Vector3) + V(0, 2.5, 0)
+	local dir = flatLook(d)
+	local from = at + dir * 14
+	gStroke(from, at, 0.12, 0.8, 0.1, TIME2, TIME, true, 0.5)
+	gStroke(from + V(0, 1.2, 0), at + V(0, 1.2, 0), 0.15, 0.3, 0.3, TIME, TIME2, true, 0.4)
+	for k = 1, 4 do
+		afterimage(d.m, CF(dir * (k * 3.2)), 0.3 + k * 0.05, TIME)
+	end
+	sand(at, 16, 8, 0.7, TIME, TIME2)
+	pcall(Fx.sound, "swing", 0.6, 0.7, at)
+end
+-- 천시전: 멈춘 시간 속에 빛의 화살 열둘이 몸 둘레에 떠서 바깥을 겨눈다
+VFX.arrowHalo = function(d)
+	local TIME, TIME2 = timePal(d)
+	local r0 = rootOf(d.m)
+	if not r0 then
+		return
+	end
+	local life = d.life or 0.85
+	local c = r0.Position + V(0, 3, 0)
+	for i = 1, 12 do
+		local a = i / 12 * math.pi * 2
+		local p = c + V(math.cos(a) * 5, math.sin(i * 1.7) * 1.2, math.sin(a) * 5)
+		local out = p + V(math.cos(a), 0, math.sin(a))
+		local ar = piece(V(0.35, 0.35, 3.2), CF(p, out), i % 2 == 0 and TIME2 or TIME, 0.05)
+		ar.Size = V(0.1, 0.1, 0.4)
+		tween(ar, 0.2, { Size = V(0.35, 0.35, 3.2) })
+		Debris:AddItem(ar, life + 0.2)
+		task.delay(life, function()
+			fadeOut(ar, 0.15)
+		end)
+	end
+	clockFace(ground(c) + V(0, 0.35, 0), 7, life, false, nil, TIME, TIME2)
+	pcall(Fx.sound, "deflect", 0.6, 1.1, c)
+end
+VFX.arrowVolley = function(d)
+	local TIME, TIME2 = timePal(d)
+	local r0 = rootOf(d.m)
+	local at = (d.at :: Vector3) + V(0, 2.5, 0)
+	local from = r0 and (r0.Position + V((math.random() - 0.5) * 8, 3 + math.random() * 2, (math.random() - 0.5) * 8)) or (at + V(0, 10, 0))
+	local ar = piece(V(0.35, 0.35, 3.2), CF(from, at), TIME2, 0)
+	tween(ar, 0.1, { CFrame = CF(at, at + (at - from)) }, Enum.EasingStyle.Linear)
+	task.delay(0.1, function()
+		fadeOut(ar, 0.15, V(0.8, 0.8, 5))
+		gEmit(at, TEX_SPARK, TIME2, TIME, 10, 0.4, 9, 0.35)
+		sand(at, 8, 5, 0.5, TIME, TIME2)
+	end)
+	gStroke(from, at, 0.1, 0.2, 0.05, TIME, TIME2, true, 0.25)
 end
 -- 맞힐 때: 별가루 / 금모래
 -- 북두개천 (초 칠성보권 X): 북두낙성의 하늘을 더 크고 길게, 둘레에 잔별 고리를 하나 더
@@ -61706,13 +61925,15 @@ VFX.starBeam = function(d)
 end
 local function attendHit(styleId: string, pos: Vector3, big: boolean)
 	if string.sub(styleId, 1, 9) == "chilseong" then
+		local c1, c2 = starPal({ style = styleId })
 		if big then
-			star(pos + V(0, 1, 0), 1.2, 0.35)
+			star(pos + V(0, 1, 0), 1.2, 0.35, c2)
 		end
-		gEmit(pos, TEX_SPARK, STAR2, STAR, big and 10 or 4, 0.35, 8, 0.35)
+		gEmit(pos, TEX_SPARK, c2, c1, big and 10 or 4, 0.35, 8, 0.35)
 	else
-		sand(pos, big and 12 or 5, big and 8 or 5, 0.5)
-		gEmit(pos, TEX_SPARK, TIME2, TIME, big and 8 or 3, 0.35, 7, 0.3)
+		local c1, c2 = timePal({ style = styleId })
+		sand(pos, big and 12 or 5, big and 8 or 5, 0.5, c1, c2)
+		gEmit(pos, TEX_SPARK, c2, c1, big and 8 or 3, 0.35, 7, 0.3)
 	end
 end
 ForgeFx.attendHit = attendHit
@@ -73603,6 +73824,42 @@ return {
 	["가까운 적 일곱의 몸에 별이 박히고, 빛의 실로 이어진 별이 세 번 잇달아 터진다"] = "A star lodges in each of the seven nearest foes, and the stars linked by threads of light burst three times in a row",
 	["하늘이 밤으로 바뀌고 북두칠성이 걸린다. 별 스물하나가 비처럼 떨어져 적을 내리찍고, 마지막에 국자 전체가 쏟아지며 둘레 26칸이 별빛으로 터진다"] = "The sky turns to night and the Big Dipper hangs overhead. Twenty-one stars rain down onto foes, and at last the whole ladle pours down, bursting into starlight within 26 studs",
 	["초 오의 (그동안 무적). 하늘이 깊은 밤이 되고 북두칠성이 하늘을 가득 채운다. 별이 네 번 비처럼 쏟아져 적 여덟을 내리찍고, 마지막에 일곱 별이 한 줄로 서서 하늘을 가르는 빛기둥이 되어 내리꽂힌다 (둘레 36칸)"] = "Supreme ultimate (invincible meanwhile). The sky becomes deep night and the Big Dipper fills the heavens. Stars rain down four times onto eight foes, and at last the seven stars stand in a line and become a pillar of light that splits the sky and strikes down (36 stud radius)",
+	["성광"] = "Starflash",
+	["유성각"] = "Meteor Kick",
+	["성운장"] = "Nebula Palm",
+	["북극추"] = "Polaris Hammer",
+	["은하승천"] = "Milky Way Ascension",
+	["칠성환"] = "Seven Star Halo",
+	["별 일곱이 몸 둘레를 돈다. 돌던 별이 하나씩 가까운 적에게 날아가 꽂히며 터진다 (일곱 발)"] = "Seven stars orbit your body. One by one they fly off and lodge into the nearest foes, bursting (seven shots)",
+	["칠성: 일곱 번 맞힐 때마다 별이 떨어진다 (더 세고 넓다). 금빛 별. R 칠성환: 몸 둘레를 도는 별 일곱을 하나씩 쏜다"] = "Seven Stars: every seventh hit, a star falls (stronger and wider). Golden stars. R Seven Star Halo: fire the seven stars orbiting you one at a time",
+	["천강"] = "Heavenly Gang",
+	["지살"] = "Earthly Fiend",
+	["은하각"] = "Galaxy Kick",
+	["천랑추"] = "Sirius Hammer",
+	["자미승천"] = "Purple Star Ascension",
+	["유성낙각"] = "Falling Meteor Kick",
+	["별처럼 하늘로 뛰어올라 앞으로 16칸을 날아가 내리찍는다. 떨어진 자리가 별빛으로 터지고, 둘레의 적 다섯에게 잔별이 쏟아진다"] = "Leap into the sky like a star, fly 16 studs ahead and slam down. The landing spot bursts into starlight and small stars rain on five nearby foes",
+	["별 일곱이 몸 둘레를 돈다. 돌던 별이 하나씩 가까운 적에게 날아가 꽂히며 크게 터지고, 마지막 별은 둘레 12칸을 터뜨린다"] = "Seven stars orbit your body. One by one they fly off and lodge into the nearest foes with big bursts, and the last star detonates within 12 studs",
+	["칠성: 일곱 번 맞힐 때마다 별이 떨어진다 (가장 세고 넓다). 보랏빛 별. E 유성낙각 · R 칠성환 · 초 오의(X) 북두개천"] = "Seven Stars: every seventh hit, a star falls (strongest and widest). Violet stars. E Falling Meteor Kick · R Seven Star Halo · supreme ultimate (X) Heaven-Opening Dipper",
+	["잔상: 네 번 맞힐 때마다 조금 전의 내가 나타나 같은 자리를 한 번 더 친다. 은빛 시간. R 회귀참: 내달렸다가 되감겨 돌아오며 한 번 더 벤다"] = "Afterimage: every fourth hit, your self from a moment ago appears and strikes the same spot again. Silver time. R Rewind Slash: dash out, then get rewound back and cut once more",
+	["찰나"] = "Kshana",
+	["순식"] = "Breath",
+	["탄지각"] = "Finger-Snap Kick",
+	["수유장"] = "Moment Palm",
+	["삭망추"] = "New Moon Hammer",
+	["백야승천"] = "White Night Ascension",
+	["회귀참"] = "Rewind Slash",
+	["선 자리에 시간의 닻을 박고 앞으로 14칸을 베며 내달린 뒤, 시간이 되감기듯 닻으로 끌려 돌아오며 같은 길을 한 번 더 벤다 (그동안 무적). 돌아온 자리에서 시계판이 터진다"] = "Drive an anchor of time where you stand and dash 14 studs ahead cutting, then get dragged back to the anchor as if time were rewinding, cutting the same path again (invincible meanwhile). A clock face bursts where you return",
+	["잔상: 네 번 맞힐 때마다 조금 전의 내가 나타나 한 번 더 친다. 새벽빛 시간. E 천시전 · R 회귀참 두 번 · 초 오의(X) 종겁귀원"] = "Afterimage: every fourth hit, your self from a moment ago appears and strikes again. Dawn-colored time. E Frozen Arrows · R Rewind Slash twice · supreme ultimate (X) Return at the End of Eons",
+	["일겁권"] = "Kalpa Fist",
+	["항사장"] = "Ganges Sands Palm",
+	["아승기각"] = "Asamkhya Kick",
+	["무량권"] = "Boundless Fist",
+	["윤겁추"] = "Cycle of Eons Hammer",
+	["개벽승천"] = "Genesis Ascension",
+	["천시전"] = "Frozen Arrows",
+	["멈춘 시간 속에 빛의 화살 열둘이 몸 둘레에 떠오른다. 화살이 두 번에 나뉘어 가까운 적 여섯에게 쏟아지고, 마지막 한 발이 앞으로 34칸을 꿰뚫는다"] = "Twelve arrows of light rise around you in frozen time. They rain on six nearby foes in two volleys, and a final shot pierces 34 studs ahead",
+	["시간의 닻을 박고 앞으로 베며 내달렸다가 닻으로 되감겨 돌아오기를 두 번 한다 (그동안 무적). 오갈 때마다 같은 길을 벤다. 돌아온 자리에서 시계판이 크게 터진다"] = "Drive an anchor of time, then dash ahead cutting and get rewound back to the anchor, twice (invincible meanwhile). Each trip cuts the same path. A clock face bursts big where you return",
 }
 ]]></string>
           </Properties>
