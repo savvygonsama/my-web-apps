@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.82" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.83" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2033,20 +2033,20 @@ table.insert(Config.Styles, {
 	pulse = { every = 3, kind = "tide", radius = 13, delay = 0.25, name = "조수", dmg = 30, posture = 30, stun = 0.6, kb = 20, up = 18, pull = 40 },
 	stance = "stance_ocean",
 	combo = {
-		{ id = "cc1", name = "창랑장", pose = "wave_palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.8, 11, 10, 0.35, 10) } },
-		{ id = "cc2", name = "회류장", pose = "wave_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.8, 11, 10, 0.35, 10) } },
-		{ id = "cc3", name = "대와각", pose = "whirl_kick", dur = 0.4, lunge = 2, hits = { hit(0.2, 0, 7.5, 13, 12, 0.4, 18, nil, true) } },
-		{ id = "cc4", name = "경파권", pose = "tidal_punch", dur = 0.46, lunge = 4, hits = { hit(0.22, 8, 6, 21, 24, 0.6, 44, 8) } },
+		{ id = "xc1", name = "창랑장", pose = "wave_palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.8, 11, 10, 0.35, 10) } },
+		{ id = "xc2", name = "회류장", pose = "wave_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.8, 11, 10, 0.35, 10) } },
+		{ id = "xc3", name = "대와각", pose = "whirl_kick", dur = 0.4, lunge = 2, hits = { hit(0.2, 0, 7.5, 13, 12, 0.4, 18, nil, true) } },
+		{ id = "xc4", name = "경파권", pose = "tidal_punch", dur = 0.46, lunge = 4, hits = { hit(0.22, 8, 6, 21, 24, 0.6, 44, 8) } },
 	},
-	heavy = { id = "ccH", name = "거경격", pose = "billow_strike", dur = 0.65, lunge = 3, hits = { hit(0.32, 10, 7, 30, 44, 0.8, 76, 10, true) } },
+	heavy = { id = "xcH", name = "거경격", pose = "billow_strike", dur = 0.65, lunge = 3, hits = { hit(0.32, 10, 7, 30, 44, 0.8, 76, 10, true) } },
 	skills = {
-		E = { id = "ccE", name = "조류창", desc = "손끝에 바다를 모아 소용돌이치는 물의 창을 던진다. 창은 앞의 적을 모두 꿰뚫고 끝에서 1.2초 동안 소용돌이가 되어 둘레를 끌어당기다 물기둥으로 터진다", pose = "tidal_punch", dur = 0.55, cd = 8, chi = 20,
+		E = { id = "xcE", name = "조류창", desc = "손끝에 바다를 모아 소용돌이치는 물의 창을 던진다. 창은 앞의 적을 모두 꿰뚫고 끝에서 1.2초 동안 소용돌이가 되어 둘레를 끌어당기다 물기둥으로 터진다", pose = "tidal_punch", dur = 0.55, cd = 8, chi = 20,
 			mech = { kind = "tideSpear", delay = 0.18, length = 34, travel = 0.3, width = 4.5, hit = hit(0, 0, 0, 26, 22, 0.5, 10), vortexDur = 1.2, every = 0.3, radius = 9, pull = 30, tick = hit(0, 0, 0, 8, 8, 0.3, 0), burst = hit(0, 0, 0, 30, 30, 0.6, 20, 18) } },
-		R = { id = "ccR", name = "경음", desc = "두 손을 모아 깊은 바다의 노래를 부른다. 고래의 울음이 물의 고리 셋이 되어 차례로 퍼지고 맞은 적을 밀어내며 굼뜨게 만든다. 마지막 고리가 가장 넓다", pose = "wall_raise", dur = 0.8, cd = 11, chi = 25,
+		R = { id = "xcR", name = "경음", desc = "두 손을 모아 깊은 바다의 노래를 부른다. 고래의 울음이 물의 고리 셋이 되어 차례로 퍼지고 맞은 적을 밀어내며 굼뜨게 만든다. 마지막 고리가 가장 넓다", pose = "wall_raise", dur = 0.8, cd = 11, chi = 25,
 			mech = { kind = "whaleSong", delay = 0.25, rings = 3, gap = 0.28, radius = 24, slow = 2.0, hit = hit(0, 0, 0, 22, 24, 0.5, 34) } },
-		G = { id = "ccG", name = "만경창파", desc = "둘레 26칸의 땅이 바다가 된다. 사방에서 큰 파도 넷이 차례로 가운데로 밀려와 적을 쓸어 모으고 마지막에 한가운데서 거대한 소용돌이가 솟아 모두 삼킨다", pose = "ult_tsunami", dur = 2.0, cd = 30, chi = 100, armor = true,
+		G = { id = "xcG", name = "만경창파", desc = "둘레 26칸의 땅이 바다가 된다. 사방에서 큰 파도 넷이 차례로 가운데로 밀려와 적을 쓸어 모으고 마지막에 한가운데서 거대한 소용돌이가 솟아 모두 삼킨다", pose = "ult_tsunami", dur = 2.0, cd = 30, chi = 100, armor = true,
 			mech = { kind = "fourWaves", delay = 0.4, radius = 26, waves = 4, travel = 0.8, gap = 0.25, pull = 40, hit = hit(0, 0, 0, 26, 26, 0.5, 0), final = hit(0, 0, 0, 110, 130, 1.4, 30, 40) } },
-		X = { id = "ccX", name = "고경승천", desc = "초 오의. 하늘이 어두워지고 땅이 깊은 바다가 된다 (그동안 무적). 바다 밑에서 고대의 고래가 솟구쳐 머리 위를 지나 하늘 높이 뛰어오른다. 고래가 지나가는 그림자 아래의 적은 물살에 휩쓸려 떠오르고 고래가 앞의 바다로 떨어지며 거대한 해일이 둘레를 덮친다", pose = "ult_tsunami", dur = 4.6, cd = 60, chi = 150, armor = true,
+		X = { id = "xcX", name = "고경승천", desc = "초 오의. 하늘이 어두워지고 땅이 깊은 바다가 된다 (그동안 무적). 바다 밑에서 고대의 고래가 솟구쳐 머리 위를 지나 하늘 높이 뛰어오른다. 고래가 지나가는 그림자 아래의 적은 물살에 휩쓸려 떠오르고 고래가 앞의 바다로 떨어지며 거대한 해일이 둘레를 덮친다", pose = "ult_tsunami", dur = 4.6, cd = 60, chi = 150, armor = true,
 			mech = { kind = "ancientWhale", cut = 1.4, behind = 58, ahead = 58, flight = 2.4, height = 50, scale = 3.0, every = 0.25, width = 14, hit = hit(0, 0, 0, 16, 16, 0.4, 0, 30), finalRadius = 30, final = hit(0, 0, 0, 200, 220, 1.8, 80, 26), waveAt = 0.4, waveRadius = 30, wave = hit(0, 0, 0, 60, 70, 0.8, 60, 10) } },
 	},
 })
@@ -2279,18 +2279,18 @@ table.insert(Config.Styles, {
 	pulse = { every = 4, kind = "ashCrack", radius = 6, delay = 0.45, name = "무상인", dmg = 28, posture = 26, stun = 0.7, kb = 8, up = 6 },
 	stance = "stance_mist",
 	combo = {
-		{ id = "ms1", name = "허장", pose = "ghost_palm_r", dur = 0.24, lunge = 4, hits = { hit(0.09, 6, 5, 8, 7, 0.25, 5) } },
-		{ id = "ms2", name = "실장", pose = "ghost_palm_l", dur = 0.24, lunge = 4, hits = { hit(0.09, 6, 5, 8, 7, 0.25, 5) } },
-		{ id = "ms3", name = "연무퇴", pose = "ghost_sweep", dur = 0.4, lunge = 2, hits = { hit(0.14, 0, 8, 8, 9, 0.35, 8, 6, true), hit(0.28, 0, 8, 8, 9, 0.35, 8, 6, true) } },
-		{ id = "ms4", name = "멸영장", pose = "ghost_flash", dur = 0.44, lunge = 7, hits = { hit(0.2, 8, 6, 18, 20, 0.55, 22) } },
+		{ id = "xq1", name = "허장", pose = "ghost_palm_r", dur = 0.24, lunge = 4, hits = { hit(0.09, 6, 5, 8, 7, 0.25, 5) } },
+		{ id = "xq2", name = "실장", pose = "ghost_palm_l", dur = 0.24, lunge = 4, hits = { hit(0.09, 6, 5, 8, 7, 0.25, 5) } },
+		{ id = "xq3", name = "연무퇴", pose = "ghost_sweep", dur = 0.4, lunge = 2, hits = { hit(0.14, 0, 8, 8, 9, 0.35, 8, 6, true), hit(0.28, 0, 8, 8, 9, 0.35, 8, 6, true) } },
+		{ id = "xq4", name = "멸영장", pose = "ghost_flash", dur = 0.44, lunge = 7, hits = { hit(0.2, 8, 6, 18, 20, 0.55, 22) } },
 	},
-	heavy = { id = "msH", name = "일장무상", pose = "ghost_flash", dur = 0.52, lunge = 16, iframes = 0.3, hits = { hit(0.22, 9, 6, 24, 24, 0.6, 26) } },
+	heavy = { id = "xqH", name = "일장무상", pose = "ghost_flash", dur = 0.52, lunge = 16, iframes = 0.3, hits = { hit(0.22, 9, 6, 24, 24, 0.6, 26) } },
 	skills = {
-		E = { id = "msE", name = "잔영멸", desc = "재가 되어 앞으로 20칸을 스친다 (무적). 지나간 자리에 재로 빚은 내 모습 다섯이 남아 있다가, 차례로 금이 가고 무너지며 둘레를 친다", pose = "ghost_flash", dur = 0.5, cd = 8, chi = 20, lunge = 20, iframes = 0.4,
+		E = { id = "xqE", name = "잔영멸", desc = "재가 되어 앞으로 20칸을 스친다 (무적). 지나간 자리에 재로 빚은 내 모습 다섯이 남아 있다가, 차례로 금이 가고 무너지며 둘레를 친다", pose = "ghost_flash", dur = 0.5, cd = 8, chi = 20, lunge = 20, iframes = 0.4,
 			mech = { kind = "ashStatues", dist = 20, n = 5, width = 4, hit = hit(0, 0, 0, 14, 12, 0.4, 8), crumble = 0.45, step = 0.1, radius = 6, burst = hit(0, 0, 0, 20, 18, 0.5, 12, 8) } },
-		R = { id = "msR", name = "화무십일", desc = "앞의 땅에 커다란 잿빛 꽃이 피어난다. 꽃잎 여덟이 적을 감싸 안으로 끌어들이다가, 꽃이 시들어 재로 무너지며 터진다", pose = "ghost_split", dur = 0.6, cd = 11, chi = 25,
+		R = { id = "xqR", name = "화무십일", desc = "앞의 땅에 커다란 잿빛 꽃이 피어난다. 꽃잎 여덟이 적을 감싸 안으로 끌어들이다가, 꽃이 시들어 재로 무너지며 터진다", pose = "ghost_split", dur = 0.6, cd = 11, chi = 25,
 			mech = { kind = "witherBloom", dist = 9, radius = 11, bloom = 0.35, hold = 0.9, every = 0.3, pull = 28, tick = hit(0, 0, 0, 10, 10, 0.3, 0), burst = hit(0, 0, 0, 42, 40, 0.8, 16, 12) } },
-		G = { id = "msG", name = "제행무상", desc = "둘레 26칸 위로 커다란 모래시계가 내려선다. 모래가 흐르는 동안 그 안의 적은 굼뜨고 재의 비를 맞는다. 모래가 다 흐르면 모래시계에 금이 가고 산산이 깨지며 모든 것이 모래 폭풍으로 흩어진다", pose = "ult_mist", dur = 2.4, cd = 30, chi = 100, armor = true,
+		G = { id = "xqG", name = "제행무상", desc = "둘레 26칸 위로 커다란 모래시계가 내려선다. 모래가 흐르는 동안 그 안의 적은 굼뜨고 재의 비를 맞는다. 모래가 다 흐르면 모래시계에 금이 가고 산산이 깨지며 모든 것이 모래 폭풍으로 흩어진다", pose = "ult_mist", dur = 2.4, cd = 30, chi = 100, armor = true,
 			mech = { kind = "hourglass", radius = 26, descend = 0.5, run = 2.4, every = 0.3, slow = 0.5, tick = hit(0, 0, 0, 10, 10, 0.3, 0), crack = 0.35, final = hit(0, 0, 0, 130, 150, 1.5, 60, 20) } },
 		X = { id = "mkX", name = "경화수월", desc = "초 오의. 세상의 빛깔이 빠진다 (그동안 무적). 둘레 36칸에 사람 키 세 배의 거울 열둘이 솟아 원을 이룬다. 거울 속에서 유리로 된 나의 그림자가 튀어나와 적을 치고 다른 거울로 돌아가기를 거듭한다. 거울마다 금이 번지고 모든 거울이 한가운데로 산산이 깨져 쏟아지며 모든 것이 재가 된다", pose = "ult_mist_x", dur = 4.6, cd = 60, chi = 150, armor = true,
 			mech = { kind = "mirrorWorld", cut = 1.4, radius = 36, rise = 0.5, echo = 1.6, every = 0.25, hit = hit(0, 0, 0, 12, 10, 0.3, 0), crack = 0.5, final = hit(0, 0, 0, 230, 260, 1.8, 70, 26) } },
@@ -3026,20 +3026,20 @@ table.insert(Config.Styles, {
 	pulse = { every = 4, kind = "mirror", radius = 9, delay = 0.35, name = "거울 분신", dmg = 29, posture = 30, stun = 0.5, kb = 12, up = 6 },
 	stance = "stance_mirror",
 	combo = {
-		{ id = "mg1", name = "경수", pose = "mg_shard_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 9, 10, 0.3, 6) } },
-		{ id = "mg2", name = "명수", pose = "mg_shard_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 9, 10, 0.3, 6) } },
-		{ id = "mg3", name = "쌍경각", pose = "mg_twinkick", dur = 0.42, lunge = 2, hits = { hit(0.14, 5, 7, 7, 8, 0.3, 8, nil, true), hit(0.3, 5, 7, 7, 8, 0.3, 8, nil, true) } },
-		{ id = "mg4", name = "파경권", pose = "mg_break", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 6, 20, 24, 0.6, 28) } },
+		{ id = "xm1", name = "경수", pose = "mg_shard_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 9, 10, 0.3, 6) } },
+		{ id = "xm2", name = "명수", pose = "mg_shard_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 9, 10, 0.3, 6) } },
+		{ id = "xm3", name = "쌍경각", pose = "mg_twinkick", dur = 0.42, lunge = 2, hits = { hit(0.14, 5, 7, 7, 8, 0.3, 8, nil, true), hit(0.3, 5, 7, 7, 8, 0.3, 8, nil, true) } },
+		{ id = "xm4", name = "파경권", pose = "mg_break", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 6, 20, 24, 0.6, 28) } },
 	},
-	heavy = { id = "mgH", name = "명경일장", pose = "mg_flash", dur = 0.6, lunge = 10, iframes = 0.15, hits = { hit(0.28, 8, 8, 24, 28, 0.6, 22, nil, true) } },
+	heavy = { id = "xmH", name = "명경일장", pose = "mg_flash", dur = 0.6, lunge = 10, iframes = 0.15, hits = { hit(0.28, 8, 8, 24, 28, 0.6, 22, nil, true) } },
 	skills = {
-		E = { id = "mgE", name = "명경지수", desc = "0.8초 동안 거울처럼 고요한 자세. 맞으면 피해 없이 상대 앞에 나타나 그 힘을 되돌려 친다", pose = "mg_still", dur = 0.8, cd = 7, chi = 15, counter = 0.8,
+		E = { id = "xmE", name = "명경지수", desc = "0.8초 동안 거울처럼 고요한 자세. 맞으면 피해 없이 상대 앞에 나타나 그 힘을 되돌려 친다", pose = "mg_still", dur = 0.8, cd = 7, chi = 15, counter = 0.8,
 			counterHit = { pose = "mg_counter", tp = true, hit = hit(0, 7, 5, 39, 44, 0.8, 30) } },
-		R = { id = "mgR", name = "경중분신", desc = "둘레의 적 넷 앞에 거울 속의 내가 하나씩 나타나 두 번씩 친다", pose = "mg_summon", dur = 0.8, cd = 10, chi = 25,
+		R = { id = "xmR", name = "경중분신", desc = "둘레의 적 넷 앞에 거울 속의 내가 하나씩 나타나 두 번씩 친다", pose = "mg_summon", dur = 0.8, cd = 10, chi = 25,
 			mech = { kind = "clones", n = 4, range = 28, delay = 0.3, every = 0.1, hitsEach = 2, hit = hit(0, 0, 0, 26, 26, 0.5, 10, 6) } },
-		G = { id = "mgG", name = "만경회랑", desc = "둘레에 거울이 열 장 선다. 거울마다 빛이 튀어 둘레의 적 열에게 차례로 꽂힌다", pose = "mg_gallery", dur = 1.9, cd = 30, chi = 100, armor = true,
+		G = { id = "xmG", name = "만경회랑", desc = "둘레에 거울이 열 장 선다. 거울마다 빛이 튀어 둘레의 적 열에게 차례로 꽂힌다", pose = "mg_gallery", dur = 1.9, cd = 30, chi = 100, armor = true,
 			mech = { kind = "targets", n = 10, range = 34, delay = 0.35, stagger = 0.1, radius = 6, hit = hit(0, 0, 0, 42, 46, 0.7, 12, 8), fx = "mirror" } },
-		X = { id = "mgX", name = "천경파쇄", desc = "초 오의. 하늘과 땅이 거울이 된다. 둘레의 적 여덟 앞에 거울 속의 내가 셋씩 나타나 몰아치고 마지막에 거울이 모두 깨지며 둘레가 터진다", pose = "mg_shatter", dur = 3.0, cd = 50, chi = 140, armor = true,
+		X = { id = "xmX", name = "천경파쇄", desc = "초 오의. 하늘과 땅이 거울이 된다. 둘레의 적 여덟 앞에 거울 속의 내가 셋씩 나타나 몰아치고 마지막에 거울이 모두 깨지며 둘레가 터진다", pose = "mg_shatter", dur = 3.0, cd = 50, chi = 140, armor = true,
 			mech = { kind = "clones", n = 8, range = 40, delay = 0.6, every = 0.12, hitsEach = 3, hit = hit(0, 0, 0, 48, 50, 0.6, 10, 6) } },
 	},
 })
@@ -7918,7 +7918,7 @@ do
 		})
 	end
 	chil({
-		tier = 1, idp = "cs", id = "chilseong",
+		tier = 1, idp = "x7", id = "chilseong",
 		cn = { "천추", "천선", "천기각", "천권", "옥형추", "요광승천" }, cp = { "palm_r", "moon_palm_l", "crescent_kick", "push_palm", "moon_throw", "crescent_kick" }, name = "칠성보권", hanja = "七星步拳", icon = "🌟", grade = "전설", attend = 7,
 		color = Color3.fromRGB(150, 190, 255), color2 = Color3.fromRGB(255, 236, 170),
 		desc = "밤하늘 북두칠성의 일곱 별을 차례로 밟아 나가는 보법 권. 한 걸음마다 별이 박히고, 일곱 별이 이어지면 하늘의 국자가 그려진다. 끝에는 그 별들이 하나씩 떨어진다.",
@@ -8141,25 +8141,25 @@ do
 		deflect = 0.26, speed = 1.04, stance = "stance_overlord",
 		hidden = true, keepGrade = true, secret = true, rebirthReq = 3, hellBoost = 1.5,
 		combo = {
-			{ id = "mg1", name = "귀수", pose = "ghost_palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 10, 0.35, 8) } },
-			{ id = "mg2", name = "쇄장", pose = "ghost_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 10, 0.35, 8) } },
-			{ id = "mg3", name = "왕권", pose = "king_jab_r", dur = 0.4, lunge = 2, hits = { hit(0.16, 5, 5.5, 10, 10, 0.4, 10, 10, true), hit(0.28, 5, 5.5, 8, 8, 0.3, 12) } },
-			{ id = "mg4", name = "무간타", pose = "king_cannon", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 5.5, 24, 28, 0.6, 38) } },
+			{ id = "xn1", name = "귀수", pose = "ghost_palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 10, 0.35, 8) } },
+			{ id = "xn2", name = "쇄장", pose = "ghost_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 10, 0.35, 8) } },
+			{ id = "xn3", name = "왕권", pose = "king_jab_r", dur = 0.4, lunge = 2, hits = { hit(0.16, 5, 5.5, 10, 10, 0.4, 10, 10, true), hit(0.28, 5, 5.5, 8, 8, 0.3, 12) } },
+			{ id = "xn4", name = "무간타", pose = "king_cannon", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 5.5, 24, 28, 0.6, 38) } },
 		},
-		heavy = { id = "mgH", name = "귀왕추", pose = "king_hammer", dur = 0.7, lunge = 2, hits = { hit(0.34, 7, 7.5, 34, 46, 0.85, 46, 10, true) } },
-		finisher = { id = "mgF", name = "황천승", pose = "king_uppercut", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		heavy = { id = "xnH", name = "귀왕추", pose = "king_hammer", dur = 0.7, lunge = 2, hits = { hit(0.34, 7, 7.5, 34, 46, 0.85, 46, 10, true) } },
+		finisher = { id = "xnF", name = "황천승", pose = "king_uppercut", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
 		skills = {
-			E = { id = "mgE", name = "무간쇄", desc = "저승의 쇠사슬 여섯 줄을 앞으로 던져 걸린 적을 발밑까지 끌어오고, 끌려온 적을 사슬째 움켜쥐어 터뜨린다", pose = "karma_chain", dur = 0.8, cd = 8, chi = 20,
+			E = { id = "xnE", name = "무간쇄", desc = "저승의 쇠사슬 여섯 줄을 앞으로 던져 걸린 적을 발밑까지 끌어오고, 끌려온 적을 사슬째 움켜쥐어 터뜨린다", pose = "karma_chain", dur = 0.8, cd = 8, chi = 20,
 				mech = seq({
 					{ t = 0.15, shape = "line", at = "self", length = 28, width = 6, pull = 22, vfx = "mgChain", hit = hit(0, 0, 0, 18, 18, 0.5, 4) },
 					{ t = 0.5, shape = "circle", at = "self", radius = 8, vfx = "mgClench", hit = hit(0, 0, 0, 22, 24, 0.6, 24) },
 				}) },
-			R = { id = "mgR", name = "귀수천망", desc = "가까운 적 다섯의 발밑에서 원혼의 손이 솟아 붙잡는다. 이어서 둘레의 원혼들이 한꺼번에 울부짖어 밀쳐 낸다", pose = "bh_soul", dur = 1.0, cd = 11, chi = 25,
+			R = { id = "xnR", name = "귀수천망", desc = "가까운 적 다섯의 발밑에서 원혼의 손이 솟아 붙잡는다. 이어서 둘레의 원혼들이 한꺼번에 울부짖어 밀쳐 낸다", pose = "bh_soul", dur = 1.0, cd = 11, chi = 25,
 				mech = seq({
 					{ t = 0.3, at = "each", n = 5, range = 24, radius = 6, vfx = "mgHands", hit = hit(0, 0, 0, 22, 26, 0.9, 2, 6) },
 					{ t = 0.85, shape = "circle", at = "self", radius = 15, vfx = "mgWail", hit = hit(0, 0, 0, 22, 22, 0.5, 30) },
 				}) },
-			G = { id = "mgG", name = "귀왕강림", desc = "발밑에 저승문이 열리고, 등 뒤로 산만 한 귀왕의 혼이 솟는다. 귀왕이 두 번 손바닥으로 적 여섯을 내리누르고, 마지막에 주먹으로 땅을 부순다", pose = "ult_star", dur = 2.4, cd = 30, chi = 100, armor = true,
+			G = { id = "xnG", name = "귀왕강림", desc = "발밑에 저승문이 열리고, 등 뒤로 산만 한 귀왕의 혼이 솟는다. 귀왕이 두 번 손바닥으로 적 여섯을 내리누르고, 마지막에 주먹으로 땅을 부순다", pose = "ult_star", dur = 2.4, cd = 30, chi = 100, armor = true,
 				mech = seq({
 					{ t = 0.15, shape = "circle", at = "self", radius = 30, life = 2.3, vfx = "mgGate" },
 					{ t = 0.4, shape = "circle", at = "self", radius = 1, life = 1.9, vfx = "mgKing" },
@@ -8249,20 +8249,20 @@ do
 			-- 3.99.72판 검역 (영역 전개): 극을 채운 자리에 반지름 45칸의 검역이 8초 펼쳐져, 안의 적을 0.2초마다 벤다 (막을 수 없다 · 걸음 ×0.6)
 			domain = { radius = 45, dur = 8, every = 0.2, slow = 0.6, hit = hit(0, 0, 0, 10, 8, 0.12, 0) } },
 		combo = {
-			{ id = "gs1", name = "무형일섬", pose = "palm_r", dur = 0.26, lunge = 4, hits = { hit(0.1, 7, 5, 26, 18, 0.3, 8) } },
-			{ id = "gs2", name = "역섬", pose = "palm_l", dur = 0.26, lunge = 4, hits = { hit(0.1, 7, 5, 26, 18, 0.3, 8) } },
-			{ id = "gs3", name = "쌍섬", pose = "back_spin_kick", dur = 0.4, lunge = 2, hits = { hit(0.15, 0, 8, 22, 20, 0.35, 12, nil, true), hit(0.28, 0, 8, 22, 20, 0.35, 12, nil, true) } },
-			{ id = "gs4", name = "발검", pose = "push_palm", dur = 0.46, lunge = 6, hits = { hit(0.22, 10, 6, 44, 46, 0.6, 30) } },
+			{ id = "xg1", name = "무형일섬", pose = "palm_r", dur = 0.26, lunge = 4, hits = { hit(0.1, 7, 5, 26, 18, 0.3, 8) } },
+			{ id = "xg2", name = "역섬", pose = "palm_l", dur = 0.26, lunge = 4, hits = { hit(0.1, 7, 5, 26, 18, 0.3, 8) } },
+			{ id = "xg3", name = "쌍섬", pose = "back_spin_kick", dur = 0.4, lunge = 2, hits = { hit(0.15, 0, 8, 22, 20, 0.35, 12, nil, true), hit(0.28, 0, 8, 22, 20, 0.35, 12, nil, true) } },
+			{ id = "xg4", name = "발검", pose = "push_palm", dur = 0.46, lunge = 6, hits = { hit(0.22, 10, 6, 44, 46, 0.6, 30) } },
 		},
-		heavy = { id = "gsH", name = "일도양단", pose = "king_hammer", dur = 0.58, lunge = 10, iframes = 0.2, hits = { hit(0.28, 12, 7, 78, 100, 0.9, 50, 8) } },
-		finisher = { id = "gsF", name = "승천검", pose = "uppercut", dur = 0.6, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		heavy = { id = "xgH", name = "일도양단", pose = "king_hammer", dur = 0.58, lunge = 10, iframes = 0.2, hits = { hit(0.28, 12, 7, 78, 100, 0.9, 50, 8) } },
+		finisher = { id = "xgF", name = "승천검", pose = "uppercut", dur = 0.6, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
 		skills = {
-			E = { id = "gsE", name = "무형참", desc = "손날을 그으면 한 박자 뒤 앞으로 34칸이 보이지 않는 검기에 갈라진다. 갈라진 자리에 빛이 번쩍이고, 그 위를 열십자로 한 번 더 벤다", pose = "push_palm", dur = 0.7, cd = 7, chi = 22,
+			E = { id = "xgE", name = "무형참", desc = "손날을 그으면 한 박자 뒤 앞으로 34칸이 보이지 않는 검기에 갈라진다. 갈라진 자리에 빛이 번쩍이고, 그 위를 열십자로 한 번 더 벤다", pose = "push_palm", dur = 0.7, cd = 7, chi = 22,
 				mech = seq({
 					{ t = 0.3, shape = "line", at = "self", length = 34, width = 5, vfx = "swCut", hit = hit(0, 0, 0, 74, 64, 0.6, 10) },
 					{ t = 0.55, shape = "line", at = "self", length = 34, width = 9, vfx = "swCross", hit = hit(0, 0, 0, 52, 46, 0.5, 14) },
 				}) },
-			R = { id = "gsR", name = "검막", desc = "내 둘레에 보이지 않는 검이 휘몰아쳐 검의 장막이 된다 (그동안 무적). 둘레 15칸을 여섯 번 베고, 마지막에 장막이 바깥으로 터진다", pose = "back_spin_kick", dur = 1.1, cd = 10, chi = 25,
+			R = { id = "xgR", name = "검막", desc = "내 둘레에 보이지 않는 검이 휘몰아쳐 검의 장막이 된다 (그동안 무적). 둘레 15칸을 여섯 번 베고, 마지막에 장막이 바깥으로 터진다", pose = "back_spin_kick", dur = 1.1, cd = 10, chi = 25,
 				mech = seq({
 					{ t = 0.12, shape = "circle", at = "self", radius = 15, vfx = "swStorm", hit = hit(0, 0, 0, 24, 18, 0.3, 2) },
 					{ t = 0.27, shape = "circle", at = "self", radius = 15, vfx = "swStorm", hit = hit(0, 0, 0, 24, 18, 0.3, 2) },
@@ -8271,13 +8271,13 @@ do
 					{ t = 0.72, shape = "circle", at = "self", radius = 15, vfx = "swStorm", hit = hit(0, 0, 0, 24, 18, 0.3, 2) },
 					{ t = 0.95, shape = "circle", at = "self", radius = 18, vfx = "swBurst", hit = hit(0, 0, 0, 70, 70, 0.7, 36, 8) },
 				}, true) },
-			G = { id = "gsG", name = "비검천강", desc = "가까운 적 여섯의 하늘에 빛의 검이 하나씩 맺혀 두 번 내리꽂힌다. 마지막에 내 발밑에 검의 진이 그려지고 둘레 24칸이 한꺼번에 베인다", pose = "ult_star", dur = 2.2, cd = 28, chi = 100, armor = true,
+			G = { id = "xgG", name = "비검천강", desc = "가까운 적 여섯의 하늘에 빛의 검이 하나씩 맺혀 두 번 내리꽂힌다. 마지막에 내 발밑에 검의 진이 그려지고 둘레 24칸이 한꺼번에 베인다", pose = "ult_star", dur = 2.2, cd = 28, chi = 100, armor = true,
 				mech = seq({
 					{ t = 0.5, at = "each", n = 6, range = 32, radius = 6, vfx = "swFall", hit = hit(0, 0, 0, 120, 110, 0.8, 6, 6) },
 					{ t = 1.0, at = "each", n = 6, range = 32, radius = 6, vfx = "swFall", hit = hit(0, 0, 0, 120, 110, 0.8, 6, 6) },
 					{ t = 1.7, shape = "circle", at = "self", radius = 24, vfx = "swArray", big = true, hit = hit(0, 0, 0, 260, 280, 1.4, 50, 16) },
 				}) },
-			X = { id = "gsX", name = "만검귀종", desc = "초 오의 (그동안 무적). 하늘 가득 만 자루 검이 둥글게 떠오른다. 검이 네 번 비처럼 쏟아져 적 여덟을 꿰뚫고, 마지막에 모든 검이 하나로 모여 하늘만 한 검이 되어 내리꽂힌다 (둘레 50칸)", pose = "ult_star", dur = 3.6, cd = 55, chi = 150, armor = true,
+			X = { id = "xgX", name = "만검귀종", desc = "초 오의 (그동안 무적). 하늘 가득 만 자루 검이 둥글게 떠오른다. 검이 네 번 비처럼 쏟아져 적 여덟을 꿰뚫고, 마지막에 모든 검이 하나로 모여 하늘만 한 검이 되어 내리꽂힌다 (둘레 50칸)", pose = "ult_star", dur = 3.6, cd = 55, chi = 150, armor = true,
 				mech = seq({
 					{ t = 0.05, shape = "circle", at = "self", radius = 50, life = 3.4, vfx = "swSky" },
 					{ t = 0.7, at = "each", n = 8, range = 40, radius = 7, vfx = "swRainX", hit = hit(0, 0, 0, 70, 60, 0.6, 4) },
@@ -16336,8 +16336,11 @@ function Geuk.trigger(f: any, st: any)
 		end)
 		return
 	end
-	Push:FireAllClients("geukTwilight", { m = f.model, name = name, style = st.id, cut = G.cut, dur = G.dur })
-	World.twilight(G.cut, G.dur)
+	-- 3.99.83판: 일월극변은 쓴 사람 화면에만 (예전엔 서버 전체에 컷씬이 돌고 하늘이 황혼으로 바뀌었다.
+	--   사부 · 문하생 · 겨루기 상대 같은 NPC 가 극 일월신권을 써도 모두의 화면에 떠서 '황혼' 이 자꾸 나왔다). 기술이 바뀌는 건 그대로
+	if f.player and f.player.Parent then
+		Push:FireClient(f.player, "geukTwilight", { m = f.model, name = name, style = st.id, cut = G.cut, dur = G.dur })
+	end
 end
 function Geuk.add(f: any, amount: number)
 	local st = geukStyle(f)

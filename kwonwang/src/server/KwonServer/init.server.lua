@@ -4547,8 +4547,11 @@ function Geuk.trigger(f: any, st: any)
 		end)
 		return
 	end
-	Push:FireAllClients("geukTwilight", { m = f.model, name = name, style = st.id, cut = G.cut, dur = G.dur })
-	World.twilight(G.cut, G.dur)
+	-- 3.99.83판: 일월극변은 쓴 사람 화면에만 (예전엔 서버 전체에 컷씬이 돌고 하늘이 황혼으로 바뀌었다.
+	--   사부 · 문하생 · 겨루기 상대 같은 NPC 가 극 일월신권을 써도 모두의 화면에 떠서 '황혼' 이 자꾸 나왔다). 기술이 바뀌는 건 그대로
+	if f.player and f.player.Parent then
+		Push:FireClient(f.player, "geukTwilight", { m = f.model, name = name, style = st.id, cut = G.cut, dur = G.dur })
+	end
 end
 function Geuk.add(f: any, amount: number)
 	local st = geukStyle(f)
