@@ -8591,6 +8591,18 @@ local function onPlayerAdded(player: Player)
 				profile.skyGems += rw.gems
 				table.insert(got, "💠 " .. Config.formatNumber(rw.gems))
 			end
+			-- 3.99.79판 출석 권법: 7일째 칠성보권 · 31일째 광음신권 (이미 익혔으면 비급 조각으로)
+			local gotStyle = nil
+			if rw.style and Config.STYLE_BY_ID[rw.style] then
+				if profile.styles[rw.style] then
+					profile.shards = (profile.shards or 0) + (rw.alt or 0)
+					table.insert(got, "🧩 " .. (rw.alt or 0))
+				else
+					gotStyle = rw.style
+					local sd = Config.STYLE_BY_ID[rw.style]
+					table.insert(got, sd.icon .. " " .. sd.name)
+				end
+			end
 			-- 3.99.78판: 천상 재료 (아무거나 n 개)
 			if rw.mats then
 				local tally = {}
@@ -8609,7 +8621,14 @@ local function onPlayerAdded(player: Player)
 			task.delay(7, function()
 				if player.Parent then
 					toast(player, string.format("📅 출석 %d일째 (이어서 %d일) · %s", day, streak, table.concat(got, "  ")))
-					Push:FireClient(player, "attend", { day = day, streak = streak, total = #A.days })
+					Push:FireClient(player, "attend", { day = day, streak = streak, total = #A.days, style = gotStyle })
+					if gotStyle then
+						task.delay(2.5, function()
+							if player.Parent then
+								grantStyle(player, gotStyle, true)
+							end
+						end)
+					end
 				end
 			end)
 		end

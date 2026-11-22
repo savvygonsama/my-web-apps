@@ -1058,7 +1058,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	end
 	if pulse then
 		local at = tgt.root.Position
-		Push:FireAllClients("skillfx", { kind = "pulse", fx = pulse.kind, at = at, radius = pulse.radius, delay = pulse.delay, style = att.style })
+		Push:FireAllClients("skillfx", { kind = "pulse", fx = pulse.kind, at = at, radius = pulse.radius, delay = pulse.delay, style = att.style, m = att.model })
 		task.delay(pulse.delay, function()
 			if att.dead then
 				return

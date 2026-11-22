@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.78" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.79" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -401,7 +401,7 @@ Config.ATTEND = { tz = 9 * 3600, big = { [7] = true, [14] = true, [21] = true, [
 	{ gems = 300 },
 	{ coins = 3, shards = 5 },
 	{ scrolls = 2 },
-	{ coins = 8, shards = 15, gems = 1000, scrolls = 4 }, -- 7 (첫 주)
+	{ style = "chilseong", alt = 25, coins = 6, shards = 10, gems = 800, scrolls = 3 }, -- 7: 칠성보권 (이미 익혔으면 비급 조각 25) (첫 주)
 	{ coins = 3 },
 	{ shards = 5 },
 	{ gems = 500, scrolls = 1 }, -- 10
@@ -425,7 +425,7 @@ Config.ATTEND = { tz = 9 * 3600, big = { [7] = true, [14] = true, [21] = true, [
 	{ coins = 20, shards = 35, gems = 3000, scrolls = 8, mats = 6 }, -- 28 (넷째 주)
 	{ coins = 8, shards = 15 },
 	{ gems = 1500, scrolls = 5 }, -- 30
-	{ coins = 30, shards = 60, gems = 5000, scrolls = 12, mats = 10 }, -- 31 (한 달)
+	{ style = "gwangeum", alt = 80, coins = 20, shards = 40, gems = 3000, scrolls = 8, mats = 6 }, -- 31: 광음신권 (이미 익혔으면 비급 조각 80) (한 달)
 } }
 Config.TRAIN_LATE_REF = 12 -- 천상 수련 '완벽' 한 번에 오르는 몫의 합 (2 × 6). 3.3판: 천상 수련이 24 → 6이 되어 48 → 12 (후반 수련 몫은 그대로)
 function Config.trainMult(idx: number): number
@@ -7776,6 +7776,108 @@ do
 					{ t = 2.4, at = "each", n = 8, range = 34, radius = 7, vfx = "ghostTorrent", hit = hit(0, 0, 0, 30, 30, 0.5, 6, 10) },
 					{ t = 3.1, shape = "circle", at = "self", radius = 36, vfx = "soulReap", big = true, hit = hit(0, 0, 0, 240, 270, 1.8, 80, 30) },
 				} } },
+		},
+	})
+end
+
+-- 3.99.79판 출석 권법 둘: 출석으로만 얻는다 (7일째 칠성보권 [전설], 31일째 광음신권 [태초])
+do
+	local function seq(steps: { any }): any
+		return { kind = "forgeSeq", steps = steps }
+	end
+	local function add(st: any)
+		st.keepGrade = true
+		st.hidden = true
+		st.rank = OLD_RANK[st.grade] or 1
+		table.insert(Config.Styles, st)
+		st.index = #Config.Styles
+		Config.STYLE_BY_ID[st.id] = st
+	end
+
+	-- 🌟 칠성보권 [전설]: 북두칠성 일곱 별을 밟는 걸음. 이레를 빠짐없이 온 자에게
+	add({
+		id = "chilseong", name = "칠성보권", hanja = "七星步拳", icon = "🌟", grade = "전설", fx = "mist", attend = 7,
+		color = Color3.fromRGB(150, 190, 255), color2 = Color3.fromRGB(255, 236, 170),
+		palette = { Color3.fromRGB(160, 200, 255), Color3.fromRGB(255, 236, 170), Color3.fromRGB(40, 50, 110) },
+		desc = "밤하늘 북두칠성의 일곱 별을 차례로 밟아 나가는 보법 권. 한 걸음마다 별이 박히고, 일곱 별이 이어지면 하늘의 국자가 그려진다. 끝에는 그 별들이 하나씩 떨어진다.",
+		gimmick = "칠성: 일곱 번 맞힐 때마다 상대 머리 위로 별 하나가 떨어진다. 몸이 가볍고 빠르다",
+		unlockHint = "출석 7일째 (빠짐없이 이레를 들어온 자에게 하늘이 내린다)",
+		deflect = 0.22, speed = 1.12, stance = "stance_sunmoon",
+		pulse = { every = 7, kind = "starFall", radius = 8, delay = 0.35, name = "낙성", dmg = 22, posture = 20, stun = 0.5, kb = 6, up = 0 },
+		combo = {
+			{ id = "cs1", name = "천추", pose = "palm_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 7, 4.5, 8, 8, 0.3, 8) } },
+			{ id = "cs2", name = "천선", pose = "moon_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 7, 4.5, 8, 8, 0.3, 8) } },
+			{ id = "cs3", name = "천기각", pose = "crescent_kick", dur = 0.42, lunge = 2, hits = { hit(0.15, 6, 6, 7, 7, 0.3, 8, 8, true), hit(0.28, 6, 6, 8, 8, 0.35, 10, 10, true) } },
+			{ id = "cs4", name = "천권", pose = "push_palm", dur = 0.5, lunge = 3, hits = { hit(0.24, 9, 7, 13, 16, 0.5, 30, nil, true) } },
+		},
+		heavy = { id = "csH", name = "옥형추", pose = "moon_throw", dur = 0.6, lunge = 2, hits = { hit(0.28, 13, 5, 22, 26, 0.6, 34) } },
+		finisher = { id = "csF", name = "요광승천", pose = "crescent_kick", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		skills = {
+			E = { id = "csE", name = "북두칠보", desc = "별에서 별로 건너뛰듯 일곱 걸음을 내딛는다. 밟은 자리마다 별이 박혀 터지고, 일곱째 걸음에 일곱 별이 한 줄로 이어져 번쩍인다", pose = "dash_punch", dur = 0.9, cd = 8, chi = 20,
+				mech = (function()
+					local t = {}
+					for k = 0, 6 do
+						table.insert(t, { t = 0.08 + k * 0.09, dash = 3.2, shape = "circle", at = "self", radius = 5, vfx = "starStep", hit = hit(0, 0, 0, 6, 6, 0.2, 3) })
+					end
+					table.insert(t, { t = 0.75, shape = "circle", at = "self", radius = 9, vfx = "starChain", hit = hit(0, 0, 0, 14, 14, 0.4, 10, 6) })
+					return seq(t)
+				end)() },
+			R = { id = "csR", name = "칠성연주", desc = "가까운 적 일곱의 몸에 별이 하나씩 박힌다. 별과 별 사이를 빛의 실이 국자 모양으로 잇고, 이어지는 순간 일곱 별이 한꺼번에 터진다", pose = "point_sky", dur = 0.9, cd = 10, chi = 24,
+				mech = seq({
+					{ t = 0.2, at = "each", n = 7, range = 24, radius = 5, vfx = "starMark", hit = hit(0, 0, 0, 10, 10, 0.3, 0) },
+					{ t = 0.65, at = "each", n = 7, range = 24, radius = 6, vfx = "starNova", hit = hit(0, 0, 0, 20, 20, 0.5, 12, 8) },
+				}) },
+			G = { id = "csG", name = "북두낙성", desc = "하늘이 밤으로 바뀌고 머리 위에 커다란 북두칠성이 걸린다. 일곱 별이 하나씩 떨어져 적을 내리찍고, 마지막에 국자 전체가 땅으로 쏟아지며 둘레 22칸이 별빛으로 터진다", pose = "ult_star", dur = 2.3, cd = 30, chi = 100, armor = true,
+				mech = (function()
+					local t = { { t = 0.2, shape = "circle", at = "self", radius = 22, pull = 20, life = 1.9, vfx = "dipperSky", hit = hit(0, 0, 0, 10, 10, 0.3, 0) } }
+					for k = 0, 6 do
+						table.insert(t, { t = 0.55 + k * 0.15, at = "target", range = 26, shape = "circle", radius = 7, col = k + 1, vfx = "starDrop", hit = hit(0, 0, 0, 14, 14, 0.35, 6, 6) })
+					end
+					table.insert(t, { t = 1.85, shape = "circle", at = "self", radius = 22, vfx = "dipperFall", big = true, hit = hit(0, 0, 0, 60, 70, 1.0, 40, 16) })
+					return seq(t)
+				end)() },
+		},
+	})
+
+	-- ⏳ 광음신권 [태초]: 흐르는 시간 (광음) 을 주먹에 담는다. 한 달을 하루도 빠짐없이 온 자에게
+	add({
+		id = "gwangeum", name = "광음신권", hanja = "光陰神拳", icon = "⏳", grade = "태초", fx = "void", attend = 31,
+		color = Color3.fromRGB(255, 214, 140), color2 = Color3.fromRGB(235, 250, 255),
+		palette = { Color3.fromRGB(255, 214, 140), Color3.fromRGB(235, 250, 255), Color3.fromRGB(20, 40, 50) },
+		desc = "흐르는 세월을 주먹에 담는 신권. 주먹이 지나간 자리에 조금 전의 내가 남아 같은 주먹을 한 번 더 지르고, 끝에는 하늘에 커다란 해시계가 떠 천 년을 한순간에 몰아친다.",
+		gimmick = "잔상: 다섯 번 맞힐 때마다 조금 전의 내가 나타나 같은 자리를 한 번 더 친다. 기술마다 시곗바늘 · 모래 · 잔상이 나타난다",
+		unlockHint = "출석 31일째 (한 달을 하루도 빠짐없이 들어온 자에게 세월이 내린다)",
+		deflect = 0.26, speed = 1.08, stance = "stance_mugeuk",
+		pulse = { every = 5, kind = "timeEcho", radius = 8, delay = 0.3, name = "잔상", dmg = 28, posture = 24, stun = 0.5, kb = 8, up = 0 },
+		combo = {
+			{ id = "ge1", name = "초침", pose = "jab_l", dur = 0.3, lunge = 4, hits = { hit(0.12, 6, 5, 18, 15, 0.35, 10) } },
+			{ id = "ge2", name = "분침", pose = "punch_r", dur = 0.34, lunge = 3, hits = { hit(0.15, 6, 5, 18, 15, 0.35, 12) } },
+			{ id = "ge3", name = "시침선", pose = "circle_palm", dur = 0.46, lunge = 2, hits = { hit(0.24, 0, 8, 20, 24, 0.5, 14, 10, true) } },
+			{ id = "ge4", name = "정오권", pose = "push_palm", dur = 0.48, lunge = 6, hits = { hit(0.22, 9, 6, 30, 34, 0.6, 38) } },
+		},
+		heavy = { id = "geH", name = "자정추", pose = "grav_hammer", dur = 0.72, lunge = 4, hits = { hit(0.36, 6, 9, 50, 76, 1.0, 40, 12, true) } },
+		finisher = { id = "geF", name = "여명승천", pose = "push_palm", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		skills = {
+			E = { id = "geE", name = "광음여전", desc = "세월은 화살처럼 간다. 주먹 끝에서 빛의 화살이 앞으로 28칸을 꿰뚫고, 그 길을 따라 조금 전의 내 잔상 셋이 늦게 뒤쫓아 가까운 적을 다시 친다", pose = "push_palm", dur = 0.75, cd = 8, chi = 20,
+				mech = seq({
+					{ t = 0.15, shape = "line", at = "self", length = 28, width = 6, vfx = "timeArrow", hit = hit(0, 0, 0, 30, 30, 0.5, 14) },
+					{ t = 0.5, at = "each", n = 3, range = 28, radius = 6, vfx = "timeGhost", hit = hit(0, 0, 0, 30, 32, 0.6, 12, 8) },
+				}) },
+			R = { id = "geR", name = "역류일순", desc = "시간을 찢고 앞으로 16칸을 내달려 지나는 적을 벤다 (그동안 무적). 발밑에 시계판이 펼쳐지고 바늘이 거꾸로 돌며, 둘레의 적이 끌려와 되감긴 시간에 한 번 더 맞는다", pose = "dash_punch", dur = 1.0, cd = 11, chi = 26,
+				mech = { kind = "forgeSeq", iframes = true, steps = {
+					{ t = 0.1, dash = 16, shape = "circle", at = "self", radius = 7, vfx = "timeDash", hit = hit(0, 0, 0, 30, 30, 0.5, 6) },
+					{ t = 0.45, shape = "circle", at = "self", radius = 13, pull = 16, life = 0.5, vfx = "timeDial", hit = hit(0, 0, 0, 16, 18, 0.4, 0) },
+					{ t = 0.85, shape = "circle", at = "self", radius = 13, vfx = "timeSnap", hit = hit(0, 0, 0, 40, 44, 0.8, 24, 10) },
+				} } },
+			G = { id = "geG", name = "천년일순", desc = "하늘에 거대한 해시계가 떠오르고 둘레 26칸의 시간이 멈춘다. 열두 시진의 빛 기둥이 차례로 내리꽂혀 적을 치고, 바늘이 열두 시에 닿는 순간 멈췄던 천 년이 한꺼번에 흘러 터진다", pose = "ult_taiji", dur = 2.6, cd = 32, chi = 100, armor = true,
+				mech = (function()
+					local t = { { t = 0.25, shape = "circle", at = "self", radius = 26, pull = 30, life = 2.15, vfx = "sunDial", hit = hit(0, 0, 0, 10, 12, 0.3, 0) } }
+					for k = 0, 11 do
+						table.insert(t, { t = 0.6 + k * 0.1, at = "target", range = 28, shape = "circle", radius = 6, col = k + 1, vfx = "hourPillar", hit = hit(0, 0, 0, 12, 14, 0.3, 4) })
+					end
+					table.insert(t, { t = 2.2, shape = "circle", at = "self", radius = 26, vfx = "timeRelease", big = true, hit = hit(0, 0, 0, 100, 140, 1.4, 60, 18) })
+					return seq(t)
+				end)() },
 		},
 	})
 end

@@ -2164,6 +2164,9 @@ function handlers.hit(data: any)
 			if data.style == "hondon" or data.style == "janwol" or data.style == "noeun" or data.style == "gwihwa" or data.style == "sashin" then
 				pcall(ForgeFx.hit, data.style, pos, data.heavy == true, data.skill == true)
 			end
+			if data.style == "chilseong" or data.style == "gwangeum" then
+				pcall((ForgeFx :: any).attendHit, data.style, pos, data.heavy == true or data.skill == true)
+			end
 			if data.style == "gumiho" or data.style == "heukyeom" then
 				pcall(PassArts.hit, data.style, pos, data.heavy == true, data.skill == true, dir, a and tonumber(a:GetAttribute("Enh")) or 0)
 			end
@@ -2546,6 +2549,11 @@ function handlers.attend(data: any)
 		end
 	end
 	local sub = last and "한 달을 채웠다 · 가장 큰 보상" or (big and "큰 보상의 날" or string.format("이어서 %d일 · %d일째에 큰 보상", data.streak, nextBig))
+	-- 3.99.79판: 출석으로만 얻는 권법 (7일째 · 31일째)
+	local sd = type(data.style) == "string" and Config.STYLE_BY_ID[data.style]
+	if sd then
+		sub = string.format("%s %s 을(를) 하늘이 내렸다", sd.icon, sd.name)
+	end
 	UI.banner(string.format("📅 출석 %d / %d일", data.day, data.total), sub, (last or big) and Color3.fromRGB(255, 210, 110) or Color3.fromRGB(150, 220, 255))
 	if last or big then
 		shake(0.5)

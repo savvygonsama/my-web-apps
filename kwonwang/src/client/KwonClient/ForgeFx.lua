@@ -2039,7 +2039,7 @@ function ForgeFx.sashin(data: any): boolean
 	return true
 end
 -- 연출을 이 모듈이 그리는 패시브 (pulse fx 이름)
-local OWN_PULSE = { inkKnot = true, venomCloud = true, swordQi = true, blackFlame = true }
+local OWN_PULSE = { inkKnot = true, venomCloud = true, swordQi = true, blackFlame = true, starFall = true, timeEcho = true }
 
 -- 3.99.38판 손맛: 혼돈개천권은 맞힐 때마다 먹이 튄다 (강타 · 기술은 크게)
 function ForgeFx.hit(styleId: string, pos: Vector3, heavy: boolean, skill: boolean)
@@ -3818,6 +3818,400 @@ local function idleAura(model: Model)
 		end
 	end)
 end
+------------------------------------------------------------------------
+-- 3.99.79판 출석 권법 연출
+--   🌟 칠성보권: 별 (빛 공 + 십자 빛살) · 별을 잇는 빛의 실 · 하늘에 걸리는 북두칠성 · 떨어지는 별
+--   ⏳ 광음신권: 시계판 (눈금 열둘 · 거꾸로 도는 바늘) · 금모래 · 조금 전의 나 (잔상) · 시간이 멈춘 화면
+------------------------------------------------------------------------
+local STAR, STAR2, STARD = Color3.fromRGB(160, 200, 255), Color3.fromRGB(255, 236, 170), Color3.fromRGB(40, 50, 110)
+local function star(at: Vector3, size: number, life: number, c: Color3?)
+	local col = c or STAR2
+	local core = piece(V(size, size, size), CF(at), WHITE, 0, Enum.PartType.Ball)
+	fadeOut(core, life, V(size * 0.3, size * 0.3, size * 0.3))
+	local halo = piece(V(size * 2.4, size * 2.4, size * 2.4), CF(at), col, 0.55, Enum.PartType.Ball)
+	fadeOut(halo, life * 0.8, V(size * 3.4, size * 3.4, size * 3.4))
+	-- 십자 빛살 (세 축): 반짝 커졌다 가늘어진다
+	for i = 1, 3 do
+		local sz = i == 1 and V(size * 5, size * 0.12, size * 0.12) or (i == 2 and V(size * 0.12, size * 5, size * 0.12) or V(size * 0.12, size * 0.12, size * 5))
+		local ray = piece(sz * 0.4, CF(at) * CFrame.Angles(0, math.rad(45), 0), col, 0.1)
+		tween(ray, life * 0.25, { Size = sz })
+		task.delay(life * 0.25, function()
+			fadeOut(ray, life * 0.75, sz * V(0.6, 0.6, 0.6))
+		end)
+	end
+	gEmit(at, TEX_SPARK, WHITE, col, math.floor(size * 4), size * 0.4, size * 3, life * 0.8)
+end
+-- 북두칠성 일곱 별의 자리 (국자: 넷은 그릇, 셋은 자루). 단위 길이 1
+local DIPPER = { { 1.15, -0.05 }, { 1.25, -0.95 }, { 0.15, -1.0 }, { 0, 0 }, { -0.95, 0.25 }, { -1.85, 0.5 }, { -2.8, 0.25 } }
+local function dipperPoints(center: Vector3, look: Vector3, scale: number): { Vector3 }
+	local right = V(-look.Z, 0, look.X)
+	local out = {}
+	for _, p in ipairs(DIPPER) do
+		table.insert(out, center + right * (p[1] + 0.8) * scale + look * p[2] * scale)
+	end
+	return out
+end
+local function flatLook(d: any): Vector3
+	local dir = typeof(d.dir) == "Vector3" and V(d.dir.X, 0, d.dir.Z) or V(0, 0, -1)
+	return dir.Magnitude > 0.01 and dir.Unit or V(0, 0, -1)
+end
+-- 칠성 (패시브): 머리 위에서 별이 비스듬히 떨어진다
+VFX.starFall = function(d)
+	local at = (d.at :: Vector3) + V(0, 2, 0)
+	local from = at + V((math.random() - 0.5) * 16, 34, (math.random() - 0.5) * 16)
+	local b = piece(V(1.6, 1.6, 1.6), CF(from), WHITE, 0, Enum.PartType.Ball)
+	local tr = gBrush(0.9, 0.35, STAR2, STAR, true)
+	local t0 = os.clock()
+	local dur = d.delay or 0.35
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local k = math.min(1, (os.clock() - t0) / dur)
+		local p = from:Lerp(at, k * k)
+		b.CFrame = CF(p)
+		tr.p.CFrame = CF(p)
+		if k >= 1 then
+			conn:Disconnect()
+			b:Destroy()
+			dropBrush(tr, 0.35)
+			star(at, 2.2, 0.5)
+			Fx.ring(ground(at) + V(0, 0.3, 0), STAR, 2, (d.radius or 8) * 2, 0.4)
+		end
+	end)
+end
+VFX.starStep = function(d)
+	local g = ground(d.at) + V(0, 0.4, 0)
+	star(g + V(0, 1.2, 0), 1.4, 0.9)
+	disc(g, 1, STAR, 0.3, 0.5, d.radius or 5)
+	pcall(Fx.sound, "ping", 0.25, 1.6 + math.random() * 0.4, g)
+end
+-- 일곱째 걸음: 밟아 온 별 일곱이 한 줄로 이어져 번쩍인다
+VFX.starChain = function(d)
+	local look = flatLook(d)
+	local base = ground(d.at) + V(0, 1.6, 0)
+	local pts = {}
+	for k = 0, 6 do
+		table.insert(pts, base - look * (k * 3.2))
+	end
+	for i = 1, 6 do
+		task.delay(i * 0.03, function()
+			gStroke(pts[i], pts[i + 1], 0.06, 0.25, 0.1, STAR2, STAR, true, 0.5)
+		end)
+	end
+	task.delay(0.22, function()
+		for _, p in ipairs(pts) do
+			star(p, 1.8, 0.5)
+		end
+		Fx.flash(base, STAR2, 26, 2, 0.25)
+		shake(0.35)
+	end)
+end
+VFX.starMark = function(d)
+	local at = d.at + V(0, 5.5, 0)
+	star(at, 1.3, 0.55)
+	local caster = d.m and d.m:FindFirstChild("HumanoidRootPart")
+	if caster and caster:IsA("BasePart") then
+		gStroke(caster.Position + V(0, 2.5, 0), at, 0.12, 0.14, 0.4, STAR, STAR2, true, 0.5)
+	end
+end
+VFX.starNova = function(d)
+	local at = d.at + V(0, 3, 0)
+	star(at, 2.6, 0.6)
+	Fx.ring(ground(d.at) + V(0, 0.3, 0), STAR2, 2, (d.radius or 6) * 2.2, 0.4)
+	gEmit(at, TEX_SPARK, STAR2, STAR, 18, 0.6, 14, 0.5)
+	shake(0.25)
+end
+-- 북두낙성: 하늘이 밤이 되고 머리 위에 북두칠성이 걸린다
+local function nightSky(dur: number)
+	local cc = Instance.new("ColorCorrectionEffect")
+	cc.Parent = Lighting
+	tween(cc, 0.3, { Brightness = -0.18, TintColor = Color3.fromRGB(170, 185, 255), Saturation = -0.2 })
+	task.delay(dur, function()
+		tween(cc, 0.5, { Brightness = 0, TintColor = WHITE, Saturation = 0 })
+		Debris:AddItem(cc, 0.6)
+	end)
+end
+VFX.dipperSky = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 22
+	local life = d.life or 1.9
+	local cam = workspace.CurrentCamera
+	if cam and (cam.CFrame.Position - g).Magnitude < 140 then
+		nightSky(life)
+		domainTitle("북두낙성", "일곱 별이 떨어진다", 1.4)
+	end
+	disc(g + V(0, 0.3, 0), r, STARD, 0.45, life)
+	local pts = dipperPoints(g + V(0, 30, 0), flatLook(d), r * 0.42)
+	for i, p in ipairs(pts) do
+		task.delay(i * 0.06, function()
+			star(p, 2.6, life - i * 0.06)
+			if i > 1 then
+				gStroke(pts[i - 1], p, 0.1, 0.35, 0.05, STAR, STAR2, true, life - i * 0.06)
+			end
+		end)
+	end
+	-- 하늘 둘레에 잔별
+	gSwirl(function()
+		return g + V(0, 24, 0)
+	end, 14, r * 1.1, 8, life, STAR, STAR2, { width = 0.2, trail = 0.6, speed = 0.3 })
+	pcall(Fx.sound, "ping", 0.6, 0.6, g)
+end
+VFX.starDrop = function(d)
+	local at = d.at + V(0, 2, 0)
+	local from = at + V(0, 30, 0) + flatLook(d) * -6
+	gStroke(from, at, 0.12, 1.1, 0.05, WHITE, STAR2, true, 0.4)
+	task.delay(0.12, function()
+		star(at, 2.2, 0.45)
+		Fx.ring(ground(d.at) + V(0, 0.3, 0), STAR, 2, (d.radius or 7) * 2, 0.35)
+		Fx.debris(ground(d.at), 4, 10)
+		pcall(Fx.sound, "heavy", 0.35, 1.3, at)
+		shake(0.3)
+	end)
+end
+VFX.dipperFall = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 22
+	local pts = dipperPoints(g + V(0, 30, 0), flatLook(d), r * 0.42)
+	for i, p in ipairs(pts) do
+		local to = g + (V(p.X, g.Y, p.Z) - g) * 0.5 + V(0, 1, 0)
+		gStroke(p, to, 0.18, 1.4, 0.1, WHITE, STAR2, true, 0.5)
+		task.delay(0.18, function()
+			star(to, 3, 0.6)
+		end)
+		if i == 4 then
+			task.delay(0.2, function()
+				bloom(1.2, 0.5)
+				Fx.flash(g + V(0, 4, 0), STAR2, r * 2.6, 6, 0.35)
+				Fx.ring(g + V(0, 0.4, 0), STAR2, 4, r * 2.4, 0.5)
+				Fx.ring(g + V(0, 0.4, 0), STAR, 3, r * 1.6, 0.6)
+				gEmit(g + V(0, 3, 0), TEX_SPARK, STAR2, STAR, 60, 1, 26, 0.9)
+				Fx.debris(g, 12, 24)
+				pcall(Fx.sound, "shatter", 0.6, 0.8, g)
+				shake(1.1)
+			end)
+		end
+	end
+end
+
+local TIME, TIME2, TIMED = Color3.fromRGB(255, 214, 140), Color3.fromRGB(235, 250, 255), Color3.fromRGB(20, 40, 50)
+-- 조금 전의 나: 몸 부위를 빛으로 떠서 그 자리에 남긴다 (조금 밀려나며 흐려진다)
+local function afterimage(model: Instance?, shift: CFrame?, life: number, c: Color3?, push: Vector3?)
+	if typeof(model) ~= "Instance" or not model:IsA("Model") then
+		return
+	end
+	local n = 0
+	for _, bp in ipairs(model:GetDescendants()) do
+		if bp:IsA("BasePart") and bp.Name ~= "HumanoidRootPart" and bp.Transparency < 0.9 and bp.Size.Magnitude < 12 then
+			n += 1
+			if n > 18 then
+				break
+			end
+			local cf = shift and (shift * bp.CFrame) or bp.CFrame
+			local g = piece(bp.Size, cf, c or TIME, 0.45)
+			g.Material = Enum.Material.ForceField
+			local goal: { [string]: any } = { Transparency = 1 }
+			if push then
+				goal.CFrame = cf + push
+			end
+			tween(g, life, goal, Enum.EasingStyle.Sine)
+			Debris:AddItem(g, life + 0.05)
+		end
+	end
+end
+local function sand(at: Vector3, n: number, spread: number, life: number)
+	gEmit(at, TEX_SPARK, TIME, TIME:Lerp(TIMED, 0.4), n, 0.25, spread, life, 0.6, V(0, -12, 0))
+end
+-- 시계판: 둘레 고리 · 눈금 열둘 · 거꾸로 (또는 바로) 도는 두 바늘
+local function clockFace(g: Vector3, r: number, life: number, reverse: boolean, tilt: CFrame?)
+	local base = CF(g) * (tilt or CFrame.new())
+	local face = piece(V(0.3, r * 2, r * 2), base * CFrame.Angles(0, 0, math.rad(90)), TIMED, 0.5, Enum.PartType.Cylinder)
+	face.Material = Enum.Material.Glass
+	Debris:AddItem(face, life + 0.3)
+	task.delay(life, function()
+		fadeOut(face, 0.25)
+	end)
+	local rim = piece(V(0.4, r * 2.04, r * 2.04), base * CFrame.Angles(0, 0, math.rad(90)) * CF(0.1, 0, 0), TIME, 0.2, Enum.PartType.Cylinder)
+	Debris:AddItem(rim, life + 0.3)
+	task.delay(life, function()
+		fadeOut(rim, 0.25)
+	end)
+	local parts = {}
+	for i = 0, 11 do
+		local a = i / 12 * math.pi * 2
+		local big = i % 3 == 0
+		local tick = piece(V(big and 0.9 or 0.5, 0.3, r * (big and 0.22 or 0.14)), base * CF(math.sin(a) * r * 0.86, 0.3, math.cos(a) * r * 0.86) * CFrame.Angles(0, a, 0), TIME2, 0.05)
+		table.insert(parts, tick)
+	end
+	local hour = piece(V(0.8, 0.35, r * 0.55), base, TIME, 0)
+	local minute = piece(V(0.5, 0.35, r * 0.85), base, TIME2, 0)
+	table.insert(parts, hour)
+	table.insert(parts, minute)
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		if t > life or not hour.Parent then
+			conn:Disconnect()
+			for _, p in ipairs(parts) do
+				fadeOut(p, 0.25)
+			end
+			return
+		end
+		local sgn = reverse and -1 or 1
+		local am, ah = sgn * t * 9, sgn * t * 1.2
+		minute.CFrame = base * CFrame.Angles(0, am, 0) * CF(0, 0.4, -r * 0.42)
+		hour.CFrame = base * CFrame.Angles(0, ah, 0) * CF(0, 0.45, -r * 0.27)
+	end)
+end
+-- 잔상 (패시브): 조금 전의 내가 나타나 한 번 더 친다
+VFX.timeEcho = function(d)
+	local at = (d.at :: Vector3) + V(0, 2.5, 0)
+	local m = d.m
+	if typeof(m) == "Instance" and m:IsA("Model") then
+		local r0 = m:FindFirstChild("HumanoidRootPart")
+		if r0 and r0:IsA("BasePart") then
+			afterimage(m, nil, 0.45, TIME, (at - r0.Position) * V(0.5, 0, 0.5))
+		end
+	end
+	task.delay(d.delay or 0.3, function()
+		gEmit(at, TEX_SPARK, TIME2, TIME, 12, 0.5, 10, 0.4)
+		Fx.ring(at - V(0, 2, 0), TIME, 1.5, (d.radius or 8) * 1.6, 0.3)
+	end)
+end
+VFX.timeArrow = function(d)
+	local from = (d.from :: Vector3) + V(0, 2.6, 0)
+	local dir = d.dir :: Vector3
+	local len = d.length or 28
+	gStroke(from, from + dir * len, 0.12, 0.9, 0.05, TIME2, TIME, true, 0.6)
+	gStroke(from + V(0, 0.6, 0), from + dir * len + V(0, 0.6, 0), 0.16, 0.3, 0.2, TIME, TIME2, true, 0.5)
+	-- 화살 끝: 금빛 촉
+	local tip = piece(V(1.4, 1.4, 4), CF(from + dir * 2, from + dir * 3), TIME2, 0)
+	tween(tip, 0.14, { CFrame = CF(from + dir * len, from + dir * (len + 1)) }, Enum.EasingStyle.Linear)
+	task.delay(0.14, function()
+		fadeOut(tip, 0.2, V(3, 3, 8))
+		Fx.flash(from + dir * len, TIME, 16, 2, 0.2)
+		sand(from + dir * len, 14, 6, 0.8)
+	end)
+	afterimage(d.m, nil, 0.5, TIME2, -dir * 3)
+	pcall(Fx.sound, "swing", 0.6, 1.3, from)
+end
+VFX.timeGhost = function(d)
+	local m = d.m
+	local at = d.at :: Vector3
+	if typeof(m) == "Instance" and m:IsA("Model") then
+		local r0 = m:FindFirstChild("HumanoidRootPart")
+		if r0 and r0:IsA("BasePart") then
+			local to = V(at.X, r0.Position.Y, at.Z)
+			local away = (r0.Position - to)
+			away = away.Magnitude > 0.1 and V(away.X, 0, away.Z).Unit or V(0, 0, 1)
+			local spot = to + away * 3.5
+			-- 자리 옮긴 잔상: 상대 앞에 서서 반 걸음 들어가며 흐려진다
+			afterimage(m, CF(spot, to) * r0.CFrame:Inverse(), 0.45, TIME, -away * 2.5)
+		end
+	end
+	task.delay(0.12, function()
+		gEmit(at + V(0, 2.5, 0), TEX_SPARK, TIME2, TIME, 14, 0.5, 10, 0.4)
+		Fx.flash(at + V(0, 2.5, 0), TIME, 10, 1.5, 0.15)
+	end)
+end
+VFX.timeDash = function(d)
+	afterimage(d.m, nil, 0.6, TIME2)
+	local g = ground(d.at) + V(0, 0.4, 0)
+	disc(g, 1, TIME, 0.4, 0.4, d.radius or 7)
+	sand(g + V(0, 2, 0), 16, 8, 0.8)
+end
+VFX.timeDial = function(d)
+	local g = ground(d.at) + V(0, 0.35, 0)
+	clockFace(g, d.radius or 13, d.life or 0.5, true)
+	pcall(Fx.sound, "deflect", 0.5, 0.6, g)
+end
+VFX.timeSnap = function(d)
+	local g = ground(d.at) + V(0, 1, 0)
+	local r = d.radius or 13
+	Fx.ring(g, TIME2, 3, r * 2.4, 0.4)
+	Fx.flash(g + V(0, 2, 0), TIME, r * 2, 3, 0.25)
+	sand(g + V(0, 4, 0), 40, 18, 1)
+	-- 되감기: 둘레에서 가운데로 빨려드는 바늘 열둘
+	for i = 1, 12 do
+		local a = i / 12 * math.pi * 2
+		gStroke(g + V(math.cos(a) * r, 2, math.sin(a) * r), g + V(0, 2, 0), 0.12, 0.3, 0.2, TIME2, TIME, true, 0.35)
+	end
+	shake(0.6)
+end
+-- 천년일순: 하늘에 해시계가 뜨고 시간이 멈춘다 (화면 빛이 빠진다)
+local function timeStop(dur: number)
+	local cc = Instance.new("ColorCorrectionEffect")
+	cc.Parent = Lighting
+	tween(cc, 0.15, { Saturation = -0.85, Contrast = 0.15, TintColor = Color3.fromRGB(235, 225, 205) })
+	task.delay(dur, function()
+		tween(cc, 0.35, { Saturation = 0, Contrast = 0, TintColor = WHITE })
+		Debris:AddItem(cc, 0.4)
+	end)
+end
+VFX.sunDial = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 26
+	local life = d.life or 2.1
+	local cam = workspace.CurrentCamera
+	if cam and (cam.CFrame.Position - g).Magnitude < 150 then
+		timeStop(life)
+		domainTitle("천년일순", "천 년이 한순간에", 1.6)
+	end
+	-- 땅의 시계판 (거꾸로) + 하늘의 해시계 (바로, 기울어져 걸린다)
+	clockFace(g + V(0, 0.35, 0), r, life, true)
+	clockFace(g + V(0, 34, 0), r * 0.8, life, false, CFrame.Angles(math.rad(70), 0, 0))
+	-- 공중에 멈춘 금모래
+	gSwirl(function()
+		return g + V(0, 8, 0)
+	end, 16, r * 0.9, 10, life, TIME, TIME2, { width = 0.25, trail = 0.8, speed = 0.15 })
+	pcall(Fx.sound, "deflect", 0.8, 0.4, g)
+end
+VFX.hourPillar = function(d)
+	local g = ground(d.at)
+	local col = (d.col or 1) % 3 == 0 and TIME2 or TIME
+	local p = piece(V(2.2, 60, 2.2), CF(g + V(0, 30, 0)), col, 0.15, Enum.PartType.Cylinder)
+	p.CFrame = CF(g + V(0, 30, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	p.Size = V(60, 0.3, 0.3)
+	tween(p, 0.08, { Size = V(60, 2.4, 2.4) })
+	task.delay(0.1, function()
+		fadeOut(p, 0.3, V(60, 0.2, 0.2))
+	end)
+	disc(g + V(0, 0.3, 0), 1, col, 0.2, 0.35, d.radius or 6)
+	sand(g + V(0, 2, 0), 10, 6, 0.6)
+	pcall(Fx.sound, "ping", 0.25, 0.9 + (d.col or 1) * 0.06, g)
+end
+VFX.timeRelease = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 26
+	bloom(1.6, 0.7)
+	Fx.flash(g + V(0, 6, 0), TIME2, r * 3, 8, 0.4)
+	Fx.ring(g + V(0, 0.4, 0), TIME2, 5, r * 2.6, 0.6)
+	Fx.ring(g + V(0, 0.4, 0), TIME, 4, r * 1.8, 0.7)
+	Fx.ring(g + V(0, 10, 0), TIME, 2, r * 2.2, 0.5)
+	-- 흘러 버린 천 년: 시곗바늘 스물넷이 사방으로 튀고 금모래가 폭풍처럼 쏟아진다
+	for i = 1, 24 do
+		local a = i / 24 * math.pi * 2
+		gStroke(g + V(0, 3, 0), g + V(math.cos(a) * r * 1.3, math.random() * 10, math.sin(a) * r * 1.3), 0.2, 0.5, 0.3, TIME2, TIME, true, 0.6)
+	end
+	gEmit(g + V(0, 4, 0), TEX_SPARK, TIME, TIME2, 70, 1.1, 30, 1.1, 0.8, V(0, -8, 0))
+	afterimage(d.m, nil, 0.8, TIME2)
+	Fx.debris(g, 14, 30)
+	pcall(Fx.sound, "shatter", 0.8, 0.6, g)
+	shake(1.5)
+end
+-- 맞힐 때: 별가루 / 금모래
+local function attendHit(styleId: string, pos: Vector3, big: boolean)
+	if styleId == "chilseong" then
+		if big then
+			star(pos + V(0, 1, 0), 1.2, 0.35)
+		end
+		gEmit(pos, TEX_SPARK, STAR2, STAR, big and 10 or 4, 0.35, 8, 0.35)
+	else
+		sand(pos, big and 12 or 5, big and 8 or 5, 0.5)
+		gEmit(pos, TEX_SPARK, TIME2, TIME, big and 8 or 3, 0.35, 7, 0.3)
+	end
+end
+ForgeFx.attendHit = attendHit
+
 ForgeFx.idleAura = idleAura
 
 function ForgeFx.handles(data: any): boolean
