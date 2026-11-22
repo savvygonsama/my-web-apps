@@ -4154,7 +4154,13 @@ VFX.sunDial = function(d)
 	local cam = workspace.CurrentCamera
 	if cam and (cam.CFrame.Position - g).Magnitude < 150 then
 		timeStop(life)
-		domainTitle("천년일순", "천 년이 한순간에", 1.6)
+		if d.style == "gwangeum3" then
+			domainTitle("억년일순", "억 년이 한순간에", 1.6)
+		elseif d.style == "gwangeum2" then
+			domainTitle("만년일순", "만 년이 한순간에", 1.6)
+		else
+			domainTitle("천년일순", "천 년이 한순간에", 1.6)
+		end
 	end
 	-- 땅의 시계판 (거꾸로) + 하늘의 해시계 (바로, 기울어져 걸린다)
 	clockFace(g + V(0, 0.35, 0), r, life, true)
@@ -4197,6 +4203,78 @@ VFX.timeRelease = function(d)
 	Fx.debris(g, 14, 30)
 	pcall(Fx.sound, "shatter", 0.8, 0.6, g)
 	shake(1.5)
+end
+-- 종겁귀원 (초 광음신권 X): 세상의 빛이 빠지고, 등 뒤에 하늘만 한 시계가 선다
+VFX.eonClock = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 40
+	local life = d.life or 3.1
+	local cam = workspace.CurrentCamera
+	if cam and (cam.CFrame.Position - g).Magnitude < 180 then
+		timeStop(life)
+		domainTitle("종겁귀원", "시간이 끝나는 곳", 2.2)
+		bloom(0.8, 0.6)
+	end
+	local look = flatLook(d)
+	-- 등 뒤에 곧게 선 하늘 시계 (바늘이 미친 듯 거꾸로 돈다)
+	local back = g - look * (r * 0.6) + V(0, r * 0.75, 0)
+	clockFace(back, r * 0.7, life, true, CFrame.lookAt(V(), look).Rotation * CFrame.Angles(math.rad(90), 0, 0))
+	clockFace(g + V(0, 0.35, 0), r, life, false)
+	-- 멈춘 금모래가 하늘 가득 떠 있다
+	gSwirl(function()
+		return g + V(0, 12, 0)
+	end, 22, r, 16, life, TIME, TIME2, { width = 0.25, trail = 1, speed = 0.08 })
+	gSwirl(function()
+		return back
+	end, 12, r * 0.75, 4, life, TIME2, TIME, { width = 0.35, trail = 0.6, speed = -1.2, flat = true })
+	pcall(Fx.sound, "deflect", 1, 0.3, g)
+	shake(0.8)
+end
+-- 지나간 날의 나: 적 둘레에 잔상 여섯이 서서 한꺼번에 파고든다
+VFX.pastLegion = function(d)
+	local m = d.m
+	local at = d.at :: Vector3
+	if typeof(m) == "Instance" and m:IsA("Model") then
+		local r0 = m:FindFirstChild("HumanoidRootPart")
+		if r0 and r0:IsA("BasePart") then
+			local base = math.random() * math.pi * 2
+			for i = 1, 6 do
+				local a = base + i / 6 * math.pi * 2
+				local spot = V(at.X + math.cos(a) * 5, r0.Position.Y, at.Z + math.sin(a) * 5)
+				local to = V(at.X, r0.Position.Y, at.Z)
+				afterimage(m, CF(spot, to) * r0.CFrame:Inverse(), 0.4, i % 2 == 0 and TIME2 or TIME, (to - spot) * 0.6)
+			end
+		end
+	end
+	task.delay(0.18, function()
+		star(at + V(0, 2.5, 0), 1.6, 0.35, TIME)
+		gEmit(at + V(0, 2.5, 0), TEX_SPARK, TIME2, TIME, 16, 0.5, 12, 0.4)
+		Fx.ring(ground(at) + V(0, 0.3, 0), TIME, 2, 12, 0.3)
+		shake(0.3)
+	end)
+end
+-- 하늘의 시계가 산산이 깨진다: 유리 조각이 쏟아지고 멈췄던 모든 시간이 한꺼번에 터진다
+VFX.clockShatter = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 40
+	local look = flatLook(d)
+	local back = g - look * (r * 0.6) + V(0, r * 0.75, 0)
+	for i = 1, 26 do
+		local sz = V(1 + math.random() * 3, 0.3, 1 + math.random() * 3)
+		local p = piece(sz, CF(back + V((math.random() - 0.5) * r, (math.random() - 0.5) * r * 0.6, (math.random() - 0.5) * 4)) * CFrame.Angles(math.random() * 6, math.random() * 6, 0), i % 3 == 0 and TIME or TIME2, 0.2)
+		p.Material = Enum.Material.Glass
+		local fall = V((math.random() - 0.5) * r * 1.2, -r * 0.8 - math.random() * 10, (math.random() - 0.5) * r * 1.2)
+		tween(p, 0.9, { CFrame = p.CFrame * CFrame.Angles(math.random() * 4, math.random() * 4, 0) + fall, Transparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		Debris:AddItem(p, 1)
+	end
+	pcall(Fx.sound, "shatter", 1, 0.7, back)
+	Fx.flash(back, TIME2, r * 2, 6, 0.3)
+	task.delay(0.12, function()
+		VFX.timeRelease(d, TIME, TIME2, {})
+		Fx.ring(g + V(0, 0.4, 0), TIME2, 6, r * 3, 0.8)
+		bloom(2, 0.9)
+		shake(2)
+	end)
 end
 -- 맞힐 때: 별가루 / 금모래
 local function attendHit(styleId: string, pos: Vector3, big: boolean)

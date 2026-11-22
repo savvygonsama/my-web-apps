@@ -82,6 +82,7 @@ type Profile = {
 	refine: { [string]: number }?, -- 3.99.28판 제작소 권법 정련 단계 (0 ~ 10)
 	attDay: number?, -- 3.99.27판 출석: 마지막으로 받은 날 (한국 시각 날짜 번호)
 	attStreak: number?, -- 3.99.27판 출석: 이어서 들어온 날 수
+	attTotal: number?, -- 3.99.80판 출석 100일: 받은 날 수 (빠져도 끊기지 않는다)
 	lastSeen: number?, -- 3.99.26판: 마지막으로 저장한 때 (os.time, 자리를 비운 동안의 수련)
 	shards: number?, -- 3.41판 비급 조각 (강화 재료, 보스가 떨어뜨린다)
 	receipts: { string }?, -- 3.40판: 이미 준 개발자 상품 영수증 (최근 50개. 같은 구매를 두 번 주지 않게)
@@ -329,6 +330,7 @@ local function sanitize(data: any): Profile
 		end
 	end
 	p.attStreak = math.floor(num(data.attStreak, 1e6))
+	p.attTotal = math.floor(num(data.attTotal, 100))
 	-- 3.40판 개발자 상품 영수증
 	p.receipts = {}
 	if type(data.receipts) == "table" then
@@ -8567,10 +8569,20 @@ local function onPlayerAdded(player: Player)
 		local A = Config.ATTEND
 		local today = math.floor((os.time() + A.tz) / 86400)
 		local lastDay = profile.attDay or 0
-		if today > lastDay then
+		-- 3.99.80판: 들어온 날 수만큼 쌓인다 (빠져도 끊기지 않는다). 100일을 채우면 끝
+		local fresh = today > lastDay and (profile.attTotal or 0) < A.total
+		if not fresh then
+			task.delay(7, function()
+				if player.Parent then
+					Push:FireClient(player, "attend", { day = profile.attTotal or 0, total = A.total, fresh = false, coinUnit = Config.productCoins((Calc.realm(profile))) })
+				end
+			end)
+		end
+		if fresh then
 			local streak = (lastDay == today - 1) and ((profile.attStreak or 0) + 1) or 1
+			profile.attTotal = (profile.attTotal or 0) + 1
 			profile.attDay, profile.attStreak = today, streak
-			local day = (streak - 1) % #A.days + 1
+			local day = profile.attTotal
 			local rw = A.days[day]
 			local idx = Calc.realm(profile)
 			local got = {}
@@ -8620,8 +8632,8 @@ local function onPlayerAdded(player: Player)
 			st.dirty = true
 			task.delay(7, function()
 				if player.Parent then
-					toast(player, string.format("📅 출석 %d일째 (이어서 %d일) · %s", day, streak, table.concat(got, "  ")))
-					Push:FireClient(player, "attend", { day = day, streak = streak, total = #A.days, style = gotStyle })
+					toast(player, string.format("📅 출석 %d일째 · %s", day, table.concat(got, "  ")))
+					Push:FireClient(player, "attend", { day = day, total = A.total, fresh = true, style = gotStyle, coinUnit = Config.productCoins(idx) })
 					if gotStyle then
 						task.delay(2.5, function()
 							if player.Parent then

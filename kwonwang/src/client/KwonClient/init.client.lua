@@ -24,6 +24,7 @@ local Sakura = require(script:WaitForChild("Sakura"))
 local AchAura = require(script:WaitForChild("AchAura"))
 UI.previewGear = Sakura.preview
 local Titles = require(script:WaitForChild("Titles"))
+local AttendUI = require(script:WaitForChild("AttendUI"))
 Titles.init()
 local Drunk = require(script:WaitForChild("Drunk"))
 local Awake = require(script:WaitForChild("Awake"))
@@ -2164,7 +2165,7 @@ function handlers.hit(data: any)
 			if data.style == "hondon" or data.style == "janwol" or data.style == "noeun" or data.style == "gwihwa" or data.style == "sashin" then
 				pcall(ForgeFx.hit, data.style, pos, data.heavy == true, data.skill == true)
 			end
-			if data.style == "chilseong" or data.style == "gwangeum" then
+			if data.style == "chilseong" or data.style == "gwangeum" or data.style == "gwangeum2" or data.style == "gwangeum3" then
 				pcall((ForgeFx :: any).attendHit, data.style, pos, data.heavy == true or data.skill == true)
 			end
 			if data.style == "gumiho" or data.style == "heukyeom" then
@@ -2536,20 +2537,21 @@ function handlers.donors(list: any)
 	UI.setDonors(list)
 end
 
--- 3.99.27판 출석: 가운데에 크게 (일곱째 날은 금빛)
+-- 3.99.27판 출석: 가운데에 크게 (큰 보상의 날은 금빛). 3.99.80판 100일: 들어올 때마다 그 주의 보상판이 뜬다
 function handlers.attend(data: any)
-	-- 3.99.78판 출석 31일: 7 · 14 · 21 · 28일째는 큰 보상, 31일째가 가장 크다
-	local last = data.day == data.total
-	local big = Config.ATTEND.big and Config.ATTEND.big[data.day]
-	local nextBig = data.total
-	for d = data.day + 1, data.total do
-		if Config.ATTEND.big and Config.ATTEND.big[d] then
-			nextBig = d
-			break
-		end
+	if typeof(data) ~= "table" then
+		return
 	end
-	local sub = last and "한 달을 채웠다 · 가장 큰 보상" or (big and "큰 보상의 날" or string.format("이어서 %d일 · %d일째에 큰 보상", data.streak, nextBig))
-	-- 3.99.79판: 출석으로만 얻는 권법 (7일째 · 31일째)
+	local pg = Players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
+	if pg then
+		pcall(AttendUI.show, pg, data, UI.device())
+	end
+	if not data.fresh then
+		return
+	end
+	local last = data.day == data.total
+	local big = Config.ATTEND.big[data.day] == true
+	local sub = last and "백 날을 채웠다 · 마지막 보상" or (big and "큰 보상의 날" or "들어올 때마다 하루씩 쌓인다")
 	local sd = type(data.style) == "string" and Config.STYLE_BY_ID[data.style]
 	if sd then
 		sub = string.format("%s %s 을(를) 하늘이 내렸다", sd.icon, sd.name)
