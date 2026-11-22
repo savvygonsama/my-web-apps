@@ -1425,6 +1425,144 @@ function handlers.state(data: any)
 	end
 end
 
+-- 3.99.75판 첫 입장 강호 한 바퀴: 카메라가 마을 → 흑호채 → 천상계 → 지옥 → 세상 끝을 날며 한 줄씩 보여 주고, 마을로 돌아와 '권왕' 을 띄운다
+function worldTour()
+	local cam = workspace.CurrentCamera
+	local pg = player:FindFirstChildOfClass("PlayerGui")
+	if not cam or not pg then
+		return
+	end
+	local TS = game:GetService("TweenService")
+	local SY = (Config.SKY and Config.SKY.y) or 4000
+	local HY = (Config.HELL and Config.HELL.y) or 8000
+	local E = Config.EGGS and Config.EGGS.edge
+	local shots = {
+		{ from = Vector3.new(120, 160, 260), to = Vector3.new(40, 90, 160), look = Vector3.new(0, 0, 0), title = "청운 마을", sub = "맨손 하나로 시작하는 곳" },
+		{ from = Vector3.new(160, 140, -860), to = Vector3.new(90, 90, -930), look = Vector3.new(0, 10, -1020), title = "흑호채", sub = "첫 번째 두목이 기다린다" },
+		{ from = Vector3.new(420, SY + 260, 420), to = Vector3.new(260, SY + 160, 260), look = Vector3.new(0, SY, 0), title = "천상계", sub = "구름 위에 뜬 섬들" },
+		{ from = Vector3.new(380, HY + 160, 380), to = Vector3.new(220, HY + 110, 160), look = Vector3.new(0, HY, -600), title = "지옥", sub = "아홉 갈래의 땅 밑" },
+		{ from = Vector3.new(260, 200, (E and E.cliff.Z or 4780) - 420), to = Vector3.new(120, 170, (E and E.cliff.Z or 4780) - 260), look = E and E.garden or Vector3.new(0, 128, 5080), title = "세상 끝", sub = "누구도 돌아오지 못한 정원" },
+	}
+	local g = Instance.new("ScreenGui")
+	g.Name = "KwonWorldTour"
+	g.IgnoreGuiInset = true
+	g.ResetOnSpawn = false
+	g.DisplayOrder = 90
+	g.Parent = pg
+	local bars = {}
+	for k = 0, 1 do
+		local b = Instance.new("Frame")
+		b.BorderSizePixel = 0
+		b.BackgroundColor3 = Color3.new(0, 0, 0)
+		b.AnchorPoint = Vector2.new(0, k)
+		b.Position = UDim2.fromScale(0, k)
+		b.Size = UDim2.fromScale(1, 0.09)
+		b.Parent = g
+		table.insert(bars, b)
+	end
+	local fade = Instance.new("Frame")
+	fade.Size = UDim2.fromScale(1, 1)
+	fade.BackgroundColor3 = Color3.new(0, 0, 0)
+	fade.BorderSizePixel = 0
+	fade.Parent = g
+	local title = Instance.new("TextLabel")
+	title.BackgroundTransparency = 1
+	title.AnchorPoint = Vector2.new(0, 1)
+	title.Position = UDim2.new(0.06, 0, 0.82, 0)
+	title.Size = UDim2.fromScale(0.6, 0.1)
+	title.Font = Enum.Font.Antique
+	title.TextScaled = true
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.TextColor3 = Color3.new(1, 1, 1)
+	title.TextStrokeTransparency = 0.6
+	title.Parent = g
+	local sub = title:Clone()
+	sub.Position = UDim2.new(0.06, 0, 0.87, 0)
+	sub.Size = UDim2.fromScale(0.6, 0.04)
+	sub.Font = Enum.Font.GothamMedium
+	sub.TextColor3 = Color3.fromRGB(235, 220, 190)
+	sub.Parent = g
+	local skip = Instance.new("TextButton")
+	skip.AnchorPoint = Vector2.new(1, 0)
+	skip.Position = UDim2.new(0.97, 0, 0.1, 6)
+	skip.Size = UDim2.new(0, 110, 0, 34)
+	skip.BackgroundColor3 = Color3.fromRGB(30, 26, 24)
+	skip.BackgroundTransparency = 0.3
+	skip.TextColor3 = Color3.new(1, 1, 1)
+	skip.Font = Enum.Font.GothamBold
+	skip.TextSize = 16
+	skip.Text = "건너뛰기 ▶"
+	skip.Parent = g
+	local skipped = false
+	skip.MouseButton1Click:Connect(function()
+		skipped = true
+	end)
+	local oldType = cam.CameraType
+	cam.CameraType = Enum.CameraType.Scriptable
+	local function wait(sec: number)
+		local t0 = os.clock()
+		while os.clock() - t0 < sec and not skipped do
+			task.wait()
+		end
+	end
+	for _, sh in ipairs(shots) do
+		if skipped then
+			break
+		end
+		cam.CFrame = CFrame.lookAt(sh.from, sh.look)
+		title.Text, sub.Text = sh.title, sh.sub
+		title.TextTransparency, sub.TextTransparency = 1, 1
+		TS:Create(fade, TweenInfo.new(0.35), { BackgroundTransparency = 1 }):Play()
+		TS:Create(cam, TweenInfo.new(2.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { CFrame = CFrame.lookAt(sh.to, sh.look) }):Play()
+		task.delay(0.3, function()
+			TS:Create(title, TweenInfo.new(0.4), { TextTransparency = 0 }):Play()
+			TS:Create(sub, TweenInfo.new(0.4), { TextTransparency = 0.1 }):Play()
+		end)
+		wait(2.1)
+		TS:Create(fade, TweenInfo.new(0.3), { BackgroundTransparency = 0 }):Play()
+		wait(0.3)
+	end
+	-- 마지막: 마을 하늘에 '권왕'
+	if not skipped then
+		local me = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		local at = me and me:IsA("BasePart") and me.Position or Vector3.zero
+		cam.CFrame = CFrame.lookAt(at + Vector3.new(0, 60, 70), at)
+		title.Text, sub.Text = "", ""
+		local big = Instance.new("TextLabel")
+		big.BackgroundTransparency = 1
+		big.AnchorPoint = Vector2.new(0.5, 0.5)
+		big.Position = UDim2.fromScale(0.5, 0.45)
+		big.Size = UDim2.fromScale(0.5, 0.16)
+		big.Font = Enum.Font.Antique
+		big.TextScaled = true
+		big.Text = "권왕"
+		big.TextColor3 = Color3.fromRGB(255, 225, 150)
+		big.TextStrokeTransparency = 0.4
+		big.TextTransparency = 1
+		big.Parent = g
+		local bs = big:Clone()
+		bs.Position = UDim2.fromScale(0.5, 0.56)
+		bs.Size = UDim2.fromScale(0.5, 0.05)
+		bs.Font = Enum.Font.GothamMedium
+		bs.Text = "맨손 하나로 강호의 정점에"
+		bs.TextColor3 = Color3.fromRGB(240, 230, 210)
+		bs.Parent = g
+		TS:Create(fade, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
+		TS:Create(cam, TweenInfo.new(2.6, Enum.EasingStyle.Sine), { CFrame = CFrame.lookAt(at + Vector3.new(0, 14, 22), at + Vector3.new(0, 3, 0)) }):Play()
+		TS:Create(big, TweenInfo.new(0.8), { TextTransparency = 0 }):Play()
+		TS:Create(bs, TweenInfo.new(0.8), { TextTransparency = 0.1 }):Play()
+		wait(2.4)
+	end
+	cam.CameraType = oldType == Enum.CameraType.Scriptable and Enum.CameraType.Custom or oldType
+	TS:Create(fade, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
+	for _, b in ipairs(bars) do
+		TS:Create(b, TweenInfo.new(0.4), { Size = UDim2.fromScale(1, 0) }):Play()
+	end
+	task.delay(0.45, function()
+		g:Destroy()
+	end)
+end
+
 -- 중요한 장면: 서버가 고른 컷씬 (처음 한 번만)
 function handlers.cutscene(data: any)
 	local scene = Config.CUTSCENES[data.id]
@@ -1434,7 +1572,15 @@ function handlers.cutscene(data: any)
 	if state and state.seen then
 		state.seen[data.id] = true
 	end
-	Cutscene.play(scene, { m = data.m, at = data.at }, data.id == "intro" and maybeControls or nil)
+	-- 3.99.75판: 처음 들어온 사람에게는 장로의 말 전에 강호를 한 바퀴 날아 보여 준다 (천상 · 지옥 · 세상 끝까지. 화면을 누르면 건너뛴다)
+	if data.id == "intro" then
+		task.spawn(function()
+			pcall(worldTour)
+			Cutscene.play(scene, { m = data.m, at = data.at }, maybeControls)
+		end)
+		return
+	end
+	Cutscene.play(scene, { m = data.m, at = data.at }, nil)
 end
 
 -- 천층탑

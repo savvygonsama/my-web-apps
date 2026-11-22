@@ -1480,7 +1480,18 @@ local function shareGain(player: Player): number
 end
 -- 능력치를 얻는 배율 (환생할수록 많이)
 local function gainMult(p: Profile): number
-	return Config.rebirthGain(p.rebirth or 0) * Calc.perk(p, "gain")
+	-- 3.99.75판 초반 성장: 첫 삶의 낮은 경지는 능력치를 더 (특급까지 ×2, 초절정까지 ×1.5)
+	local early = 1
+	if (p.rebirth or 0) == 0 then
+		local idx = Calc.realm(p)
+		for _, e in ipairs(Config.EARLY_GAIN or {}) do
+			if idx <= e[1] then
+				early = e[2]
+				break
+			end
+		end
+	end
+	return Config.rebirthGain(p.rebirth or 0) * Calc.perk(p, "gain") * early
 end
 
 local function refreshFighter(player: Player)

@@ -5268,4 +5268,13 @@ return {
 	["검역 전개"] = "Sword Domain Expansion",
 	["검역"] = "Sword Domain",
 	["두 손가락 · ＋－: 확대 · 끌기: 이동 · X: 닫기"] = "Pinch · ＋－: zoom · drag: move · X: close",
+	["맨손 하나로 시작하는 곳"] = "Where it all begins, bare-handed",
+	["첫 번째 두목이 기다린다"] = "The first chief awaits",
+	["구름 위에 뜬 섬들"] = "Islands floating above the clouds",
+	["아홉 갈래의 땅 밑"] = "Nine realms beneath the earth",
+	["누구도 돌아오지 못한 정원"] = "The garden no one has returned from",
+	["건너뛰기 ▶"] = "Skip ▶",
+	["맨손 하나로 강호의 정점에"] = "To the peak of the martial world, bare-handed",
+	["새 권법은 써야 손에 붙는다. 그 권법으로 적을 때려 숙련을 2까지 올려라. 숙련 2에 두 번째 기술(R)이 열린다."] = "A new style only sticks if you use it. Hit enemies with it to raise its mastery to 2. At mastery 2 its second skill (R) opens.",
+	["한 권법의 숙련을 4까지 올려라. 숙련 4에 그 권법의 오의(G)가 열린다. 내공이 가득 찼을 때 쓰는 한 수다."] = "Raise a style's mastery to 4. At mastery 4 its Secret Art (G) opens. It's the move you use when your Ki is full.",
 }
