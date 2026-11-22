@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.76" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.77" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3364,8 +3364,6 @@ end
 Config.SKILL_UNLOCK = { E = 1, R = 3, G = 5, X = 5 }
 -- 3.99.75판 초반 성장: 첫 삶에서 경지 n 이하일 때 얻는 능력치 배 ({ 경지, 배 } 차례로 본다)
 Config.EARLY_GAIN = { { 4, 2 }, { 6, 1.5 } }
--- 3.99.76판 꿈 체험: 첫 기술을 배운 뒤 (이야기 5장) 한 번, 하늘의 꿈 마당에서 전설 권법을 오의까지 열린 채 쥐고 졸병 세 무리를 쓸어버린다 (보상 없음)
-Config.DREAM = { at = Vector3.new(-1700, 2600, -1700), radius = 60, style = "yeolhwa", story = 5, waves = 3, perWave = 7, time = 75, pool = { "thug", "bandit", "spearman" } }
 -- 초 오의 (초월 권법의 X): 오의보다 이만큼 더 세다
 -- 매화·벚꽃 꽃잎: 마지막으로 때린 뒤 6초 (가득 차면 15초) 남아 있다가 1초에 3잎씩 진다
 Config.PETAL_KEEP = 6
