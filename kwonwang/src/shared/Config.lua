@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.75" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.76" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3361,9 +3361,11 @@ end
 function Config.masteryDmg(lv: number): number
 	return 1 + 0.03 * (math.min(lv, 10) - 1) + 0.01 * math.max(0, lv - 10)
 end
-Config.SKILL_UNLOCK = { E = 1, R = 2, G = 4, X = 4 } -- 3.99.75판: R 3 → 2 · 오의 5 → 4 (초반에 오의가 너무 늦게 열렸다)
+Config.SKILL_UNLOCK = { E = 1, R = 3, G = 5, X = 5 }
 -- 3.99.75판 초반 성장: 첫 삶에서 경지 n 이하일 때 얻는 능력치 배 ({ 경지, 배 } 차례로 본다)
 Config.EARLY_GAIN = { { 4, 2 }, { 6, 1.5 } }
+-- 3.99.76판 꿈 체험: 첫 기술을 배운 뒤 (이야기 5장) 한 번, 하늘의 꿈 마당에서 전설 권법을 오의까지 열린 채 쥐고 졸병 세 무리를 쓸어버린다 (보상 없음)
+Config.DREAM = { at = Vector3.new(-1700, 2600, -1700), radius = 60, style = "yeolhwa", story = 5, waves = 3, perWave = 7, time = 75, pool = { "thug", "bandit", "spearman" } }
 -- 초 오의 (초월 권법의 X): 오의보다 이만큼 더 세다
 -- 매화·벚꽃 꽃잎: 마지막으로 때린 뒤 6초 (가득 차면 15초) 남아 있다가 1초에 3잎씩 진다
 Config.PETAL_KEEP = 6
@@ -4129,12 +4131,12 @@ Config.Story = {
 	{ title = "사부를 찾아서", text = "삼재권만으로는 멀리 못 간다. 강호에는 열 사부가 숨어 산다. 안내판의 소문을 따라 한 분을 찾아가라. 남쪽 주막의 취한 노인 이야기가 가장 가깝지.", goal = { kind = "found", n = 1, at = Vector3.new(0, 0, 620) }, reward = { coins = 200 } },
 	{ title = "사부의 시험", text = "사부는 아무나 받지 않는다. 사부 곁에서 T를 눌러 시험을 청하고 사부마다 다른 시험(흘리기·버티기·제자 연무)을 넘어라.", goal = { kind = "trial", n = 1 }, reward = { coins = 300, stats = 25 } },
 	{ title = "첫 진짜 권법", text = "시험을 넘었다면 은자를 바치고 그 권법을 배워라. 권법 창(메뉴)에서 언제든 바꿔 쓸 수 있다.", goal = { kind = "learn", n = 2 }, reward = { coins = 300 } },
-	{ title = "손에 익히기", text = "새 권법은 써야 손에 붙는다. 그 권법으로 적을 때려 숙련을 2까지 올려라. 숙련 2에 두 번째 기술(R)이 열린다.", goal = { kind = "mastery", n = 2 }, reward = { coins = 400, stats = 30 } },
+	{ title = "손에 익히기", text = "새 권법은 써야 손에 붙는다. 그 권법으로 적을 때려 숙련을 3까지 올려라. 숙련 3에 두 번째 기술(R)이 열린다.", goal = { kind = "mastery", n = 3 }, reward = { coins = 400, stats = 30 } },
 	{ title = "일류의 벽", text = "수련과 싸움으로 능력치를 쌓아 일류에 올라라. 경지가 오를 때마다 몸이 크게 달라진다. 일류부터 철사장 수련이 열린다.", goal = { kind = "realm", n = 3 }, reward = { coins = 500, stats = 40 } },
 	{ title = "두 번째 사부", text = "한 권법만 쓰면 상대가 읽는다. 안내판의 소문을 따라 다른 사부를 찾아가 시험을 넘고 권법을 하나 더 익혀라.", goal = { kind = "learn", n = 3 }, reward = { coins = 600, stats = 50 } },
 	{ title = "특급에 오르다", text = "일류를 넘어 특급에 오르면 몸이 한 번 더 달라진다. 특급부터 운기조식이 열린다. 수련과 사냥으로 능력치를 채워 특급에 올라라.", goal = { kind = "realm", n = 4 }, reward = { coins = 800, stats = 100 } },
 	{ title = "흑호채", text = "먼 북쪽 산적 소굴의 두목 흑호가 마을을 노린다. 놈을 꺾어라.", goal = { kind = "boss", id = "heukho", at = Vector3.new(0, 0, -1020) }, reward = { coins = 1000, stats = 150 } },
-	{ title = "오의를 열어라", text = "한 권법의 숙련을 4까지 올려라. 숙련 4에 그 권법의 오의(G)가 열린다. 내공이 가득 찼을 때 쓰는 한 수다.", goal = { kind = "mastery", n = 4 }, reward = { coins = 1000, stats = 150 } },
+	{ title = "오의를 열어라", text = "한 권법의 숙련을 5까지 올려라. 숙련 5에 그 권법의 오의(G)가 열린다. 내공이 가득 찼을 때 쓰는 한 수다.", goal = { kind = "mastery", n = 5 }, reward = { coins = 1000, stats = 150 } },
 	{ title = "심법 두루마리", text = "적과 보스는 가끔 심법 두루마리를 떨어뜨린다. 만물상의 📜 심법 탭에서 두루마리를 펼쳐 심법 하나를 얻고 세 칸 중 하나에 끼워라. 심법 하나가 권법 전체를 받쳐 준다.", goal = { kind = "manual", n = 1 }, reward = { coins = 1000 } },
 	{ title = "서해의 해적", text = "서쪽 끝 서해 절벽에 해적 떼가 배를 댔다. 특급이면 해볼 만하다. 해적 도객 여덟을 쓰러뜨려라.", goal = { kind = "kill", id = "pirate", n = 8, at = Vector3.new(-1800, 0, -250) }, reward = { coins = 1200, stats = 200 } },
 	{ title = "심법 셋", text = "심법은 셋까지 끼울 수 있다. 두루마리를 펼쳐 심법을 셋 모아라. 좋은 심법이 없어도 칸을 비워 두는 것보다 낫다.", goal = { kind = "manual", n = 3 }, reward = { coins = 1800, stats = 200 } },

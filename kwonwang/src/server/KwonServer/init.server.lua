@@ -664,6 +664,13 @@ local function saveProfile(player: Player, final: boolean?)
 	end
 	saving += 1
 	local out = table.clone(p) :: any
+	-- 3.99.76판 꿈 체험 중이면 꿈의 권법 · 숙련이 아니라 원래 것을 저장한다
+	local dm = (st :: any).dream
+	if dm then
+		out.style = dm.style
+		out.mastery = table.clone(p.mastery)
+		out.mastery[dm.dreamStyle] = dm.mastery
+	end
 	out._job, out._open, out._t = JOB, not final, os.time()
 	out.lastSeen = os.time()
 	p.lastSeen = out.lastSeen
@@ -1871,6 +1878,15 @@ function Story.advance(player: Player, line: string?)
 	giveReward(player, p, ch)
 	L.story = math.min(#list, L.story + 1)
 	L.prog = 0
+	-- 3.99.76판 꿈 체험: 첫 기술을 배운 뒤 한 번
+	if ln == "ground" and Config.DREAM and L.story == Config.DREAM.story and not p.seen.dream then
+		task.delay(3, function()
+			local DR = (_G :: any).KwonDream
+			if DR and player.Parent then
+				DR.start(player)
+			end
+		end)
+	end
 	-- 3.99.3판: 이미 이룬 경지 장은 받지 않아도 바로 넘긴다 (사냥하다 보면 경지가 먼저 올라 '절정에 올라라' 가 이미 화경일 때 나왔다)
 	local skipped = {}
 	while ln == "ground" do
@@ -2826,11 +2842,12 @@ Combat.init(PushNear, {
 				end
 				-- 3.20판 도감 (보스 수를 센 뒤에)
 				Dex.onKill(killer, p, (f :: any).typeId, isBossKill)
-				addMastery(killer, p, xp * (vip and PS.vipMastery or 1))
+				-- 3.99.76판: 처치 숙련은 경험치가 클수록 덜 늘게 (후반 적의 경험치가 수만이라 한 마리에 숙련이 몇 단계씩 올랐다)
+				addMastery(killer, p, math.min(xp, 20 + 2 * math.sqrt(math.max(0, xp))) * (vip and PS.vipMastery or 1))
 				-- 1.5판: 쓰러뜨린 적의 전투력만큼 능력치가 오른다 (네 능력치에 고루). 시험·관문·심마의 상대는 빼고
 				local statGain = 0
 				-- 2.7.6판: 천층탑의 적도 능력치를 준다 (시련 표시가 붙어 있어 지금까지 하나도 오르지 않았다. 몫은 KILL_GAIN.tower)
-				if (not f.trialOwner or f.towerOwner) and not f.gateOwner and not f.simmaOwner and not f.raid and not (f.npc :: any).dummy then
+				if (not f.trialOwner or f.towerOwner) and not f.gateOwner and not f.simmaOwner and not f.raid and not f.dreamOwner and not (f.npc :: any).dummy then
 					local KG = Config.KILL_GAIN
 					-- 2.0판: 얻는 양은 쓰러뜨린 적의 전투력으로만 정해진다
 					-- 2.7.4판: 나보다 훨씬 센 적은 처치 몫이 가파르게 늘어 (전투력 1.5배에 능력치 3.4배) 몇 마리면 경지가 올랐다. 내 수준 적의 OVER_CAP배까지만
@@ -2938,7 +2955,8 @@ Combat.init(PushNear, {
 		if att.player and not opt.chain then
 			local p = profiles[att.player]
 			if p then
-				addMastery(att.player, p, 1 + dmg * 0.05)
+				-- 3.99.76판: 맞힘 숙련은 피해 크기가 아니라 상대 체력의 몇 할을 깎았는지로 (후반엔 피해가 수억이라 한 대에 숙련이 몇 단계씩 올랐다)
+				addMastery(att.player, p, 1 + math.min(4, dmg / math.max(1, _tgt.maxHp or 1) * 20))
 			end
 		end
 	end,
@@ -7654,7 +7672,112 @@ do
 		end
 	end)
 end
-(_G :: any).KwonKarma = Karma
+-- 3.99.76판 꿈 체험: 꿈 마당에서 잠깐 전설 권법을 쥔다. 끝나면 (또는 나가면) 원래 권법 · 숙련으로 돌아간다 (저장도 원래 것으로)
+local Dream = {}
+function Dream.finish(player: Player)
+	local p, st = profiles[player], states[player] :: any
+	if not p or not st or not st.dream then
+		return
+	end
+	local dm = st.dream
+	st.dream = nil
+	p.style = dm.style
+	p.mastery[dm.dreamStyle] = dm.mastery
+	for _, ef in ipairs(dm.foes) do
+		if not ef.dead then
+			pcall(Npc.despawn, ef)
+		end
+	end
+	st.dirty = true
+	refreshFighter(player)
+	local char = player.Character
+	if char and dm.back then
+		char:PivotTo(dm.back)
+	end
+	pushState(player)
+	Push:FireClient(player, "dream", { stage = "end", style = dm.dreamStyle })
+end
+function Dream.start(player: Player)
+	local D = Config.DREAM
+	local p, st = profiles[player], states[player] :: any
+	local f = Combat.fighterOfPlayer(player)
+	if BATTLE or not D or not p or not st or not f or f.dead or st.dream or p.seen.dream or activeTrial[player] or Tower.active(player) then
+		return
+	end
+	p.seen.dream = true
+	st.dirty = true
+	local DS = D.style
+	local token = { style = p.style, dreamStyle = DS, mastery = p.mastery[DS], back = f.root.CFrame, foes = {} }
+	st.dream = token
+	p.mastery[DS] = { lv = 10, xp = 0 }
+	p.style = DS
+	refreshFighter(player)
+	local char = player.Character
+	local at = D.at + Vector3.new(0, 4, D.radius * 0.4)
+	if char then
+		char:PivotTo(CFrame.lookAt(at, Vector3.new(D.at.X, at.Y, D.at.Z)))
+	end
+	f.hp = f.maxHp
+	f.chi = (f :: any).chiMax or Config.CHI_MAX
+	Combat.sync(f)
+	pushState(player)
+	Push:FireClient(player, "dream", { stage = "start", style = DS })
+	task.spawn(function()
+		local t0 = os.clock()
+		for w = 1, D.waves do
+			if st.dream ~= token then
+				return
+			end
+			local foes = {}
+			for i = 1, D.perWave do
+				local a = i / D.perWave * math.pi * 2 + w
+				local pos = D.at + Vector3.new(math.cos(a) * 26, 3, math.sin(a) * 26)
+				local ok, e = pcall(Npc.spawn, D.pool[math.random(#D.pool)], false, pos, "trial")
+				if ok and e then
+					local ef = e.f :: any
+					ef.dreamOwner = player
+					-- 두세 대면 쓰러지고 거의 아프지 않다 (꿈이니까)
+					ef.maxHp = math.max(1, math.floor(f.dmgMult * 40))
+					ef.hp = ef.maxHp
+					ef.dmgMult *= 0.02
+					Combat.sync(ef)
+					e.target = f
+					table.insert(foes, ef)
+					table.insert(token.foes, ef)
+				end
+			end
+			Push:FireClient(player, "dream", { stage = "wave", n = w, of = D.waves })
+			while st.dream == token and os.clock() - t0 < D.time do
+				local alive = 0
+				for _, ef in ipairs(foes) do
+					if not ef.dead and ef.root.Parent then
+						alive += 1
+					end
+				end
+				local ff = Combat.fighterOfPlayer(player)
+				if alive == 0 or not ff or ff.dead then
+					break
+				end
+				-- 꿈 속에선 내공이 마르지 않는다 (오의를 마음껏)
+				ff.chi = (ff :: any).chiMax or Config.CHI_MAX
+				Combat.sync(ff)
+				task.wait(0.4)
+			end
+			if os.clock() - t0 >= D.time then
+				break
+			end
+		end
+		if st.dream == token then
+			task.wait(1.5)
+			Dream.finish(player)
+		end
+	end)
+end
+Players.PlayerRemoving:Connect(function(player: Player)
+	pcall(Dream.finish, player)
+end)
+;(_G :: any).KwonDream = Dream
+;(_G :: any).KwonKarma = Karma
 if W.karmaMirror then
 	W.karmaMirror.Triggered:Connect(function(player: Player)
 		Karma.reflect(player)

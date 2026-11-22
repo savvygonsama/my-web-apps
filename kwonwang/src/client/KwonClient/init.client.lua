@@ -2539,6 +2539,40 @@ function handlers.attend(data: any)
 	UI.banner(string.format("📅 출석 %d일째", data.day), seventh and "일곱째 날 · 가장 큰 보상" or string.format("이어서 %d일 · 일곱째 날이 가장 크다", data.streak), seventh and Color3.fromRGB(255, 210, 110) or Color3.fromRGB(150, 220, 255))
 end
 
+-- 3.99.76판 꿈 체험: 꿈에 빠지고 (분홍빛 · 흐릿한 가장자리), 무리마다 알리고, 깨어나면 그 권법을 어디서 배우는지
+local dreamFx: any = nil
+function handlers.dream(data: any)
+	local st = Config.STYLE_BY_ID[data.style or ""]
+	local Lighting = game:GetService("Lighting")
+	local TS = game:GetService("TweenService")
+	if data.stage == "start" then
+		UI.flash(Color3.new(1, 1, 1), 0.8)
+		local cc = Instance.new("ColorCorrectionEffect")
+		cc.Parent = Lighting
+		TS:Create(cc, TweenInfo.new(0.8), { TintColor = Color3.fromRGB(255, 228, 240), Brightness = 0.06, Saturation = 0.15 }):Play()
+		local blur = Instance.new("DepthOfFieldEffect")
+		blur.FarIntensity = 0.5
+		blur.FocusDistance = 30
+		blur.InFocusRadius = 40
+		blur.Parent = Lighting
+		dreamFx = { cc = cc, blur = blur }
+		UI.banner("꿈 · 언젠가의 너", string.format("%s %s이(가) 손에 깃들었다. 오의(G)까지 마음껏 휘둘러라", st and st.icon or "", st and st.name or ""), Color3.fromRGB(255, 190, 215))
+		shake(0.6)
+	elseif data.stage == "wave" then
+		UI.toast(string.format("🌸 꿈속의 무리 %d / %d", data.n or 1, data.of or 3))
+	elseif data.stage == "end" then
+		UI.flash(Color3.new(1, 1, 1), 0.9)
+		if dreamFx then
+			TS:Create(dreamFx.cc, TweenInfo.new(1), { TintColor = Color3.new(1, 1, 1), Brightness = 0, Saturation = 0 }):Play()
+			game:GetService("Debris"):AddItem(dreamFx.cc, 1.1)
+			dreamFx.blur:Destroy()
+			dreamFx = nil
+		end
+		local m = st and Config.MASTERS[st.id]
+		UI.banner("꿈에서 깼다", m and string.format("그 불꽃은 언젠가 네 것이 된다 · %s의 %s에게서 배운다", m.region, m.name) or "그 힘은 언젠가 네 것이 된다", Color3.fromRGB(255, 220, 160))
+	end
+end
+
 -- 3.99.56판 전생의 업경: 업이 거울에서 걸어 나온다 (핏빛 섬광, 땅울림)
 function handlers.karmaRise(data: any)
 	if typeof(data) ~= "table" or typeof(data.at) ~= "Vector3" then

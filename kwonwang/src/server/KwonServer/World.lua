@@ -8795,6 +8795,41 @@ function World.build(): any
 		{ "먹물 굴", function()
 			inkShrine(out)
 		end },
+		{ "꿈 마당", function()
+			-- 3.99.76판 꿈 체험의 마당: 구름 위에 떠 있는 흰 대리석 단, 둘레의 벚나무와 흩날리는 꽃잎, 분홍빛 등
+			local D = Config.DREAM
+			if not D then
+				return
+			end
+			local f = Instance.new("Folder")
+			f.Name = "DreamYard"
+			f.Parent = folder
+			local c = D.at
+			disc("DreamFloor", c - Vector3.new(0, 1.5, 0), D.radius, 3, Color3.fromRGB(246, 238, 244), Enum.Material.Marble, f)
+			disc("DreamRim", c - Vector3.new(0, 1.45, 0), D.radius + 1.2, 2.9, Color3.fromRGB(255, 190, 215), Enum.Material.Neon, f, false)
+			disc("DreamCloudA", c - Vector3.new(0, 6, 0), D.radius * 1.3, 6, Color3.fromRGB(255, 240, 248), Enum.Material.SmoothPlastic, f, false).Transparency = 0.35
+			disc("DreamCloudB", c - Vector3.new(0, 10, 0), D.radius * 1.6, 5, Color3.fromRGB(255, 232, 244), Enum.Material.SmoothPlastic, f, false).Transparency = 0.55
+			for k = 0, 9 do
+				local a = k / 10 * math.pi * 2
+				tree(c + Vector3.new(math.cos(a) * (D.radius - 6), 0, math.sin(a) * (D.radius - 6)), rng:NextNumber(1.1, 1.5), f, true)
+			end
+			for k = 0, 5 do
+				local a = k / 6 * math.pi * 2 + 0.3
+				local lamp = part({ Name = "DreamLamp", Size = Vector3.new(1.6, 2.2, 1.6), Position = c + Vector3.new(math.cos(a) * 34, 7, math.sin(a) * 34), Color = Color3.fromRGB(255, 200, 225), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+				light(lamp, Color3.fromRGB(255, 190, 220), 40, 1.4)
+			end
+			local sky = part({ Name = "DreamPetals", Size = Vector3.new(D.radius * 2, 1, D.radius * 2), Position = c + Vector3.new(0, 40, 0), Transparency = 1, CanCollide = false, Parent = f })
+			local e = Instance.new("ParticleEmitter")
+			e.Rate = 40
+			e.Color = ColorSequence.new(Color3.fromRGB(255, 190, 215))
+			e.Size = NumberSequence.new(0.4)
+			e.Lifetime = NumberRange.new(7, 10)
+			e.Speed = NumberRange.new(3, 6)
+			e.Acceleration = Vector3.new(1.5, -1.2, 0.8)
+			e.EmissionDirection = Enum.NormalId.Bottom
+			e.RotSpeed = NumberRange.new(-120, 120)
+			e.Parent = sky
+		end },
 		{ "천상계", function()
 			skyWorld(out)
 		end },

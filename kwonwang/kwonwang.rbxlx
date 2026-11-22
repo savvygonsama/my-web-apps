@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.75" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.76" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3381,9 +3381,11 @@ end
 function Config.masteryDmg(lv: number): number
 	return 1 + 0.03 * (math.min(lv, 10) - 1) + 0.01 * math.max(0, lv - 10)
 end
-Config.SKILL_UNLOCK = { E = 1, R = 2, G = 4, X = 4 } -- 3.99.75판: R 3 → 2 · 오의 5 → 4 (초반에 오의가 너무 늦게 열렸다)
+Config.SKILL_UNLOCK = { E = 1, R = 3, G = 5, X = 5 }
 -- 3.99.75판 초반 성장: 첫 삶에서 경지 n 이하일 때 얻는 능력치 배 ({ 경지, 배 } 차례로 본다)
 Config.EARLY_GAIN = { { 4, 2 }, { 6, 1.5 } }
+-- 3.99.76판 꿈 체험: 첫 기술을 배운 뒤 (이야기 5장) 한 번, 하늘의 꿈 마당에서 전설 권법을 오의까지 열린 채 쥐고 졸병 세 무리를 쓸어버린다 (보상 없음)
+Config.DREAM = { at = Vector3.new(-1700, 2600, -1700), radius = 60, style = "yeolhwa", story = 5, waves = 3, perWave = 7, time = 75, pool = { "thug", "bandit", "spearman" } }
 -- 초 오의 (초월 권법의 X): 오의보다 이만큼 더 세다
 -- 매화·벚꽃 꽃잎: 마지막으로 때린 뒤 6초 (가득 차면 15초) 남아 있다가 1초에 3잎씩 진다
 Config.PETAL_KEEP = 6
@@ -4149,12 +4151,12 @@ Config.Story = {
 	{ title = "사부를 찾아서", text = "삼재권만으로는 멀리 못 간다. 강호에는 열 사부가 숨어 산다. 안내판의 소문을 따라 한 분을 찾아가라. 남쪽 주막의 취한 노인 이야기가 가장 가깝지.", goal = { kind = "found", n = 1, at = Vector3.new(0, 0, 620) }, reward = { coins = 200 } },
 	{ title = "사부의 시험", text = "사부는 아무나 받지 않는다. 사부 곁에서 T를 눌러 시험을 청하고 사부마다 다른 시험(흘리기·버티기·제자 연무)을 넘어라.", goal = { kind = "trial", n = 1 }, reward = { coins = 300, stats = 25 } },
 	{ title = "첫 진짜 권법", text = "시험을 넘었다면 은자를 바치고 그 권법을 배워라. 권법 창(메뉴)에서 언제든 바꿔 쓸 수 있다.", goal = { kind = "learn", n = 2 }, reward = { coins = 300 } },
-	{ title = "손에 익히기", text = "새 권법은 써야 손에 붙는다. 그 권법으로 적을 때려 숙련을 2까지 올려라. 숙련 2에 두 번째 기술(R)이 열린다.", goal = { kind = "mastery", n = 2 }, reward = { coins = 400, stats = 30 } },
+	{ title = "손에 익히기", text = "새 권법은 써야 손에 붙는다. 그 권법으로 적을 때려 숙련을 3까지 올려라. 숙련 3에 두 번째 기술(R)이 열린다.", goal = { kind = "mastery", n = 3 }, reward = { coins = 400, stats = 30 } },
 	{ title = "일류의 벽", text = "수련과 싸움으로 능력치를 쌓아 일류에 올라라. 경지가 오를 때마다 몸이 크게 달라진다. 일류부터 철사장 수련이 열린다.", goal = { kind = "realm", n = 3 }, reward = { coins = 500, stats = 40 } },
 	{ title = "두 번째 사부", text = "한 권법만 쓰면 상대가 읽는다. 안내판의 소문을 따라 다른 사부를 찾아가 시험을 넘고 권법을 하나 더 익혀라.", goal = { kind = "learn", n = 3 }, reward = { coins = 600, stats = 50 } },
 	{ title = "특급에 오르다", text = "일류를 넘어 특급에 오르면 몸이 한 번 더 달라진다. 특급부터 운기조식이 열린다. 수련과 사냥으로 능력치를 채워 특급에 올라라.", goal = { kind = "realm", n = 4 }, reward = { coins = 800, stats = 100 } },
 	{ title = "흑호채", text = "먼 북쪽 산적 소굴의 두목 흑호가 마을을 노린다. 놈을 꺾어라.", goal = { kind = "boss", id = "heukho", at = Vector3.new(0, 0, -1020) }, reward = { coins = 1000, stats = 150 } },
-	{ title = "오의를 열어라", text = "한 권법의 숙련을 4까지 올려라. 숙련 4에 그 권법의 오의(G)가 열린다. 내공이 가득 찼을 때 쓰는 한 수다.", goal = { kind = "mastery", n = 4 }, reward = { coins = 1000, stats = 150 } },
+	{ title = "오의를 열어라", text = "한 권법의 숙련을 5까지 올려라. 숙련 5에 그 권법의 오의(G)가 열린다. 내공이 가득 찼을 때 쓰는 한 수다.", goal = { kind = "mastery", n = 5 }, reward = { coins = 1000, stats = 150 } },
 	{ title = "심법 두루마리", text = "적과 보스는 가끔 심법 두루마리를 떨어뜨린다. 만물상의 📜 심법 탭에서 두루마리를 펼쳐 심법 하나를 얻고 세 칸 중 하나에 끼워라. 심법 하나가 권법 전체를 받쳐 준다.", goal = { kind = "manual", n = 1 }, reward = { coins = 1000 } },
 	{ title = "서해의 해적", text = "서쪽 끝 서해 절벽에 해적 떼가 배를 댔다. 특급이면 해볼 만하다. 해적 도객 여덟을 쓰러뜨려라.", goal = { kind = "kill", id = "pirate", n = 8, at = Vector3.new(-1800, 0, -250) }, reward = { coins = 1200, stats = 200 } },
 	{ title = "심법 셋", text = "심법은 셋까지 끼울 수 있다. 두루마리를 펼쳐 심법을 셋 모아라. 좋은 심법이 없어도 칸을 비워 두는 것보다 낫다.", goal = { kind = "manual", n = 3 }, reward = { coins = 1800, stats = 200 } },
@@ -12105,6 +12107,13 @@ local function saveProfile(player: Player, final: boolean?)
 	end
 	saving += 1
 	local out = table.clone(p) :: any
+	-- 3.99.76판 꿈 체험 중이면 꿈의 권법 · 숙련이 아니라 원래 것을 저장한다
+	local dm = (st :: any).dream
+	if dm then
+		out.style = dm.style
+		out.mastery = table.clone(p.mastery)
+		out.mastery[dm.dreamStyle] = dm.mastery
+	end
 	out._job, out._open, out._t = JOB, not final, os.time()
 	out.lastSeen = os.time()
 	p.lastSeen = out.lastSeen
@@ -13312,6 +13321,15 @@ function Story.advance(player: Player, line: string?)
 	giveReward(player, p, ch)
 	L.story = math.min(#list, L.story + 1)
 	L.prog = 0
+	-- 3.99.76판 꿈 체험: 첫 기술을 배운 뒤 한 번
+	if ln == "ground" and Config.DREAM and L.story == Config.DREAM.story and not p.seen.dream then
+		task.delay(3, function()
+			local DR = (_G :: any).KwonDream
+			if DR and player.Parent then
+				DR.start(player)
+			end
+		end)
+	end
 	-- 3.99.3판: 이미 이룬 경지 장은 받지 않아도 바로 넘긴다 (사냥하다 보면 경지가 먼저 올라 '절정에 올라라' 가 이미 화경일 때 나왔다)
 	local skipped = {}
 	while ln == "ground" do
@@ -14267,11 +14285,12 @@ Combat.init(PushNear, {
 				end
 				-- 3.20판 도감 (보스 수를 센 뒤에)
 				Dex.onKill(killer, p, (f :: any).typeId, isBossKill)
-				addMastery(killer, p, xp * (vip and PS.vipMastery or 1))
+				-- 3.99.76판: 처치 숙련은 경험치가 클수록 덜 늘게 (후반 적의 경험치가 수만이라 한 마리에 숙련이 몇 단계씩 올랐다)
+				addMastery(killer, p, math.min(xp, 20 + 2 * math.sqrt(math.max(0, xp))) * (vip and PS.vipMastery or 1))
 				-- 1.5판: 쓰러뜨린 적의 전투력만큼 능력치가 오른다 (네 능력치에 고루). 시험·관문·심마의 상대는 빼고
 				local statGain = 0
 				-- 2.7.6판: 천층탑의 적도 능력치를 준다 (시련 표시가 붙어 있어 지금까지 하나도 오르지 않았다. 몫은 KILL_GAIN.tower)
-				if (not f.trialOwner or f.towerOwner) and not f.gateOwner and not f.simmaOwner and not f.raid and not (f.npc :: any).dummy then
+				if (not f.trialOwner or f.towerOwner) and not f.gateOwner and not f.simmaOwner and not f.raid and not f.dreamOwner and not (f.npc :: any).dummy then
 					local KG = Config.KILL_GAIN
 					-- 2.0판: 얻는 양은 쓰러뜨린 적의 전투력으로만 정해진다
 					-- 2.7.4판: 나보다 훨씬 센 적은 처치 몫이 가파르게 늘어 (전투력 1.5배에 능력치 3.4배) 몇 마리면 경지가 올랐다. 내 수준 적의 OVER_CAP배까지만
@@ -14379,7 +14398,8 @@ Combat.init(PushNear, {
 		if att.player and not opt.chain then
 			local p = profiles[att.player]
 			if p then
-				addMastery(att.player, p, 1 + dmg * 0.05)
+				-- 3.99.76판: 맞힘 숙련은 피해 크기가 아니라 상대 체력의 몇 할을 깎았는지로 (후반엔 피해가 수억이라 한 대에 숙련이 몇 단계씩 올랐다)
+				addMastery(att.player, p, 1 + math.min(4, dmg / math.max(1, _tgt.maxHp or 1) * 20))
 			end
 		end
 	end,
@@ -19095,7 +19115,112 @@ do
 		end
 	end)
 end
-(_G :: any).KwonKarma = Karma
+-- 3.99.76판 꿈 체험: 꿈 마당에서 잠깐 전설 권법을 쥔다. 끝나면 (또는 나가면) 원래 권법 · 숙련으로 돌아간다 (저장도 원래 것으로)
+local Dream = {}
+function Dream.finish(player: Player)
+	local p, st = profiles[player], states[player] :: any
+	if not p or not st or not st.dream then
+		return
+	end
+	local dm = st.dream
+	st.dream = nil
+	p.style = dm.style
+	p.mastery[dm.dreamStyle] = dm.mastery
+	for _, ef in ipairs(dm.foes) do
+		if not ef.dead then
+			pcall(Npc.despawn, ef)
+		end
+	end
+	st.dirty = true
+	refreshFighter(player)
+	local char = player.Character
+	if char and dm.back then
+		char:PivotTo(dm.back)
+	end
+	pushState(player)
+	Push:FireClient(player, "dream", { stage = "end", style = dm.dreamStyle })
+end
+function Dream.start(player: Player)
+	local D = Config.DREAM
+	local p, st = profiles[player], states[player] :: any
+	local f = Combat.fighterOfPlayer(player)
+	if BATTLE or not D or not p or not st or not f or f.dead or st.dream or p.seen.dream or activeTrial[player] or Tower.active(player) then
+		return
+	end
+	p.seen.dream = true
+	st.dirty = true
+	local DS = D.style
+	local token = { style = p.style, dreamStyle = DS, mastery = p.mastery[DS], back = f.root.CFrame, foes = {} }
+	st.dream = token
+	p.mastery[DS] = { lv = 10, xp = 0 }
+	p.style = DS
+	refreshFighter(player)
+	local char = player.Character
+	local at = D.at + Vector3.new(0, 4, D.radius * 0.4)
+	if char then
+		char:PivotTo(CFrame.lookAt(at, Vector3.new(D.at.X, at.Y, D.at.Z)))
+	end
+	f.hp = f.maxHp
+	f.chi = (f :: any).chiMax or Config.CHI_MAX
+	Combat.sync(f)
+	pushState(player)
+	Push:FireClient(player, "dream", { stage = "start", style = DS })
+	task.spawn(function()
+		local t0 = os.clock()
+		for w = 1, D.waves do
+			if st.dream ~= token then
+				return
+			end
+			local foes = {}
+			for i = 1, D.perWave do
+				local a = i / D.perWave * math.pi * 2 + w
+				local pos = D.at + Vector3.new(math.cos(a) * 26, 3, math.sin(a) * 26)
+				local ok, e = pcall(Npc.spawn, D.pool[math.random(#D.pool)], false, pos, "trial")
+				if ok and e then
+					local ef = e.f :: any
+					ef.dreamOwner = player
+					-- 두세 대면 쓰러지고 거의 아프지 않다 (꿈이니까)
+					ef.maxHp = math.max(1, math.floor(f.dmgMult * 40))
+					ef.hp = ef.maxHp
+					ef.dmgMult *= 0.02
+					Combat.sync(ef)
+					e.target = f
+					table.insert(foes, ef)
+					table.insert(token.foes, ef)
+				end
+			end
+			Push:FireClient(player, "dream", { stage = "wave", n = w, of = D.waves })
+			while st.dream == token and os.clock() - t0 < D.time do
+				local alive = 0
+				for _, ef in ipairs(foes) do
+					if not ef.dead and ef.root.Parent then
+						alive += 1
+					end
+				end
+				local ff = Combat.fighterOfPlayer(player)
+				if alive == 0 or not ff or ff.dead then
+					break
+				end
+				-- 꿈 속에선 내공이 마르지 않는다 (오의를 마음껏)
+				ff.chi = (ff :: any).chiMax or Config.CHI_MAX
+				Combat.sync(ff)
+				task.wait(0.4)
+			end
+			if os.clock() - t0 >= D.time then
+				break
+			end
+		end
+		if st.dream == token then
+			task.wait(1.5)
+			Dream.finish(player)
+		end
+	end)
+end
+Players.PlayerRemoving:Connect(function(player: Player)
+	pcall(Dream.finish, player)
+end)
+;(_G :: any).KwonDream = Dream
+;(_G :: any).KwonKarma = Karma
 if W.karmaMirror then
 	W.karmaMirror.Triggered:Connect(function(player: Player)
 		Karma.reflect(player)
@@ -42852,6 +42977,41 @@ function World.build(): any
 		{ "먹물 굴", function()
 			inkShrine(out)
 		end },
+		{ "꿈 마당", function()
+			-- 3.99.76판 꿈 체험의 마당: 구름 위에 떠 있는 흰 대리석 단, 둘레의 벚나무와 흩날리는 꽃잎, 분홍빛 등
+			local D = Config.DREAM
+			if not D then
+				return
+			end
+			local f = Instance.new("Folder")
+			f.Name = "DreamYard"
+			f.Parent = folder
+			local c = D.at
+			disc("DreamFloor", c - Vector3.new(0, 1.5, 0), D.radius, 3, Color3.fromRGB(246, 238, 244), Enum.Material.Marble, f)
+			disc("DreamRim", c - Vector3.new(0, 1.45, 0), D.radius + 1.2, 2.9, Color3.fromRGB(255, 190, 215), Enum.Material.Neon, f, false)
+			disc("DreamCloudA", c - Vector3.new(0, 6, 0), D.radius * 1.3, 6, Color3.fromRGB(255, 240, 248), Enum.Material.SmoothPlastic, f, false).Transparency = 0.35
+			disc("DreamCloudB", c - Vector3.new(0, 10, 0), D.radius * 1.6, 5, Color3.fromRGB(255, 232, 244), Enum.Material.SmoothPlastic, f, false).Transparency = 0.55
+			for k = 0, 9 do
+				local a = k / 10 * math.pi * 2
+				tree(c + Vector3.new(math.cos(a) * (D.radius - 6), 0, math.sin(a) * (D.radius - 6)), rng:NextNumber(1.1, 1.5), f, true)
+			end
+			for k = 0, 5 do
+				local a = k / 6 * math.pi * 2 + 0.3
+				local lamp = part({ Name = "DreamLamp", Size = Vector3.new(1.6, 2.2, 1.6), Position = c + Vector3.new(math.cos(a) * 34, 7, math.sin(a) * 34), Color = Color3.fromRGB(255, 200, 225), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+				light(lamp, Color3.fromRGB(255, 190, 220), 40, 1.4)
+			end
+			local sky = part({ Name = "DreamPetals", Size = Vector3.new(D.radius * 2, 1, D.radius * 2), Position = c + Vector3.new(0, 40, 0), Transparency = 1, CanCollide = false, Parent = f })
+			local e = Instance.new("ParticleEmitter")
+			e.Rate = 40
+			e.Color = ColorSequence.new(Color3.fromRGB(255, 190, 215))
+			e.Size = NumberSequence.new(0.4)
+			e.Lifetime = NumberRange.new(7, 10)
+			e.Speed = NumberRange.new(3, 6)
+			e.Acceleration = Vector3.new(1.5, -1.2, 0.8)
+			e.EmissionDirection = Enum.NormalId.Bottom
+			e.RotSpeed = NumberRange.new(-120, 120)
+			e.Parent = sky
+		end },
 		{ "천상계", function()
 			skyWorld(out)
 		end },
@@ -45595,6 +45755,40 @@ end
 function handlers.attend(data: any)
 	local seventh = data.day == data.total
 	UI.banner(string.format("📅 출석 %d일째", data.day), seventh and "일곱째 날 · 가장 큰 보상" or string.format("이어서 %d일 · 일곱째 날이 가장 크다", data.streak), seventh and Color3.fromRGB(255, 210, 110) or Color3.fromRGB(150, 220, 255))
+end
+
+-- 3.99.76판 꿈 체험: 꿈에 빠지고 (분홍빛 · 흐릿한 가장자리), 무리마다 알리고, 깨어나면 그 권법을 어디서 배우는지
+local dreamFx: any = nil
+function handlers.dream(data: any)
+	local st = Config.STYLE_BY_ID[data.style or ""]
+	local Lighting = game:GetService("Lighting")
+	local TS = game:GetService("TweenService")
+	if data.stage == "start" then
+		UI.flash(Color3.new(1, 1, 1), 0.8)
+		local cc = Instance.new("ColorCorrectionEffect")
+		cc.Parent = Lighting
+		TS:Create(cc, TweenInfo.new(0.8), { TintColor = Color3.fromRGB(255, 228, 240), Brightness = 0.06, Saturation = 0.15 }):Play()
+		local blur = Instance.new("DepthOfFieldEffect")
+		blur.FarIntensity = 0.5
+		blur.FocusDistance = 30
+		blur.InFocusRadius = 40
+		blur.Parent = Lighting
+		dreamFx = { cc = cc, blur = blur }
+		UI.banner("꿈 · 언젠가의 너", string.format("%s %s이(가) 손에 깃들었다. 오의(G)까지 마음껏 휘둘러라", st and st.icon or "", st and st.name or ""), Color3.fromRGB(255, 190, 215))
+		shake(0.6)
+	elseif data.stage == "wave" then
+		UI.toast(string.format("🌸 꿈속의 무리 %d / %d", data.n or 1, data.of or 3))
+	elseif data.stage == "end" then
+		UI.flash(Color3.new(1, 1, 1), 0.9)
+		if dreamFx then
+			TS:Create(dreamFx.cc, TweenInfo.new(1), { TintColor = Color3.new(1, 1, 1), Brightness = 0, Saturation = 0 }):Play()
+			game:GetService("Debris"):AddItem(dreamFx.cc, 1.1)
+			dreamFx.blur:Destroy()
+			dreamFx = nil
+		end
+		local m = st and Config.MASTERS[st.id]
+		UI.banner("꿈에서 깼다", m and string.format("그 불꽃은 언젠가 네 것이 된다 · %s의 %s에게서 배운다", m.region, m.name) or "그 힘은 언젠가 네 것이 된다", Color3.fromRGB(255, 220, 160))
+	end
 end
 
 -- 3.99.56판 전생의 업경: 업이 거울에서 걸어 나온다 (핏빛 섬광, 땅울림)
@@ -72418,6 +72612,12 @@ return {
 	["맨손 하나로 강호의 정점에"] = "To the peak of the martial world, bare-handed",
 	["새 권법은 써야 손에 붙는다. 그 권법으로 적을 때려 숙련을 2까지 올려라. 숙련 2에 두 번째 기술(R)이 열린다."] = "A new style only sticks if you use it. Hit enemies with it to raise its mastery to 2. At mastery 2 its second skill (R) opens.",
 	["한 권법의 숙련을 4까지 올려라. 숙련 4에 그 권법의 오의(G)가 열린다. 내공이 가득 찼을 때 쓰는 한 수다."] = "Raise a style's mastery to 4. At mastery 4 its Secret Art (G) opens. It's the move you use when your Ki is full.",
+	["꿈 · 언젠가의 너"] = "Dream · You, Someday",
+	["%s %s이(가) 손에 깃들었다. 오의(G)까지 마음껏 휘둘러라"] = "%s %s now dwells in your hands. Swing it freely, Secret Art (G) included",
+	["🌸 꿈속의 무리 %d / %d"] = "🌸 Dream horde %d / %d",
+	["꿈에서 깼다"] = "You woke from the dream",
+	["그 불꽃은 언젠가 네 것이 된다 · %s의 %s에게서 배운다"] = "That flame will be yours one day · learn it from %s's %s",
+	["그 힘은 언젠가 네 것이 된다"] = "That power will be yours one day",
 }
 ]]></string>
           </Properties>
