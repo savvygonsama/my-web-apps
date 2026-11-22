@@ -2535,8 +2535,21 @@ end
 
 -- 3.99.27판 출석: 가운데에 크게 (일곱째 날은 금빛)
 function handlers.attend(data: any)
-	local seventh = data.day == data.total
-	UI.banner(string.format("📅 출석 %d일째", data.day), seventh and "일곱째 날 · 가장 큰 보상" or string.format("이어서 %d일 · 일곱째 날이 가장 크다", data.streak), seventh and Color3.fromRGB(255, 210, 110) or Color3.fromRGB(150, 220, 255))
+	-- 3.99.78판 출석 31일: 7 · 14 · 21 · 28일째는 큰 보상, 31일째가 가장 크다
+	local last = data.day == data.total
+	local big = Config.ATTEND.big and Config.ATTEND.big[data.day]
+	local nextBig = data.total
+	for d = data.day + 1, data.total do
+		if Config.ATTEND.big and Config.ATTEND.big[d] then
+			nextBig = d
+			break
+		end
+	end
+	local sub = last and "한 달을 채웠다 · 가장 큰 보상" or (big and "큰 보상의 날" or string.format("이어서 %d일 · %d일째에 큰 보상", data.streak, nextBig))
+	UI.banner(string.format("📅 출석 %d / %d일", data.day, data.total), sub, (last or big) and Color3.fromRGB(255, 210, 110) or Color3.fromRGB(150, 220, 255))
+	if last or big then
+		shake(0.5)
+	end
 end
 
 -- 3.99.56판 전생의 업경: 업이 거울에서 걸어 나온다 (핏빛 섬광, 땅울림)

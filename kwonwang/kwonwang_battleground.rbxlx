@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.77" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.78" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -412,14 +412,40 @@ Config.TRAIN_LATE_SHARE = 1 / 16 -- 3.99.1판: 1/100 → 1/16 (절정부터 수�
 -- 3.99.26판 자리를 비운 동안의 수련: 1초에 수련 perSec 몫의 rate 만큼 (10분 ~ 여덟 시간). 한 번에 다음 경지까지의 gapCap 넘게는 오르지 않는다
 Config.OFFLINE = { minSec = 600, maxSec = 8 * 3600, perSec = 4, rate = 0.2, gapCap = 0.25 }
 -- 3.99.27판 출석 (하루 한 번, 한국 시각 자정): 일곱 날이 한 바퀴. coins = 은자 몫 (Config.productCoins), 빠지면 첫날부터
-Config.ATTEND = { tz = 9 * 3600, days = {
-	{ coins = 2 },
-	{ shards = 5 },
+-- 3.99.78판 출석 31일: 이어서 들어올수록 크다. 7 · 14 · 21 · 28일째는 큰 보상, 31일째가 가장 크다 (하루라도 빠지면 첫날부터, 31일 뒤엔 다시 첫날)
+--   coins = 은자 몫 (그 경지의 Config.productCoins 배) · shards 비급 조각 · gems 천정 · scrolls 두루마리 · mats 천상 재료 (아무거나)
+Config.ATTEND = { tz = 9 * 3600, big = { [7] = true, [14] = true, [21] = true, [28] = true, [31] = true }, days = {
+	{ coins = 2 }, -- 1
+	{ shards = 3 },
 	{ coins = 3, scrolls = 1 },
 	{ gems = 300 },
-	{ coins = 4, shards = 10 },
+	{ coins = 3, shards = 5 },
+	{ scrolls = 2 },
+	{ coins = 8, shards = 15, gems = 1000, scrolls = 4 }, -- 7 (첫 주)
+	{ coins = 3 },
+	{ shards = 5 },
+	{ gems = 500, scrolls = 1 }, -- 10
+	{ coins = 4, mats = 2 },
+	{ shards = 8 },
 	{ scrolls = 3 },
-	{ coins = 8, shards = 20, gems = 1000, scrolls = 5 },
+	{ coins = 12, shards = 20, gems = 1500, scrolls = 5, mats = 4 }, -- 14 (둘째 주)
+	{ coins = 4 },
+	{ gems = 600 },
+	{ shards = 10, scrolls = 2 },
+	{ coins = 5, mats = 3 },
+	{ scrolls = 3 },
+	{ gems = 800, shards = 8 }, -- 20
+	{ coins = 15, shards = 25, gems = 2000, scrolls = 6, mats = 5 }, -- 21 (셋째 주)
+	{ coins = 5 },
+	{ shards = 12 },
+	{ gems = 1000, scrolls = 3 },
+	{ coins = 6, mats = 4 },
+	{ scrolls = 4, shards = 10 },
+	{ gems = 1200 },
+	{ coins = 20, shards = 35, gems = 3000, scrolls = 8, mats = 6 }, -- 28 (넷째 주)
+	{ coins = 8, shards = 15 },
+	{ gems = 1500, scrolls = 5 }, -- 30
+	{ coins = 30, shards = 60, gems = 5000, scrolls = 12, mats = 10 }, -- 31 (한 달)
 } }
 Config.TRAIN_LATE_REF = 12 -- 천상 수련 '완벽' 한 번에 오르는 몫의 합 (2 × 6). 3.3판: 천상 수련이 24 → 6이 되어 48 → 12 (후반 수련 몫은 그대로)
 function Config.trainMult(idx: number): number
@@ -20047,6 +20073,20 @@ local function onPlayerAdded(player: Player)
 			if rw.gems then
 				profile.skyGems += rw.gems
 				table.insert(got, "💠 " .. Config.formatNumber(rw.gems))
+			end
+			-- 3.99.78판: 천상 재료 (아무거나 n 개)
+			if rw.mats then
+				local tally = {}
+				for _ = 1, rw.mats do
+					local M = Config.SKY_MATS[math.random(#Config.SKY_MATS)]
+					profile.mats[M.id] = (profile.mats[M.id] or 0) + 1
+					tally[M.id] = (tally[M.id] or 0) + 1
+				end
+				for _, M in ipairs(Config.SKY_MATS) do
+					if tally[M.id] then
+						table.insert(got, M.icon .. " " .. tally[M.id])
+					end
+				end
 			end
 			st.dirty = true
 			task.delay(7, function()
@@ -45611,8 +45651,21 @@ end
 
 -- 3.99.27판 출석: 가운데에 크게 (일곱째 날은 금빛)
 function handlers.attend(data: any)
-	local seventh = data.day == data.total
-	UI.banner(string.format("📅 출석 %d일째", data.day), seventh and "일곱째 날 · 가장 큰 보상" or string.format("이어서 %d일 · 일곱째 날이 가장 크다", data.streak), seventh and Color3.fromRGB(255, 210, 110) or Color3.fromRGB(150, 220, 255))
+	-- 3.99.78판 출석 31일: 7 · 14 · 21 · 28일째는 큰 보상, 31일째가 가장 크다
+	local last = data.day == data.total
+	local big = Config.ATTEND.big and Config.ATTEND.big[data.day]
+	local nextBig = data.total
+	for d = data.day + 1, data.total do
+		if Config.ATTEND.big and Config.ATTEND.big[d] then
+			nextBig = d
+			break
+		end
+	end
+	local sub = last and "한 달을 채웠다 · 가장 큰 보상" or (big and "큰 보상의 날" or string.format("이어서 %d일 · %d일째에 큰 보상", data.streak, nextBig))
+	UI.banner(string.format("📅 출석 %d / %d일", data.day, data.total), sub, (last or big) and Color3.fromRGB(255, 210, 110) or Color3.fromRGB(150, 220, 255))
+	if last or big then
+		shake(0.5)
+	end
 end
 
 -- 3.99.56판 전생의 업경: 업이 거울에서 걸어 나온다 (핏빛 섬광, 땅울림)
@@ -72436,6 +72489,10 @@ return {
 	["맨손 하나로 강호의 정점에"] = "To the peak of the martial world, bare-handed",
 	["새 권법은 써야 손에 붙는다. 그 권법으로 적을 때려 숙련을 2까지 올려라. 숙련 2에 두 번째 기술(R)이 열린다."] = "A new style only sticks if you use it. Hit enemies with it to raise its mastery to 2. At mastery 2 its second skill (R) opens.",
 	["한 권법의 숙련을 4까지 올려라. 숙련 4에 그 권법의 오의(G)가 열린다. 내공이 가득 찼을 때 쓰는 한 수다."] = "Raise a style's mastery to 4. At mastery 4 its Secret Art (G) opens. It's the move you use when your Ki is full.",
+	["📅 출석 %d / %d일"] = "📅 Attendance day %d / %d",
+	["한 달을 채웠다 · 가장 큰 보상"] = "A full month · the biggest reward",
+	["큰 보상의 날"] = "Big reward day",
+	["이어서 %d일 · %d일째에 큰 보상"] = "%d days in a row · big reward on day %d",
 }
 ]]></string>
           </Properties>

@@ -8591,6 +8591,20 @@ local function onPlayerAdded(player: Player)
 				profile.skyGems += rw.gems
 				table.insert(got, "💠 " .. Config.formatNumber(rw.gems))
 			end
+			-- 3.99.78판: 천상 재료 (아무거나 n 개)
+			if rw.mats then
+				local tally = {}
+				for _ = 1, rw.mats do
+					local M = Config.SKY_MATS[math.random(#Config.SKY_MATS)]
+					profile.mats[M.id] = (profile.mats[M.id] or 0) + 1
+					tally[M.id] = (tally[M.id] or 0) + 1
+				end
+				for _, M in ipairs(Config.SKY_MATS) do
+					if tally[M.id] then
+						table.insert(got, M.icon .. " " .. tally[M.id])
+					end
+				end
+			end
 			st.dirty = true
 			task.delay(7, function()
 				if player.Parent then
