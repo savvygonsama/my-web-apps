@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.80" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.81" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -396,7 +396,7 @@ Config.OFFLINE = { minSec = 600, maxSec = 8 * 3600, perSec = 4, rate = 0.2, gapC
 --   coins = 은자 몫 (그 경지의 Config.productCoins 배) · shards 비급 조각 · gems 천정 · scrolls 두루마리 · mats 천상 재료 (아무거나)
 -- 3.99.80판 출석 100일: 들어온 날만큼 쌓인다 (빠져도 끊기지 않는다). 100일을 채우면 끝. 들어올 때마다 그 주 (7일) 보상판이 뜬다
 --   한 주의 결: 1 은자 · 2 조각 · 3 은자 + 두루마리 · 4 천정 · 5 은자 + 조각 · 6 두루마리 + 재료 · 7 큰 보상. 주가 지날수록 12%씩 커진다
---   권법: 7일째 칠성보권 · 31일째 광음신권 · 60일째 진 광음신권 · 100일째 초 광음신권 (이미 익혔으면 비급 조각 alt)
+--   권법: 7일째 칠성보권 · 21일째 진 칠성보권 · 31일째 광음신권 · 45일째 초 칠성보권 · 60일째 진 광음신권 · 100일째 초 광음신권 (이미 익혔으면 비급 조각 alt)
 Config.ATTEND = { tz = 9 * 3600, total = 100, big = {}, days = {} }
 do
 	local A = Config.ATTEND
@@ -411,6 +411,8 @@ do
 	}
 	local STYLE = {
 		[7] = { style = "chilseong", alt = 25 },
+		[21] = { style = "chilseong2", alt = 40 },
+		[45] = { style = "chilseong3", alt = 60, coins = 8, shards = 20, gems = 1500, scrolls = 4, mats = 3 },
 		[31] = { style = "gwangeum", alt = 80, coins = 10, shards = 30, gems = 2500, scrolls = 6, mats = 4 },
 		[60] = { style = "gwangeum2", alt = 120, coins = 15, shards = 45, gems = 4000, scrolls = 8, mats = 6 },
 		[100] = { style = "gwangeum3", alt = 200, coins = 30, shards = 80, gems = 8000, scrolls = 15, mats = 12 },
@@ -7831,49 +7833,99 @@ do
 		Config.STYLE_BY_ID[st.id] = st
 	end
 
-	-- 🌟 칠성보권 [전설]: 북두칠성 일곱 별을 밟는 걸음. 이레를 빠짐없이 온 자에게
-	add({
-		id = "chilseong", name = "칠성보권", hanja = "七星步拳", icon = "🌟", grade = "전설", fx = "mist", attend = 7,
+	-- 🌟 칠성보권 [전설] · 3.99.81판 진 칠성보권 [신화] · 초 칠성보권 [초월]: 북두칠성 일곱 별을 밟는 걸음 (출석 7 · 21 · 45일째)
+	--   단계 (tier) 가 오를수록 별이 많아지고 (G 7 → 14 → 21개), 초는 초 오의 X 북두개천이 붙는다
+	local function chil(o: any)
+		local t = o.tier
+		local p = o.idp
+		local E = (function()
+			local s = {}
+			for k = 0, 6 do
+				table.insert(s, { t = 0.08 + k * 0.09, dash = 3.2, shape = "circle", at = "self", radius = 5 + t, vfx = "starStep", hit = hit(0, 0, 0, 6, 6, 0.2, 3) })
+			end
+			table.insert(s, { t = 0.75, shape = "circle", at = "self", radius = 7 + t * 2, vfx = "starChain", big = t >= 2, hit = hit(0, 0, 0, 14, 14, 0.4, 10, 6) })
+			return seq(s)
+		end)()
+		local R = (function()
+			local s = { { t = 0.2, at = "each", n = 7, range = 22 + t * 2, radius = 5, vfx = "starMark", hit = hit(0, 0, 0, 10, 10, 0.3, 0) } }
+			for k = 1, t do
+				table.insert(s, { t = 0.65 + (k - 1) * 0.3, at = "each", n = 7, range = 22 + t * 2, radius = 6, vfx = "starNova", hit = hit(0, 0, 0, 20, 20, 0.5, 12, 8) })
+			end
+			return seq(s)
+		end)()
+		local G = (function()
+			local r = 20 + t * 2
+			local s = { { t = 0.2, shape = "circle", at = "self", radius = r, pull = 20, life = 1.9, vfx = "dipperSky", hit = hit(0, 0, 0, 10, 10, 0.3, 0) } }
+			local n = 7 * t
+			for k = 0, n - 1 do
+				table.insert(s, { t = 0.55 + k * (1.05 / n), at = "target", range = r + 4, shape = "circle", radius = 7, col = k % 7 + 1, vfx = "starDrop", hit = hit(0, 0, 0, 14, 14, 0.35, 6, 6) })
+			end
+			table.insert(s, { t = 1.85, shape = "circle", at = "self", radius = r, vfx = "dipperFall", big = true, hit = hit(0, 0, 0, 60, 70, 1.0, 40, 16) })
+			return seq(s)
+		end)()
+		local skills: any = {
+			E = { id = p .. "E", name = "북두칠보", desc = o.dE, pose = "dash_punch", dur = 0.9, cd = 8, chi = 20, mech = E },
+			R = { id = p .. "R", name = "칠성연주", desc = o.dR, pose = "point_sky", dur = 0.6 + t * 0.3, cd = 10, chi = 24, mech = R },
+			G = { id = p .. "G", name = o.gName or "북두낙성", desc = o.dG, pose = "ult_star", dur = 2.3, cd = 30, chi = 100, armor = true, mech = G },
+		}
+		if t >= 3 then
+			skills.X = { id = p .. "X", name = "북두개천", desc = o.dX, pose = "ult_star", dur = 3.6, cd = 60, chi = 150, armor = true,
+				mech = { kind = "forgeSeq", iframes = true, steps = {
+					{ t = 0.1, shape = "circle", at = "self", radius = 36, pull = 34, life = 3.1, vfx = "dipperHeaven", hit = hit(0, 0, 0, 30, 30, 0.5, 0) },
+					{ t = 0.8, at = "each", n = 8, range = 34, radius = 7, vfx = "starDrop", hit = hit(0, 0, 0, 30, 30, 0.5, 6, 8) },
+					{ t = 1.3, at = "each", n = 8, range = 34, radius = 7, vfx = "starDrop", hit = hit(0, 0, 0, 30, 30, 0.5, 6, 10) },
+					{ t = 1.8, at = "each", n = 8, range = 34, radius = 7, vfx = "starDrop", hit = hit(0, 0, 0, 30, 30, 0.5, 6, 8) },
+					{ t = 2.3, at = "each", n = 8, range = 34, radius = 7, vfx = "starDrop", hit = hit(0, 0, 0, 30, 30, 0.5, 6, 10) },
+					{ t = 3.1, shape = "circle", at = "self", radius = 36, vfx = "starBeam", big = true, hit = hit(0, 0, 0, 240, 270, 1.8, 80, 30) },
+				} } }
+		end
+		add({
+			id = o.id, name = o.name, hanja = o.hanja, icon = o.icon, grade = o.grade, fx = "mist", attend = o.attend, dmgScale = o.scale,
+			color = o.color, color2 = o.color2, palette = { o.color, o.color2, Color3.fromRGB(40, 50, 110) },
+			desc = o.desc, gimmick = o.gimmick, unlockHint = o.hint,
+			deflect = 0.22, speed = ({ 1.12, 1.15, 1.18 })[t], stance = "stance_sunmoon",
+			pulse = { every = 7, kind = "starFall", radius = 8 + t, delay = 0.35, name = "낙성", dmg = 22 + (t - 1) * 6, posture = 20, stun = 0.5, kb = 6, up = 0 },
+			combo = {
+				{ id = p .. "1", name = "천추", pose = "palm_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 7, 4.5, 8, 8, 0.3, 8) } },
+				{ id = p .. "2", name = "천선", pose = "moon_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 7, 4.5, 8, 8, 0.3, 8) } },
+				{ id = p .. "3", name = "천기각", pose = "crescent_kick", dur = 0.42, lunge = 2, hits = { hit(0.15, 6, 6, 7, 7, 0.3, 8, 8, true), hit(0.28, 6, 6, 8, 8, 0.35, 10, 10, true) } },
+				{ id = p .. "4", name = "천권", pose = "push_palm", dur = 0.5, lunge = 3, hits = { hit(0.24, 9, 7, 13, 16, 0.5, 30, nil, true) } },
+			},
+			heavy = { id = p .. "H", name = "옥형추", pose = "moon_throw", dur = 0.6, lunge = 2, hits = { hit(0.28, 13, 5, 22, 26, 0.6, 34) } },
+			finisher = { id = p .. "F", name = "요광승천", pose = "crescent_kick", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+			skills = skills,
+		})
+	end
+	chil({
+		tier = 1, idp = "cs", id = "chilseong", name = "칠성보권", hanja = "七星步拳", icon = "🌟", grade = "전설", attend = 7,
 		color = Color3.fromRGB(150, 190, 255), color2 = Color3.fromRGB(255, 236, 170),
-		palette = { Color3.fromRGB(160, 200, 255), Color3.fromRGB(255, 236, 170), Color3.fromRGB(40, 50, 110) },
 		desc = "밤하늘 북두칠성의 일곱 별을 차례로 밟아 나가는 보법 권. 한 걸음마다 별이 박히고, 일곱 별이 이어지면 하늘의 국자가 그려진다. 끝에는 그 별들이 하나씩 떨어진다.",
 		gimmick = "칠성: 일곱 번 맞힐 때마다 상대 머리 위로 별 하나가 떨어진다. 몸이 가볍고 빠르다",
-		unlockHint = "누적 출석 7일째 (이레를 채운 자에게 하늘이 내린다)",
-		deflect = 0.22, speed = 1.12, stance = "stance_sunmoon",
-		pulse = { every = 7, kind = "starFall", radius = 8, delay = 0.35, name = "낙성", dmg = 22, posture = 20, stun = 0.5, kb = 6, up = 0 },
-		combo = {
-			{ id = "cs1", name = "천추", pose = "palm_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 7, 4.5, 8, 8, 0.3, 8) } },
-			{ id = "cs2", name = "천선", pose = "moon_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 7, 4.5, 8, 8, 0.3, 8) } },
-			{ id = "cs3", name = "천기각", pose = "crescent_kick", dur = 0.42, lunge = 2, hits = { hit(0.15, 6, 6, 7, 7, 0.3, 8, 8, true), hit(0.28, 6, 6, 8, 8, 0.35, 10, 10, true) } },
-			{ id = "cs4", name = "천권", pose = "push_palm", dur = 0.5, lunge = 3, hits = { hit(0.24, 9, 7, 13, 16, 0.5, 30, nil, true) } },
-		},
-		heavy = { id = "csH", name = "옥형추", pose = "moon_throw", dur = 0.6, lunge = 2, hits = { hit(0.28, 13, 5, 22, 26, 0.6, 34) } },
-		finisher = { id = "csF", name = "요광승천", pose = "crescent_kick", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
-		skills = {
-			E = { id = "csE", name = "북두칠보", desc = "별에서 별로 건너뛰듯 일곱 걸음을 내딛는다. 밟은 자리마다 별이 박혀 터지고, 일곱째 걸음에 일곱 별이 한 줄로 이어져 번쩍인다", pose = "dash_punch", dur = 0.9, cd = 8, chi = 20,
-				mech = (function()
-					local t = {}
-					for k = 0, 6 do
-						table.insert(t, { t = 0.08 + k * 0.09, dash = 3.2, shape = "circle", at = "self", radius = 5, vfx = "starStep", hit = hit(0, 0, 0, 6, 6, 0.2, 3) })
-					end
-					table.insert(t, { t = 0.75, shape = "circle", at = "self", radius = 9, vfx = "starChain", hit = hit(0, 0, 0, 14, 14, 0.4, 10, 6) })
-					return seq(t)
-				end)() },
-			R = { id = "csR", name = "칠성연주", desc = "가까운 적 일곱의 몸에 별이 하나씩 박힌다. 별과 별 사이를 빛의 실이 국자 모양으로 잇고, 이어지는 순간 일곱 별이 한꺼번에 터진다", pose = "point_sky", dur = 0.9, cd = 10, chi = 24,
-				mech = seq({
-					{ t = 0.2, at = "each", n = 7, range = 24, radius = 5, vfx = "starMark", hit = hit(0, 0, 0, 10, 10, 0.3, 0) },
-					{ t = 0.65, at = "each", n = 7, range = 24, radius = 6, vfx = "starNova", hit = hit(0, 0, 0, 20, 20, 0.5, 12, 8) },
-				}) },
-			G = { id = "csG", name = "북두낙성", desc = "하늘이 밤으로 바뀌고 머리 위에 커다란 북두칠성이 걸린다. 일곱 별이 하나씩 떨어져 적을 내리찍고, 마지막에 국자 전체가 땅으로 쏟아지며 둘레 22칸이 별빛으로 터진다", pose = "ult_star", dur = 2.3, cd = 30, chi = 100, armor = true,
-				mech = (function()
-					local t = { { t = 0.2, shape = "circle", at = "self", radius = 22, pull = 20, life = 1.9, vfx = "dipperSky", hit = hit(0, 0, 0, 10, 10, 0.3, 0) } }
-					for k = 0, 6 do
-						table.insert(t, { t = 0.55 + k * 0.15, at = "target", range = 26, shape = "circle", radius = 7, col = k + 1, vfx = "starDrop", hit = hit(0, 0, 0, 14, 14, 0.35, 6, 6) })
-					end
-					table.insert(t, { t = 1.85, shape = "circle", at = "self", radius = 22, vfx = "dipperFall", big = true, hit = hit(0, 0, 0, 60, 70, 1.0, 40, 16) })
-					return seq(t)
-				end)() },
-		},
+		hint = "누적 출석 7일째 (이레를 채운 자에게 하늘이 내린다)",
+		dE = "별에서 별로 건너뛰듯 일곱 걸음을 내딛는다. 밟은 자리마다 별이 박혀 터지고, 일곱째 걸음에 일곱 별이 한 줄로 이어져 번쩍인다",
+		dR = "가까운 적 일곱의 몸에 별이 하나씩 박힌다. 별과 별 사이를 빛의 실이 국자 모양으로 잇고, 이어지는 순간 일곱 별이 한꺼번에 터진다",
+		dG = "하늘이 밤으로 바뀌고 머리 위에 커다란 북두칠성이 걸린다. 일곱 별이 하나씩 떨어져 적을 내리찍고, 마지막에 국자 전체가 땅으로 쏟아지며 둘레 22칸이 별빛으로 터진다",
+	})
+	chil({
+		tier = 2, idp = "cv", id = "chilseong2", name = "진 칠성보권", hanja = "眞七星步拳", icon = "💫", grade = "신화", attend = 21,
+		color = Color3.fromRGB(130, 170, 255), color2 = Color3.fromRGB(255, 220, 130),
+		desc = "세 이레를 밟아 별자리가 둘이 된 칠성보권. 걸음마다 박히는 별이 더 밝고, 북두칠성이 두 번 떨어진다.",
+		gimmick = "칠성: 일곱 번 맞힐 때마다 별이 떨어진다 (더 세고 넓다). 칠성연주가 두 번 터진다",
+		hint = "누적 출석 21일째 (세 이레를 채운 자에게 별이 한 번 더 내린다)",
+		dE = "별에서 별로 일곱 걸음을 내딛는다. 밟은 자리마다 별이 터지고, 일곱째 걸음에 이어진 일곱 별이 크게 번쩍인다",
+		dR = "가까운 적 일곱의 몸에 별이 박히고, 빛의 실로 이어진 별이 두 번 잇달아 터진다",
+		dG = "하늘이 밤으로 바뀌고 북두칠성이 걸린다. 별 열넷이 잇달아 떨어져 적을 내리찍고, 마지막에 국자 전체가 쏟아지며 둘레 24칸이 별빛으로 터진다",
+	})
+	chil({
+		tier = 3, idp = "cx", id = "chilseong3", name = "초 칠성보권", hanja = "超七星步拳", icon = "🌠", grade = "초월", attend = 45, scale = 0.76,
+		color = Color3.fromRGB(190, 160, 255), color2 = Color3.fromRGB(255, 245, 200),
+		desc = "마흔닷새를 밟아 하늘 전체를 걸음판으로 삼는 칠성보권. 북두칠성이 세 번 떨어지고, 초 오의에서는 일곱 별이 한 줄로 서서 하늘을 연다.",
+		gimmick = "칠성: 일곱 번 맞힐 때마다 별이 떨어진다 (가장 세고 넓다). 초 오의(X) 북두개천이 있다",
+		hint = "누적 출석 45일째 (마흔닷새를 채운 자에게 하늘이 열린다)",
+		dE = "별에서 별로 일곱 걸음을 내딛는다. 밟은 자리마다 큰 별이 터지고, 일곱째 걸음에 이어진 일곱 별이 크게 번쩍인다",
+		dR = "가까운 적 일곱의 몸에 별이 박히고, 빛의 실로 이어진 별이 세 번 잇달아 터진다",
+		dG = "하늘이 밤으로 바뀌고 북두칠성이 걸린다. 별 스물하나가 비처럼 떨어져 적을 내리찍고, 마지막에 국자 전체가 쏟아지며 둘레 26칸이 별빛으로 터진다",
+		dX = "초 오의 (그동안 무적). 하늘이 깊은 밤이 되고 북두칠성이 하늘을 가득 채운다. 별이 네 번 비처럼 쏟아져 적 여덟을 내리찍고, 마지막에 일곱 별이 한 줄로 서서 하늘을 가르는 빛기둥이 되어 내리꽂힌다 (둘레 36칸)",
 	})
 
 	-- ⏳ 광음신권 [태초]: 흐르는 시간 (광음) 을 주먹에 담는다. 한 달을 하루도 빠짐없이 온 자에게

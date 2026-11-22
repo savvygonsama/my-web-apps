@@ -2165,7 +2165,7 @@ function handlers.hit(data: any)
 			if data.style == "hondon" or data.style == "janwol" or data.style == "noeun" or data.style == "gwihwa" or data.style == "sashin" then
 				pcall(ForgeFx.hit, data.style, pos, data.heavy == true, data.skill == true)
 			end
-			if data.style == "chilseong" or data.style == "gwangeum" or data.style == "gwangeum2" or data.style == "gwangeum3" then
+			if type(data.style) == "string" and (string.sub(data.style, 1, 9) == "chilseong" or string.sub(data.style, 1, 8) == "gwangeum") then
 				pcall((ForgeFx :: any).attendHit, data.style, pos, data.heavy == true or data.skill == true)
 			end
 			if data.style == "gumiho" or data.style == "heukyeom" then

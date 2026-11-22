@@ -3937,7 +3937,11 @@ VFX.dipperSky = function(d)
 	local cam = workspace.CurrentCamera
 	if cam and (cam.CFrame.Position - g).Magnitude < 140 then
 		nightSky(life)
-		domainTitle("북두낙성", "일곱 별이 떨어진다", 1.4)
+		if d.vfx == "dipperHeaven" then
+			domainTitle("북두개천", "일곱 별이 하늘을 연다", 2)
+		else
+			domainTitle("북두낙성", "일곱 별이 떨어진다", 1.4)
+		end
 	end
 	disc(g + V(0, 0.3, 0), r, STARD, 0.45, life)
 	local pts = dipperPoints(g + V(0, 30, 0), flatLook(d), r * 0.42)
@@ -4277,8 +4281,52 @@ VFX.clockShatter = function(d)
 	end)
 end
 -- 맞힐 때: 별가루 / 금모래
+-- 북두개천 (초 칠성보권 X): 북두낙성의 하늘을 더 크고 길게, 둘레에 잔별 고리를 하나 더
+VFX.dipperHeaven = function(d)
+	VFX.dipperSky(d, STAR, STAR2, {})
+	local g = ground(d.at)
+	local r = d.radius or 36
+	gSwirl(function()
+		return g + V(0, 40, 0)
+	end, 20, r * 1.3, 12, d.life or 3.1, STAR2, STAR, { width = 0.25, trail = 0.9, speed = 0.2 })
+	bloom(0.7, 0.6)
+	shake(0.6)
+end
+-- 일곱 별이 하늘에서 한 줄로 서고, 그 줄이 그대로 빛기둥이 되어 내리꽂힌다
+VFX.starBeam = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 36
+	local top = g + V(0, 70, 0)
+	for i = 1, 7 do
+		local p = top - V(0, (i - 1) * 9, 0)
+		task.delay(i * 0.04, function()
+			star(p, 3.2, 0.6)
+		end)
+	end
+	task.delay(0.32, function()
+		local beam = piece(V(70, 2, 2), CF(g + V(0, 35, 0)) * CFrame.Angles(0, 0, math.rad(90)), WHITE, 0, Enum.PartType.Cylinder)
+		tween(beam, 0.1, { Size = V(70, 14, 14) })
+		local glow = piece(V(70, 22, 22), CF(g + V(0, 35, 0)) * CFrame.Angles(0, 0, math.rad(90)), STAR2, 0.6, Enum.PartType.Cylinder)
+		task.delay(0.12, function()
+			fadeOut(beam, 0.5, V(70, 1, 1))
+			fadeOut(glow, 0.6, V(70, 30, 30))
+		end)
+		bloom(2, 0.8)
+		Fx.flash(g + V(0, 6, 0), STAR2, r * 3, 8, 0.4)
+		Fx.ring(g + V(0, 0.4, 0), STAR2, 6, r * 2.6, 0.7)
+		Fx.ring(g + V(0, 0.4, 0), STAR, 4, r * 1.8, 0.8)
+		for i = 1, 14 do
+			local a = i / 14 * math.pi * 2
+			star(g + V(math.cos(a) * r * 0.7, 2, math.sin(a) * r * 0.7), 2.2, 0.6)
+		end
+		gEmit(g + V(0, 4, 0), TEX_SPARK, STAR2, STAR, 80, 1.2, 34, 1.1)
+		Fx.debris(g, 16, 34)
+		pcall(Fx.sound, "shatter", 1, 0.9, g)
+		shake(2)
+	end)
+end
 local function attendHit(styleId: string, pos: Vector3, big: boolean)
-	if styleId == "chilseong" then
+	if string.sub(styleId, 1, 9) == "chilseong" then
 		if big then
 			star(pos + V(0, 1, 0), 1.2, 0.35)
 		end
