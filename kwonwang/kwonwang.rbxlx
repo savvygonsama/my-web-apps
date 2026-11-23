@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.84" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.85" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -1610,6 +1610,54 @@ do
 			st.gimmick = string.gsub(st.gimmick, "오의 만불조종: .*$", "오의 천수여래: 팔이 여럿 달린 금빛 여래가 내리치고 하늘의 손바닥이 누른다")
 			st.gimmick = string.gsub(st.gimmick, "오의 백귀야행: .*$", "오의 무영천살: 어둠 속에서 적마다 표식이 새겨지고 한꺼번에 터진다")
 			st.gimmick = string.gsub(st.gimmick, "오의 천하수류: .*$", "오의 창해만류: 소용돌이가 빨아들이고 물의 벽이 무너진다")
+		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 3.99.85판 진 권법 연타: 예전엔 원래 권법의 연타 몸짓 · 이름을 그대로 물려받아 '기술만 바뀐' 느낌이었다.
+--   연타 넷 · 강타 · 띄우기의 이름과 몸짓을 진마다 새로 (때 · 세기는 그대로). 진 천룡파천장 G 는 구룡패천권과 겹쳐 새로
+------------------------------------------------------------------------
+do
+	-- { 연타 1 ~ 4, 강타, 띄우기 } = { 이름, 몸짓 }
+	local NEW_COMBO: { [string]: { { string } } } = {
+		hyeolma2 = { { "혈랑조", "blood_phantom" }, { "혈귀수", "ghost_palm_l" }, { "혈화선각", "back_spin_kick" }, { "혈해장", "blood_spread" }, { "혈마폭쇄", "karma_smash" }, { "진 혈마천승", "uppercut" } },
+		cheonryong2 = { { "용린장", "palm_strike" }, { "반룡수", "dragon_coil" }, { "회룡각", "tornado_kick" }, { "쌍룡장", "double_palm" }, { "항룡일권", "punch_l_heavy" }, { "비룡승천각", "flying_kick" } },
+		byeokryeok2 = { { "섬광", "jab_l" }, { "뇌권", "hook_r" }, { "뇌영보", "zigzag" }, { "낙뢰각", "front_kick" }, { "천뢰일권", "punch_r_heavy" }, { "진 뇌정승천", "uppercut" } },
+		muyeong2 = { { "영종", "shadow_heel" }, { "귀반권", "spin_backfist" }, { "영회각", "tornado_kick" }, { "귀락각", "dive_kick" }, { "귀영천회", "air_spin" }, { "귀영승천각", "heaven_kick" } },
+		taeheo2 = { { "유수", "palm_l" }, { "선류장", "water_spiral" }, { "소용장", "whirl" }, { "노도장", "billow_strike" }, { "수벽장", "wall_raise" }, { "유수승천", "ult_raise" } },
+		yeolhwa2 = { { "화권", "punch_r" }, { "염주", "elbow_r" }, { "화염장", "fire_breath_palm" }, { "화산추", "hammer_down" }, { "화산폭", "grav_meteor" }, { "염천승천", "uppercut" } },
+		changhae2 = { { "해조장", "palm_r" }, { "노도", "billow_strike" }, { "해각", "front_kick" }, { "해벽장", "wall_raise" }, { "심해일격", "punch_r_heavy" }, { "해룡승천", "dragon_rise" } },
+		pungsin2 = { { "풍편각", "side_kick" }, { "선풍각", "tornado_kick" }, { "회풍각", "gale_spin" }, { "월풍각", "crescent_kick" }, { "질풍돌", "gale_dash" }, { "풍신승천각", "flying_kick" } },
+		mugeuk2 = { { "일획", "brush_sweep" }, { "원획", "brush_circle" }, { "점묵", "void_point" }, { "귀묵장", "void_gather" }, { "낙묵", "grav_press_r" }, { "무극승천", "ult_raise" } },
+		maehwa2 = { { "매엽장", "palm_r" }, { "낙화연", "petal_flurry" }, { "암향보", "fragrance_step" }, { "설매각", "heaven_kick" }, { "매화반권", "spin_backfist" }, { "매화승천각", "front_kick" } },
+		chwi2 = { { "주정권", "hook_r" }, { "취주", "elbow_r" }, { "취곤", "drunk_roll" }, { "취선각", "roundhouse" }, { "취중추", "hammer_down" }, { "취선승천", "uppercut" } },
+	}
+	for _, st in ipairs(Config.Styles) do
+		local nc = NEW_COMBO[st.id]
+		if nc then
+			for i = 1, 4 do
+				local mv = st.combo and st.combo[i]
+				if mv then
+					mv.name, mv.pose = nc[i][1], nc[i][2]
+				end
+			end
+			if st.heavy then
+				st.heavy.name, st.heavy.pose = nc[5][1], nc[5][2]
+			end
+			if st.finisher then
+				st.finisher.name, st.finisher.pose = nc[6][1], nc[6][2]
+			end
+		end
+		if st.id == "cheonryong2" then
+			st.skills.G = { id = "vcrG", name = "진룡파지", desc = "금룡의 거대한 앞발이 땅을 움켜쥔다. 둘레 18칸의 땅이 발톱 사이로 들려 올라 위의 적이 하늘로 튀어 오르고, 앞발이 그대로 내리눌러 땅을 짓뭉갠 뒤 용의 숨이 앞을 쓴다", pose = "ult_dragon", dur = 1.9, cd = 30, chi = 100, armor = true,
+				mech = { kind = "forgeSeq", steps = {
+					{ t = 0.3, shape = "circle", at = "self", radius = 18, pull = 16, life = 0.6, vfx = "jlClawGrip", hit = hit(0, 0, 0, 40, 60, 0.6, 0) },
+					{ t = 0.8, shape = "circle", at = "self", radius = 18, vfx = "jlEarthLift", hit = hit(0, 0, 0, 50, 60, 0.7, 0, 45) },
+					{ t = 1.3, shape = "circle", at = "self", radius = 18, vfx = "jlPawSlam", big = true, hit = hit(0, 0, 0, 90, 130, 1.3, 40, -10) },
+					{ t = 1.6, shape = "line", at = "self", length = 30, width = 10, vfx = "jlBreath", hit = hit(0, 0, 0, 50, 70, 0.7, 30, 8) },
+				} } }
+			st.gimmick = string.gsub(st.gimmick, "진 오의 구룡승천: .*$", "진 오의 진룡파지: 금룡의 앞발이 땅을 움켜쥐어 들어 올렸다가 짓뭉갠다")
 		end
 	end
 end
@@ -62491,6 +62539,81 @@ VFX.crScaleBurst = function(d)
 	Fx.debris(ground(d.at), 12, 22)
 	shake(0.8)
 end
+-- 🐲 진 천룡파천장 G 진룡파지: 금룡의 앞발이 땅을 움켜쥐어 들어 올렸다가 짓뭉갠다
+local JL, JL2 = Color3.fromRGB(255, 195, 60), Color3.fromRGB(255, 248, 215)
+VFX.jlClawGrip = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 18
+	-- 하늘에서 내려온 발톱 다섯이 둘레 땅에 박혔다가 가운데로 긁어 모은다
+	for i = 1, 5 do
+		local a = i / 5 * math.pi * 2
+		local tip = g + V(math.cos(a) * r, 0.5, math.sin(a) * r)
+		gStroke(tip + V(0, 30, 0), tip, 0.12, 1.4, 0.2, JL2, JL, true, 0.5)
+		task.delay(0.15, function()
+			gStroke(tip, g + V(math.cos(a) * r * 0.3, 0.5, math.sin(a) * r * 0.3), 0.3, 1.2, 0.4, JL, JL2, true, 0.6)
+			Fx.debris(tip, 4, 8)
+		end)
+	end
+	pcall(Fx.sound, "heavy", 0.6, 0.6, g)
+	shake(0.5)
+end
+VFX.jlEarthLift = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 18
+	local slab = piece(V(r * 1.6, 3, r * 1.6), CF(g - V(0, 1.5, 0)), Color3.fromRGB(120, 95, 70), 0, Enum.PartType.Cylinder)
+	slab.CFrame = CF(g - V(0, 1.5, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	slab.Size = V(3, r * 1.6, r * 1.6)
+	slab.Material = Enum.Material.Rock
+	tween(slab, 0.25, { CFrame = CF(g + V(0, 8, 0)) * CFrame.Angles(0.15, 0, math.rad(90)) }, Enum.EasingStyle.Back)
+	Debris:AddItem(slab, 1.2)
+	task.delay(0.45, function()
+		tween(slab, 0.15, { CFrame = CF(g - V(0, 2, 0)) * CFrame.Angles(0, 0, math.rad(90)), Transparency = 0.6 })
+		task.delay(0.3, function()
+			fadeOut(slab, 0.3)
+		end)
+	end)
+	gEmit(g + V(0, 2, 0), TEX_SMOKE, Color3.fromRGB(140, 115, 90), JL, 26, 4, 14, 0.9, 0.1, V(0, 10, 0))
+	Fx.debris(g, 12, 22)
+	shake(0.7)
+end
+VFX.jlPawSlam = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 18
+	local paw = piece(V(r * 1.2, r * 0.6, r * 1.2), CF(g + V(0, 70, 0)), JL, 0.1, Enum.PartType.Ball)
+	tween(paw, 0.25, { CFrame = CF(g + V(0, r * 0.25, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	for i = 1, 4 do
+		local a = (i - 2.5) * 0.45
+		local claw = piece(V(1.4, 1.4, r * 0.5), CF(g + V(0, 70, 0)), JL2, 0)
+		tween(claw, 0.25, { CFrame = CF(g + V(math.sin(a) * r * 0.55, 1, math.cos(a) * r * 0.55), g + V(math.sin(a) * r * 2, 0, math.cos(a) * r * 2)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		Debris:AddItem(claw, 0.9)
+		task.delay(0.6, function()
+			fadeOut(claw, 0.25)
+		end)
+	end
+	task.delay(0.25, function()
+		fadeOut(paw, 0.4, V(r * 1.6, r * 0.3, r * 1.6))
+		bloom(1.2, 0.6)
+		Fx.flash(g + V(0, 4, 0), JL2, r * 3, 6, 0.35)
+		Fx.ring(g + V(0, 0.4, 0), JL, 5, r * 2.6, 0.6)
+		Fx.debris(g, 18, 30)
+		pcall(Fx.sound, "heavy", 1, 0.45, g)
+		shake(1.5)
+	end)
+end
+VFX.jlBreath = function(d)
+	local from = (d.from :: Vector3) + V(0, 3, 0)
+	local look = lookOf(d)
+	local len = d.length or 30
+	for k = 1, 7 do
+		task.delay(k * 0.03, function()
+			local p = from + look * (len * k / 7)
+			gEmit(p, TEX_FIRE, JL2, JL, 12, 3 + k * 0.4, 8, 0.6, 1, look * 10)
+		end)
+	end
+	gStroke(from, from + look * len, 0.2, 2.4, 0.6, JL2, JL, true, 0.5)
+	Fx.flash(from + look * len * 0.5, JL, 30, 3, 0.25)
+	shake(0.6)
+end
 -- 맞힐 때: 별가루 / 금모래
 -- 북두개천 (초 칠성보권 X): 북두낙성의 하늘을 더 크고 길게, 둘레에 잔별 고리를 하나 더
 VFX.dipperHeaven = function(d)
@@ -74491,6 +74614,69 @@ return {
 	["마검 둘이 손을 떠나 몸 둘레를 돈다. 세 바퀴 돌며 점점 멀어져 둘레 14칸을 베고, 마지막에 앞으로 날아가 땅에 꽂히며 검은 불길이 솟는다"] = "Two demon blades leave your hands and circle your body. They spin three times, drifting outward to cut within 14 studs, then fly ahead and plunge into the ground as black flames erupt",
 	["등 뒤 하늘에 검은 불꽃을 모아 집채만 한 마검을 빚고 앞으로 내리찍는다. 땅이 한 줄로 갈라지고, 갈라진 틈을 따라 검은 불길 기둥이 차례로 솟는다"] = "Gather black flames in the sky behind you to forge a demon blade as large as a house and bring it down ahead. The ground splits in a line, and pillars of black flame erupt one after another along the rift",
 	["초 오의 (그동안 무적). 발밑에 검은 불의 진이 열리고 마검 여섯이 땅에서 솟아 둘레를 에워싼다. 불의 고리가 세 번 바깥으로 번져 나가며 적을 태우고, 마지막에 하늘에서 거대한 마검이 한가운데로 내리꽂혀 둘레 30칸에 검은 불기둥이 솟는다"] = "Supreme ultimate (invincible meanwhile). A circle of black fire opens underfoot and six demon blades rise from the ground to surround you. Rings of flame spread outward three times, burning foes, and at last a colossal demon blade plunges from the sky into the center as black fire pillars erupt within 30 studs",
+	["혈랑조"] = "Blood Wolf Claw",
+	["혈귀수"] = "Blood Ghost Hand",
+	["혈화선각"] = "Blood Flower Spin Kick",
+	["혈해장"] = "Blood Sea Palm",
+	["혈마폭쇄"] = "Blood Demon Crush",
+	["진 혈마천승"] = "True Blood Demon Ascent",
+	["용린장"] = "Dragon Scale Palm",
+	["반룡수"] = "Coiling Dragon Hand",
+	["회룡각"] = "Circling Dragon Kick",
+	["쌍룡장"] = "Twin Dragon Palm",
+	["항룡일권"] = "Dragon-Subduing Fist",
+	["비룡승천각"] = "Flying Dragon Ascending Kick",
+	["섬광"] = "Flash",
+	["뇌권"] = "Thunder Fist",
+	["뇌영보"] = "Thunder Shadow Step",
+	["천뢰일권"] = "Heavenly Thunder Fist",
+	["진 뇌정승천"] = "True Thunder Ascent",
+	["영종"] = "Shadow Trail",
+	["귀반권"] = "Ghost Backfist",
+	["영회각"] = "Shadow Spin Kick",
+	["귀락각"] = "Ghost Drop Kick",
+	["귀영천회"] = "Ghost Shadow Heaven Spin",
+	["유수"] = "Flowing Water",
+	["선류장"] = "Spiral Current Palm",
+	["소용장"] = "Whirlpool Palm",
+	["노도장"] = "Raging Wave Palm",
+	["수벽장"] = "Water Wall Palm",
+	["유수승천"] = "Flowing Water Ascent",
+	["화권"] = "Fire Fist",
+	["염주"] = "Flame Elbow",
+	["화산추"] = "Volcano Hammer",
+	["화산폭"] = "Volcanic Blast",
+	["염천승천"] = "Blazing Sky Ascent",
+	["해조장"] = "Sea Tide Palm",
+	["노도"] = "Raging Waves",
+	["해각"] = "Sea Kick",
+	["해벽장"] = "Sea Wall Palm",
+	["심해일격"] = "Deep Sea Strike",
+	["해룡승천"] = "Sea Dragon Ascent",
+	["풍편각"] = "Wind Whip Kick",
+	["회풍각"] = "Whirlwind Kick",
+	["월풍각"] = "Moon Wind Kick",
+	["질풍돌"] = "Gale Rush",
+	["원획"] = "Circle Stroke",
+	["점묵"] = "Ink Dot",
+	["귀묵장"] = "Returning Ink Palm",
+	["낙묵"] = "Falling Ink",
+	["무극승천"] = "Limitless Ascent",
+	["매엽장"] = "Plum Leaf Palm",
+	["낙화연"] = "Falling Petal Chain",
+	["암향보"] = "Hidden Fragrance Step",
+	["설매각"] = "Snow Plum Kick",
+	["매화반권"] = "Plum Backfist",
+	["매화승천각"] = "Plum Ascending Kick",
+	["주정권"] = "Tipsy Fist",
+	["취주"] = "Drunken Elbow",
+	["취곤"] = "Drunken Roll",
+	["취선각"] = "Drunken Immortal Kick",
+	["취중추"] = "Drunken Hammer",
+	["취선승천"] = "Drunken Immortal Ascent",
+	["진룡파지"] = "True Dragon Seizes the Earth",
+	["금룡의 거대한 앞발이 땅을 움켜쥔다. 둘레 18칸의 땅이 발톱 사이로 들려 올라 위의 적이 하늘로 튀어 오르고, 앞발이 그대로 내리눌러 땅을 짓뭉갠 뒤 용의 숨이 앞을 쓴다"] = "The golden dragon's colossal forepaw seizes the earth. Ground within 18 studs is torn up between its claws, launching foes into the sky, then the paw presses down to crush the earth and the dragon's breath sweeps ahead",
+	["진 오의 진룡파지: 금룡의 앞발이 땅을 움켜쥐어 들어 올렸다가 짓뭉갠다"] = "True ultimate True Dragon Seizes the Earth: the golden dragon's forepaw grips the earth, lifts it, then crushes it",
 }
 ]]></string>
           </Properties>

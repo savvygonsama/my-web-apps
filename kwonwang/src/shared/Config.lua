@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.84" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.85" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -1590,6 +1590,54 @@ do
 			st.gimmick = string.gsub(st.gimmick, "오의 만불조종: .*$", "오의 천수여래: 팔이 여럿 달린 금빛 여래가 내리치고 하늘의 손바닥이 누른다")
 			st.gimmick = string.gsub(st.gimmick, "오의 백귀야행: .*$", "오의 무영천살: 어둠 속에서 적마다 표식이 새겨지고 한꺼번에 터진다")
 			st.gimmick = string.gsub(st.gimmick, "오의 천하수류: .*$", "오의 창해만류: 소용돌이가 빨아들이고 물의 벽이 무너진다")
+		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 3.99.85판 진 권법 연타: 예전엔 원래 권법의 연타 몸짓 · 이름을 그대로 물려받아 '기술만 바뀐' 느낌이었다.
+--   연타 넷 · 강타 · 띄우기의 이름과 몸짓을 진마다 새로 (때 · 세기는 그대로). 진 천룡파천장 G 는 구룡패천권과 겹쳐 새로
+------------------------------------------------------------------------
+do
+	-- { 연타 1 ~ 4, 강타, 띄우기 } = { 이름, 몸짓 }
+	local NEW_COMBO: { [string]: { { string } } } = {
+		hyeolma2 = { { "혈랑조", "blood_phantom" }, { "혈귀수", "ghost_palm_l" }, { "혈화선각", "back_spin_kick" }, { "혈해장", "blood_spread" }, { "혈마폭쇄", "karma_smash" }, { "진 혈마천승", "uppercut" } },
+		cheonryong2 = { { "용린장", "palm_strike" }, { "반룡수", "dragon_coil" }, { "회룡각", "tornado_kick" }, { "쌍룡장", "double_palm" }, { "항룡일권", "punch_l_heavy" }, { "비룡승천각", "flying_kick" } },
+		byeokryeok2 = { { "섬광", "jab_l" }, { "뇌권", "hook_r" }, { "뇌영보", "zigzag" }, { "낙뢰각", "front_kick" }, { "천뢰일권", "punch_r_heavy" }, { "진 뇌정승천", "uppercut" } },
+		muyeong2 = { { "영종", "shadow_heel" }, { "귀반권", "spin_backfist" }, { "영회각", "tornado_kick" }, { "귀락각", "dive_kick" }, { "귀영천회", "air_spin" }, { "귀영승천각", "heaven_kick" } },
+		taeheo2 = { { "유수", "palm_l" }, { "선류장", "water_spiral" }, { "소용장", "whirl" }, { "노도장", "billow_strike" }, { "수벽장", "wall_raise" }, { "유수승천", "ult_raise" } },
+		yeolhwa2 = { { "화권", "punch_r" }, { "염주", "elbow_r" }, { "화염장", "fire_breath_palm" }, { "화산추", "hammer_down" }, { "화산폭", "grav_meteor" }, { "염천승천", "uppercut" } },
+		changhae2 = { { "해조장", "palm_r" }, { "노도", "billow_strike" }, { "해각", "front_kick" }, { "해벽장", "wall_raise" }, { "심해일격", "punch_r_heavy" }, { "해룡승천", "dragon_rise" } },
+		pungsin2 = { { "풍편각", "side_kick" }, { "선풍각", "tornado_kick" }, { "회풍각", "gale_spin" }, { "월풍각", "crescent_kick" }, { "질풍돌", "gale_dash" }, { "풍신승천각", "flying_kick" } },
+		mugeuk2 = { { "일획", "brush_sweep" }, { "원획", "brush_circle" }, { "점묵", "void_point" }, { "귀묵장", "void_gather" }, { "낙묵", "grav_press_r" }, { "무극승천", "ult_raise" } },
+		maehwa2 = { { "매엽장", "palm_r" }, { "낙화연", "petal_flurry" }, { "암향보", "fragrance_step" }, { "설매각", "heaven_kick" }, { "매화반권", "spin_backfist" }, { "매화승천각", "front_kick" } },
+		chwi2 = { { "주정권", "hook_r" }, { "취주", "elbow_r" }, { "취곤", "drunk_roll" }, { "취선각", "roundhouse" }, { "취중추", "hammer_down" }, { "취선승천", "uppercut" } },
+	}
+	for _, st in ipairs(Config.Styles) do
+		local nc = NEW_COMBO[st.id]
+		if nc then
+			for i = 1, 4 do
+				local mv = st.combo and st.combo[i]
+				if mv then
+					mv.name, mv.pose = nc[i][1], nc[i][2]
+				end
+			end
+			if st.heavy then
+				st.heavy.name, st.heavy.pose = nc[5][1], nc[5][2]
+			end
+			if st.finisher then
+				st.finisher.name, st.finisher.pose = nc[6][1], nc[6][2]
+			end
+		end
+		if st.id == "cheonryong2" then
+			st.skills.G = { id = "vcrG", name = "진룡파지", desc = "금룡의 거대한 앞발이 땅을 움켜쥔다. 둘레 18칸의 땅이 발톱 사이로 들려 올라 위의 적이 하늘로 튀어 오르고, 앞발이 그대로 내리눌러 땅을 짓뭉갠 뒤 용의 숨이 앞을 쓴다", pose = "ult_dragon", dur = 1.9, cd = 30, chi = 100, armor = true,
+				mech = { kind = "forgeSeq", steps = {
+					{ t = 0.3, shape = "circle", at = "self", radius = 18, pull = 16, life = 0.6, vfx = "jlClawGrip", hit = hit(0, 0, 0, 40, 60, 0.6, 0) },
+					{ t = 0.8, shape = "circle", at = "self", radius = 18, vfx = "jlEarthLift", hit = hit(0, 0, 0, 50, 60, 0.7, 0, 45) },
+					{ t = 1.3, shape = "circle", at = "self", radius = 18, vfx = "jlPawSlam", big = true, hit = hit(0, 0, 0, 90, 130, 1.3, 40, -10) },
+					{ t = 1.6, shape = "line", at = "self", length = 30, width = 10, vfx = "jlBreath", hit = hit(0, 0, 0, 50, 70, 0.7, 30, 8) },
+				} } }
+			st.gimmick = string.gsub(st.gimmick, "진 오의 구룡승천: .*$", "진 오의 진룡파지: 금룡의 앞발이 땅을 움켜쥐어 들어 올렸다가 짓뭉갠다")
 		end
 	end
 end

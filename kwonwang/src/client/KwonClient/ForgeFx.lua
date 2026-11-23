@@ -5027,6 +5027,81 @@ VFX.crScaleBurst = function(d)
 	Fx.debris(ground(d.at), 12, 22)
 	shake(0.8)
 end
+-- 🐲 진 천룡파천장 G 진룡파지: 금룡의 앞발이 땅을 움켜쥐어 들어 올렸다가 짓뭉갠다
+local JL, JL2 = Color3.fromRGB(255, 195, 60), Color3.fromRGB(255, 248, 215)
+VFX.jlClawGrip = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 18
+	-- 하늘에서 내려온 발톱 다섯이 둘레 땅에 박혔다가 가운데로 긁어 모은다
+	for i = 1, 5 do
+		local a = i / 5 * math.pi * 2
+		local tip = g + V(math.cos(a) * r, 0.5, math.sin(a) * r)
+		gStroke(tip + V(0, 30, 0), tip, 0.12, 1.4, 0.2, JL2, JL, true, 0.5)
+		task.delay(0.15, function()
+			gStroke(tip, g + V(math.cos(a) * r * 0.3, 0.5, math.sin(a) * r * 0.3), 0.3, 1.2, 0.4, JL, JL2, true, 0.6)
+			Fx.debris(tip, 4, 8)
+		end)
+	end
+	pcall(Fx.sound, "heavy", 0.6, 0.6, g)
+	shake(0.5)
+end
+VFX.jlEarthLift = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 18
+	local slab = piece(V(r * 1.6, 3, r * 1.6), CF(g - V(0, 1.5, 0)), Color3.fromRGB(120, 95, 70), 0, Enum.PartType.Cylinder)
+	slab.CFrame = CF(g - V(0, 1.5, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	slab.Size = V(3, r * 1.6, r * 1.6)
+	slab.Material = Enum.Material.Rock
+	tween(slab, 0.25, { CFrame = CF(g + V(0, 8, 0)) * CFrame.Angles(0.15, 0, math.rad(90)) }, Enum.EasingStyle.Back)
+	Debris:AddItem(slab, 1.2)
+	task.delay(0.45, function()
+		tween(slab, 0.15, { CFrame = CF(g - V(0, 2, 0)) * CFrame.Angles(0, 0, math.rad(90)), Transparency = 0.6 })
+		task.delay(0.3, function()
+			fadeOut(slab, 0.3)
+		end)
+	end)
+	gEmit(g + V(0, 2, 0), TEX_SMOKE, Color3.fromRGB(140, 115, 90), JL, 26, 4, 14, 0.9, 0.1, V(0, 10, 0))
+	Fx.debris(g, 12, 22)
+	shake(0.7)
+end
+VFX.jlPawSlam = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 18
+	local paw = piece(V(r * 1.2, r * 0.6, r * 1.2), CF(g + V(0, 70, 0)), JL, 0.1, Enum.PartType.Ball)
+	tween(paw, 0.25, { CFrame = CF(g + V(0, r * 0.25, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	for i = 1, 4 do
+		local a = (i - 2.5) * 0.45
+		local claw = piece(V(1.4, 1.4, r * 0.5), CF(g + V(0, 70, 0)), JL2, 0)
+		tween(claw, 0.25, { CFrame = CF(g + V(math.sin(a) * r * 0.55, 1, math.cos(a) * r * 0.55), g + V(math.sin(a) * r * 2, 0, math.cos(a) * r * 2)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		Debris:AddItem(claw, 0.9)
+		task.delay(0.6, function()
+			fadeOut(claw, 0.25)
+		end)
+	end
+	task.delay(0.25, function()
+		fadeOut(paw, 0.4, V(r * 1.6, r * 0.3, r * 1.6))
+		bloom(1.2, 0.6)
+		Fx.flash(g + V(0, 4, 0), JL2, r * 3, 6, 0.35)
+		Fx.ring(g + V(0, 0.4, 0), JL, 5, r * 2.6, 0.6)
+		Fx.debris(g, 18, 30)
+		pcall(Fx.sound, "heavy", 1, 0.45, g)
+		shake(1.5)
+	end)
+end
+VFX.jlBreath = function(d)
+	local from = (d.from :: Vector3) + V(0, 3, 0)
+	local look = lookOf(d)
+	local len = d.length or 30
+	for k = 1, 7 do
+		task.delay(k * 0.03, function()
+			local p = from + look * (len * k / 7)
+			gEmit(p, TEX_FIRE, JL2, JL, 12, 3 + k * 0.4, 8, 0.6, 1, look * 10)
+		end)
+	end
+	gStroke(from, from + look * len, 0.2, 2.4, 0.6, JL2, JL, true, 0.5)
+	Fx.flash(from + look * len * 0.5, JL, 30, 3, 0.25)
+	shake(0.6)
+end
 -- 맞힐 때: 별가루 / 금모래
 -- 북두개천 (초 칠성보권 X): 북두낙성의 하늘을 더 크고 길게, 둘레에 잔별 고리를 하나 더
 VFX.dipperHeaven = function(d)
