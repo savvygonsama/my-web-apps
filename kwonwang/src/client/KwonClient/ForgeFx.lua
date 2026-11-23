@@ -4472,6 +4472,561 @@ VFX.arrowVolley = function(d)
 	end)
 	gStroke(from, at, 0.1, 0.2, 0.05, TIME, TIME2, true, 0.25)
 end
+------------------------------------------------------------------------
+-- 3.99.84판 후반 권법 새 기술 연출 (예전엔 사신천왕권 · 천하패권 · 흑염마검장이 같은 장치를 빛깔만 바꿔 썼다)
+------------------------------------------------------------------------
+local function lookOf(d: any): Vector3
+	local dir = typeof(d.dir) == "Vector3" and V(d.dir.X, 0, d.dir.Z) or V(0, 0, -1)
+	return dir.Magnitude > 0.01 and dir.Unit or V(0, 0, -1)
+end
+-- 🐯 사신천왕권 ---------------------------------------------------------
+VFX.ssTigerLeap = function(d)
+	local g = ground(d.at)
+	local look = lookOf(d)
+	gClaw(g + V(0, 1.5, 0), look, 6, TIGER, TIGER2, 4)
+	afterimage(d.m, nil, 0.35, TIGER2)
+	gEmit(g + V(0, 1, 0), TEX_SPARK, TIGER, TIGER2, 10, 0.4, 8, 0.4)
+	pcall(Fx.sound, "swing", 0.5, 1.2, g)
+end
+VFX.ssTigerMaul = function(d)
+	local g = ground(d.at)
+	local look = lookOf(d)
+	-- 앞발 둘이 엇갈려 내리친다
+	gClaw(g + V(0, 3, 0) - V(-look.Z, 0, look.X) * 2, look, 10, TIGER, TIGER2, 4)
+	task.delay(0.08, function()
+		gClaw(g + V(0, 3, 0) + V(-look.Z, 0, look.X) * 2, look, 10, TIGER2, TIGER, 4)
+		Fx.ring(g + V(0, 0.3, 0), TIGER2, 2, 18, 0.35)
+		Fx.debris(g, 6, 12)
+		shake(0.45)
+	end)
+end
+VFX.ssBirdWings = function(d)
+	local r0 = rootOf(d.m)
+	local c = r0 and r0.Position or (d.at :: Vector3)
+	local look = lookOf(d)
+	local right = V(-look.Z, 0, look.X)
+	-- 등 뒤로 펼쳐지는 불 날개: 깃 열넷이 부채꼴로 쫙 펴진다
+	for side = -1, 1, 2 do
+		for i = 1, 7 do
+			local a = math.rad(10 + i * 14)
+			local tip = c - look * 2 + right * side * math.cos(a) * 12 + V(0, 2 + math.sin(a) * 9, 0)
+			task.delay(i * 0.015, function()
+				gStroke(c - look * 1.5 + V(0, 2.5, 0), tip, 0.12, 0.8 - i * 0.05, 0.6, BIRD2, BIRD, true, 0.5)
+			end)
+		end
+	end
+	gEmit(c + V(0, 3, 0), TEX_FIRE, BIRD2, BIRD, 30, 2, 12, 0.6, 1, V(0, 6, 0))
+	Fx.ring(ground(c) + V(0, 0.3, 0), BIRD, 2, (d.radius or 13) * 2, 0.4)
+	pcall(Fx.sound, "splash", 0.4, 1.6, c)
+end
+VFX.ssBirdDive = function(d)
+	local at = (d.at :: Vector3) + V(0, 2, 0)
+	local from = at + V((math.random() - 0.5) * 14, 18, (math.random() - 0.5) * 14)
+	gSerpent(function(u)
+		return from:Lerp(at, u) + V(0, math.sin(u * math.pi) * 3, 0)
+	end, 0.18, 6, 0.9, BIRD, BIRD2, 0.02)
+	task.delay(0.2, function()
+		gEmit(at, TEX_FIRE, BIRD2, BIRD, 16, 1.4, 10, 0.5, 1, V(0, 6, 0))
+		Fx.flash(at, BIRD, 10, 2, 0.15)
+	end)
+end
+VFX.ssBirdBurst = function(d)
+	local g = ground(d.at) + V(0, 2, 0)
+	for i = 1, 10 do
+		local a = i / 10 * math.pi * 2
+		gStroke(g, g + V(math.cos(a) * 10, 2 + math.random() * 4, math.sin(a) * 10), 0.14, 0.5, 0.4, BIRD2, BIRD, true, 0.4)
+	end
+	gEmit(g, TEX_FIRE, BIRD2, BIRD, 30, 2.2, 16, 0.7, 1, V(0, 8, 0))
+	Fx.flash(g, BIRD2, 22, 3, 0.25)
+	shake(0.4)
+end
+-- 청룡: 머리가 길을 따라가고 몸이 늦게 따라온다
+local function azure(path: (number) -> Vector3, time: number, width: number)
+	gSerpent(path, time, 16, width, AZURE, AZURE2, 0.03)
+end
+VFX.ssDragonRise = function(d)
+	local g = ground(d.at)
+	disc(g + V(0, 0.3, 0), 2, AZURE, 0.2, 0.4, d.radius or 9)
+	Fx.debris(g, 8, 14)
+	azure(function(u)
+		local a = u * math.pi * 3
+		return g + V(math.cos(a) * 3, u * 28, math.sin(a) * 3)
+	end, 0.5, 1.4)
+	pcall(Fx.sound, "splash", 0.6, 0.7, g)
+	shake(0.4)
+end
+VFX.ssDragonCoil = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 18
+	azure(function(u)
+		local a = u * math.pi * 2
+		return g + V(math.cos(a) * r * 0.8, 4 + math.sin(u * math.pi) * 6, math.sin(a) * r * 0.8)
+	end, 0.55, 1.6)
+	gSwirl(function()
+		return g + V(0, 3, 0)
+	end, 10, r * 0.8, 3, 0.55, AZURE, AZURE2, { width = 0.4, trail = 0.4, converge = true, speed = 2 })
+end
+VFX.ssDragonDive = function(d)
+	local from = (d.from :: Vector3)
+	local look = lookOf(d)
+	local len = d.length or 34
+	local start = from - look * 4 + V(0, 26, 0)
+	azure(function(u)
+		local p = start:Lerp(from + look * len, u)
+		return V(p.X, start.Y + (from.Y + 2 - start.Y) * math.min(1, u * 1.8), p.Z) + V(-look.Z, 0, look.X) * math.sin(u * math.pi * 2) * 2.5
+	end, 0.4, 2.4)
+	task.delay(0.3, function()
+		local g = ground(from + look * len * 0.6)
+		bloom(0.8, 0.5)
+		Fx.flash(g + V(0, 4, 0), AZURE2, 40, 4, 0.3)
+		for k = 1, 6 do
+			Fx.ring(ground(from + look * (len * k / 6)) + V(0, 0.4, 0), AZURE, 2, 14, 0.4)
+		end
+		Fx.debris(g, 12, 24)
+		shake(1)
+	end)
+end
+VFX.ssGodTiger = function(d)
+	local at = d.at :: Vector3
+	local dir = V(math.random() - 0.5, 0, math.random() - 0.5)
+	dir = dir.Magnitude > 0.01 and dir.Unit or V(1, 0, 0)
+	gClaw(at + V(0, 3, 0), dir, 9, TIGER, TIGER2, 4)
+	afterimage(d.m, CF(at - (rootOf(d.m) or { Position = at } :: any).Position), 0.3, TIGER2)
+	shake(0.2)
+end
+VFX.ssGodBird = function(d)
+	VFX.ssBirdDive(d, WHITE, WHITE, {})
+end
+VFX.ssGodDragon = function(d)
+	VFX.ssDragonCoil(d, WHITE, WHITE, {})
+	task.delay(0.25, function()
+		VFX.ssDragonCoil(d, WHITE, WHITE, {})
+	end)
+end
+VFX.ssGodTurtle = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 30
+	-- 하늘에서 내려오는 현무의 등껍질: 육각 무늬 판 일곱이 한꺼번에 내려앉는다
+	local shell = {}
+	for i = 0, 6 do
+		local off = i == 0 and V() or V(math.cos(i / 6 * math.pi * 2) * r * 0.45, 0, math.sin(i / 6 * math.pi * 2) * r * 0.45)
+		local hx = piece(V(1.2, r * 0.46, r * 0.46), CF(g + off + V(0, 60, 0)) * CFrame.Angles(0, i * 0.5, math.rad(90)), i == 0 and TURTLE2 or TURTLE, 0.15, Enum.PartType.Cylinder)
+		hx.Material = Enum.Material.Slate
+		table.insert(shell, hx)
+		tween(hx, 0.35, { CFrame = CF(g + off + V(0, 1.2, 0)) * CFrame.Angles(0, i * 0.5, math.rad(90)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	end
+	task.delay(0.36, function()
+		for _, hx in ipairs(shell) do
+			fadeOut(hx, 0.6)
+		end
+		bloom(1.4, 0.6)
+		Fx.flash(g + V(0, 4, 0), TURTLE2, r * 2.6, 6, 0.35)
+		Fx.ring(g + V(0, 0.4, 0), TURTLE2, 5, r * 2.4, 0.6)
+		Fx.ring(g + V(0, 0.4, 0), TIGER2, 3, r * 1.6, 0.6)
+		Fx.debris(g, 18, 34)
+		pcall(Fx.sound, "heavy", 1, 0.5, g)
+		shake(1.8)
+	end)
+end
+-- 👑 천하패권 -----------------------------------------------------------
+local CH, CH2, EARTH = Color3.fromRGB(255, 200, 80), Color3.fromRGB(255, 245, 200), Color3.fromRGB(110, 85, 60)
+VFX.chStomp = function(d)
+	local g = ground(d.at)
+	Fx.ring(g + V(0, 0.3, 0), CH, 3, (d.radius or 10) * 2.2, 0.35)
+	Fx.debris(g, 8, 14)
+	gEmit(g + V(0, 1, 0), TEX_SMOKE, EARTH, EARTH:Lerp(CH2, 0.3), 14, 3, 8, 0.8, 0)
+	pcall(Fx.sound, "heavy", 0.7, 0.7, g)
+	shake(0.5)
+end
+VFX.chCrack = function(d)
+	local from = d.from :: Vector3
+	local look = lookOf(d)
+	local len = d.length or 20
+	local right = V(-look.Z, 0, look.X)
+	local prev = ground(from)
+	for k = 1, 8 do
+		local p = ground(from + look * (len * k / 8) + right * ((math.random() - 0.5) * 3))
+		task.delay(k * 0.025, function()
+			local mid = (prev + p) / 2
+			local seg = piece(V(1.2, 0.4, (p - prev).Magnitude + 0.5), CF(mid + V(0, 0.2, 0), p + V(0, 0.2, 0)), CH, 0)
+			fadeOut(seg, 0.9)
+			gEmit(p + V(0, 1, 0), TEX_SMOKE, EARTH, EARTH, 4, 2, 5, 0.6, 0)
+			prev = p
+		end)
+	end
+	Fx.debris(ground(from + look * len), 8, 14)
+	shake(0.55)
+end
+VFX.chPillars = function(d)
+	local g = ground(d.at)
+	for i = 0, 6 do
+		local off = i == 0 and V() or V(math.cos(i) * 7, 0, math.sin(i) * 7)
+		local h = i == 0 and 18 or 9 + math.random() * 6
+		local rock = piece(V(4, h, 4), CF(g + off - V(0, h / 2, 0)) * CFrame.Angles(0, math.random() * 3, (math.random() - 0.5) * 0.4), EARTH, 0)
+		rock.Material = Enum.Material.Rock
+		tween(rock, 0.15, { CFrame = rock.CFrame + V(0, h, 0) }, Enum.EasingStyle.Back)
+		task.delay(0.9, function()
+			tween(rock, 0.4, { CFrame = rock.CFrame - V(0, h, 0), Transparency = 1 })
+			Debris:AddItem(rock, 0.45)
+		end)
+	end
+	Fx.flash(g + V(0, 6, 0), CH, 30, 3, 0.25)
+	Fx.debris(g, 14, 28)
+	bloom(0.6, 0.4)
+	shake(1)
+end
+VFX.chAura = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 30
+	disc(g + V(0, 0.3, 0), r, CH, 0.75, d.life or 1)
+	gSwirl(function()
+		return g + V(0, 2, 0)
+	end, 18, r, 3, d.life or 1, CH, CH2, { width = 0.5, trail = 0.5, converge = true, speed = 1.4, flat = true })
+	-- 무릎 꿇리는 패기: 땅이 안으로 눌린다
+	Fx.ring(g + V(0, 0.3, 0), CH2, 4, r * 2, 0.8)
+	shake(0.6)
+end
+VFX.chLift = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 30
+	for i = 1, 14 do
+		local a = i / 14 * math.pi * 2
+		local p = g + V(math.cos(a) * r * 0.6, 0, math.sin(a) * r * 0.6)
+		gStroke(p, p + V(0, 22, 0), 0.15, 0.6, 0.3, CH2, CH, true, 0.4)
+	end
+	gEmit(g + V(0, 2, 0), TEX_SMOKE, EARTH, CH, 30, 4, 20, 0.9, 0.2, V(0, 18, 0))
+	shake(0.7)
+end
+VFX.chSkyFist = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 30
+	-- 하늘에서 내려오는 금빛 주먹: 큰 덩이 (주먹) 와 손목 기둥
+	local fist = piece(V(r * 0.9, r * 0.7, r * 0.9), CF(g + V(0, 90, 0)), CH, 0.05, Enum.PartType.Ball)
+	local wrist = piece(V(r * 0.5, 80, r * 0.5), CF(g + V(0, 140, 0)), CH2, 0.3, Enum.PartType.Block)
+	fist.Material = Enum.Material.Neon
+	tween(fist, 0.3, { CFrame = CF(g + V(0, r * 0.3, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	tween(wrist, 0.3, { CFrame = CF(g + V(0, r * 0.3 + 45, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	task.delay(0.3, function()
+		fadeOut(fist, 0.5, V(r * 1.4, r * 0.4, r * 1.4))
+		fadeOut(wrist, 0.4)
+		bloom(1.8, 0.7)
+		Fx.flash(g + V(0, 6, 0), CH2, r * 3, 8, 0.4)
+		Fx.ring(g + V(0, 0.4, 0), CH, 6, r * 2.6, 0.7)
+		Fx.debris(g, 20, 36)
+		pcall(Fx.sound, "heavy", 1, 0.4, g)
+		shake(2)
+	end)
+end
+VFX.chQuake = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 34
+	for k = 1, 3 do
+		task.delay(k * 0.1, function()
+			Fx.ring(g + V(0, 0.4, 0), EARTH:Lerp(CH, 0.4), 3, r * (0.8 + k * 0.4), 0.5)
+			Fx.debris(g + V(math.random(-10, 10), 0, math.random(-10, 10)), 6, 18)
+		end)
+	end
+	shake(0.8)
+end
+-- 🗡 흑염마검장 -----------------------------------------------------------
+local HY, HY2, HYD = Color3.fromRGB(196, 70, 255), Color3.fromRGB(255, 160, 240), Color3.fromRGB(20, 8, 28)
+local function blackFlame(at: Vector3, n: number, size: number, life: number)
+	gEmit(at, TEX_FIRE, HYD, HY, n, size, size * 3, life, 0.3, V(0, 8, 0))
+	gEmit(at, TEX_FIRE, HY, HY2, math.ceil(n / 2), size * 0.6, size * 2, life * 0.7, 1, V(0, 6, 0))
+end
+local function bladePiece(len: number, cf: CFrame, alpha: number?): Part
+	local b = piece(V(len * 0.12, 0.25, len), cf, HYD, alpha or 0)
+	b.Material = Enum.Material.Glass
+	local edge = piece(V(len * 0.02, 0.3, len), cf * CF(len * 0.06, 0, 0), HY, 0)
+	edge.Parent = b
+	return b
+end
+VFX.hyDraw = function(d)
+	local to = (d.at :: Vector3) + V(0, 2.5, 0)
+	local look = lookOf(d)
+	local from = to - look * 18
+	gStroke(from, to, 0.06, 0.25, 0, HY2, HY, true, 0.5)
+	afterimage(d.m, CF(-look * 9), 0.3, HY)
+	pcall(Fx.sound, "deflect", 0.6, 0.8, to)
+end
+VFX.hyLateCuts = function(d)
+	local c = ground(d.at) + V(0, 2.5, 0)
+	local look = lookOf(d)
+	local right = V(-look.Z, 0, look.X)
+	for i = 1, 3 do
+		task.delay(i * 0.07, function()
+			local tilt = (i - 2) * 0.6
+			local a = c - look * 9 + right * (3 * tilt) + V(0, 3, 0)
+			local b = c + look * 9 - right * (3 * tilt) - V(0, 2, 0)
+			gStroke(a, b, 0.05, 0.4, 0, HY2, HY, true, 0.5)
+			blackFlame((a + b) / 2, 12, 1.4, 0.6)
+		end)
+	end
+	task.delay(0.25, function()
+		Fx.flash(c, HY, 20, 2, 0.2)
+		shake(0.4)
+	end)
+end
+VFX.hyOrbit = function(d)
+	local r0 = rootOf(d.m)
+	if not r0 then
+		return
+	end
+	local life = d.life or 0.8
+	local blades = { bladePiece(5, CF(r0.Position)), bladePiece(5, CF(r0.Position)) }
+	local trails = { gBrush(0.4, 0.25, HY, HY2, true), gBrush(0.4, 0.25, HY, HY2, true) }
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		if t > life or not r0.Parent then
+			conn:Disconnect()
+			for i = 1, 2 do
+				fadeOut(blades[i], 0.15)
+				dropBrush(trails[i], 0.25)
+			end
+			return
+		end
+		local rr = 4 + t / life * 10
+		for i = 1, 2 do
+			local a = t * 14 + i * math.pi
+			local p = r0.Position + V(math.cos(a) * rr, 1.5, math.sin(a) * rr)
+			blades[i].CFrame = CF(p, p + V(-math.sin(a), 0, math.cos(a))) * CFrame.Angles(0, math.rad(90), 0)
+			trails[i].p.CFrame = CF(p)
+		end
+	end)
+	pcall(Fx.sound, "swing", 0.6, 0.8, r0.Position)
+end
+VFX.hySwordPlant = function(d)
+	local g = ground(d.at)
+	local b = bladePiece(9, CF(g + V(0, 30, 0)) * CFrame.Angles(math.rad(90), 0, 0))
+	tween(b, 0.12, { CFrame = CF(g + V(0, 3, 0)) * CFrame.Angles(math.rad(90), 0, 0) }, Enum.EasingStyle.Linear)
+	task.delay(0.12, function()
+		blackFlame(g + V(0, 2, 0), 24, 2, 0.9)
+		Fx.ring(g + V(0, 0.3, 0), HY, 2, 18, 0.4)
+		Fx.debris(g, 6, 12)
+		shake(0.5)
+		task.delay(0.5, function()
+			fadeOut(b, 0.3)
+		end)
+	end)
+end
+VFX.hyGiantForm = function(d)
+	local r0 = rootOf(d.m)
+	if not r0 then
+		return
+	end
+	local look = lookOf(d)
+	local base = r0.Position - look * 6 + V(0, 18, 0)
+	local b = bladePiece(30, CF(base, base + V(0, 1, 0)) * CFrame.Angles(math.rad(-90), 0, 0), 1)
+	tween(b, 0.6, { Transparency = 0 })
+	Debris:AddItem(b, (d.life or 0.9) + 0.1)
+	gSwirl(function()
+		return base
+	end, 14, 10, 14, d.life or 0.9, HY, HY2, { width = 0.5, trail = 0.5, converge = true, speed = 1.5 })
+	gEmit(base, TEX_FIRE, HYD, HY, 30, 4, 6, 0.9, 0.3, V(0, 4, 0))
+end
+VFX.hyGiantSlash = function(d)
+	local from = d.from :: Vector3
+	local look = lookOf(d)
+	local len = d.length or 40
+	local b = bladePiece(34, CF(from + V(0, 30, 0), from + V(0, 31, 0) + look) * CFrame.Angles(math.rad(-80), 0, 0))
+	tween(b, 0.15, { CFrame = CF(from + look * (len * 0.5) + V(0, 2, 0), from + look * len + V(0, 2, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	task.delay(0.15, function()
+		fadeOut(b, 0.4)
+		bloom(1, 0.5)
+		for k = 1, 10 do
+			local p = ground(from + look * (len * k / 10))
+			task.delay(k * 0.02, function()
+				local seg = piece(V(1.6, 0.4, len / 10 + 0.6), CF(p + V(0, 0.2, 0), p + V(0, 0.2, 0) + look), HY, 0)
+				fadeOut(seg, 1.2)
+			end)
+		end
+		Fx.flash(from + look * len * 0.5, HY, 40, 4, 0.3)
+		pcall(Fx.sound, "shatter", 0.7, 0.6, from)
+		shake(1.2)
+	end)
+end
+VFX.hyRiftFlames = function(d)
+	local from = d.from :: Vector3
+	local look = lookOf(d)
+	local len = d.length or 40
+	for k = 1, 8 do
+		task.delay(k * 0.05, function()
+			local p = ground(from + look * (len * k / 8))
+			local col = piece(V(3, 16, 3), CF(p + V(0, 8, 0)), HYD, 0.2, Enum.PartType.Block)
+			fadeOut(col, 0.5, V(1, 22, 1))
+			blackFlame(p + V(0, 3, 0), 14, 2, 0.8)
+		end)
+	end
+end
+VFX.hyCircle = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 30
+	local life = d.life or 2.4
+	disc(g + V(0, 0.3, 0), r, HYD, 0.35, life)
+	-- 땅에서 솟는 마검 여섯
+	for i = 1, 6 do
+		local a = i / 6 * math.pi * 2
+		local p = g + V(math.cos(a) * r * 0.85, 0, math.sin(a) * r * 0.85)
+		local b = bladePiece(10, CF(p - V(0, 6, 0)) * CFrame.Angles(math.rad(90), 0, 0))
+		tween(b, 0.25, { CFrame = CF(p + V(0, 4, 0)) * CFrame.Angles(math.rad(90), 0, 0) }, Enum.EasingStyle.Back)
+		Debris:AddItem(b, life + 0.3)
+		task.delay(life, function()
+			fadeOut(b, 0.25)
+		end)
+		blackFlame(p + V(0, 1, 0), 10, 1.6, 0.8)
+	end
+	shake(0.6)
+end
+VFX.hyFlameRing = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 12
+	for i = 1, 16 do
+		local a = i / 16 * math.pi * 2
+		blackFlame(g + V(math.cos(a) * r * 0.9, 1, math.sin(a) * r * 0.9), 6, 1.8, 0.6)
+	end
+	Fx.ring(g + V(0, 0.4, 0), HY, 3, r * 2.1, 0.45)
+	shake(0.4)
+end
+VFX.hyDemonSword = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 30
+	local b = bladePiece(60, CF(g + V(0, 120, 0)) * CFrame.Angles(math.rad(90), 0, 0))
+	tween(b, 0.3, { CFrame = CF(g + V(0, 26, 0)) * CFrame.Angles(math.rad(90), 0, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	task.delay(0.3, function()
+		bloom(2, 0.8)
+		Fx.flash(g + V(0, 6, 0), HY2, r * 3, 8, 0.4)
+		Fx.ring(g + V(0, 0.4, 0), HY, 6, r * 2.6, 0.7)
+		for i = 1, 10 do
+			local a = i / 10 * math.pi * 2
+			local p = g + V(math.cos(a) * r * 0.7, 0, math.sin(a) * r * 0.7)
+			local col = piece(V(3, 30, 3), CF(p + V(0, 15, 0)), HYD, 0.15)
+			fadeOut(col, 0.8, V(1, 40, 1))
+			blackFlame(p + V(0, 2, 0), 16, 2.4, 1)
+		end
+		Fx.debris(g, 18, 34)
+		pcall(Fx.sound, "shatter", 1, 0.5, g)
+		shake(2)
+		task.delay(0.8, function()
+			fadeOut(b, 0.5)
+		end)
+	end)
+end
+-- ✨ 신 삼재권 (삼재천진) ---------------------------------------------------
+local SJ = { Color3.fromRGB(190, 225, 255), Color3.fromRGB(255, 200, 120), Color3.fromRGB(255, 245, 220) } -- 하늘 · 땅 · 사람
+local triadPts: { [any]: { Vector3 } } = {}
+VFX.snTriad = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 22
+	local life = d.life or 1.6
+	local look = lookOf(d)
+	local pts = {}
+	for i = 1, 3 do
+		local a = math.atan2(look.Z, look.X) + (i - 1) / 3 * math.pi * 2
+		local p = g + V(math.cos(a) * r * 0.85, 0, math.sin(a) * r * 0.85)
+		pts[i] = p + V(0, 12, 0)
+		local pil = piece(V(3, 24, 3), CF(p - V(0, 12, 0)), SJ[i], 0.1, Enum.PartType.Cylinder)
+		pil.CFrame = CF(p - V(0, 12, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		pil.Size = V(24, 3, 3)
+		tween(pil, 0.25, { CFrame = CF(p + V(0, 12, 0)) * CFrame.Angles(0, 0, math.rad(90)) }, Enum.EasingStyle.Back)
+		Debris:AddItem(pil, life + 0.4)
+		task.delay(life, function()
+			fadeOut(pil, 0.3)
+		end)
+		gStroke(p + V(0, 0.4, 0), g + V(math.cos(a + math.pi * 2 / 3) * r * 0.85, 0.4, math.sin(a + math.pi * 2 / 3) * r * 0.85), 0.2, 0.4, 0, SJ[i], WHITE, true, life)
+	end
+	if d.m then
+		triadPts[d.m] = pts
+	end
+	Fx.debris(g, 10, 20)
+	shake(0.6)
+end
+VFX.snBeam = function(d)
+	local col = SJ[d.col or 1] or SJ[1]
+	local pts = d.m and triadPts[d.m]
+	local from = pts and pts[d.col or 1] or ((d.at :: Vector3) + V(0, 20, 0))
+	local at = (d.at :: Vector3) + V(0, 2.5, 0)
+	gStroke(from, at, 0.08, 0.9, 0, WHITE, col, true, 0.35)
+	task.delay(0.08, function()
+		gEmit(at, TEX_SPARK, WHITE, col, 14, 0.6, 12, 0.4)
+		Fx.flash(at, col, 10, 2, 0.15)
+	end)
+end
+VFX.snUnity = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 22
+	local pts = d.m and triadPts[d.m]
+	local mid = g + V(0, 8, 0)
+	if pts then
+		for i, p in ipairs(pts) do
+			gStroke(p, mid, 0.12, 1.2, 0, WHITE, SJ[i], true, 0.4)
+		end
+		triadPts[d.m] = nil
+	end
+	task.delay(0.12, function()
+		bloom(1.4, 0.6)
+		Fx.flash(mid, WHITE, r * 3, 6, 0.35)
+		for i = 1, 3 do
+			Fx.ring(g + V(0, 0.4 + i, 0), SJ[i], 4, r * (1.6 + i * 0.4), 0.6)
+		end
+		Fx.debris(g, 16, 30)
+		shake(1.4)
+	end)
+end
+-- 🐉 초 천룡파천장 (천룡파천) ------------------------------------------------
+local CR, CR2 = Color3.fromRGB(255, 210, 80), Color3.fromRGB(120, 255, 220)
+VFX.crSkyTear = function(d)
+	local r0 = rootOf(d.m)
+	local c = (r0 and r0.Position or (d.at :: Vector3)) - lookOf(d) * 10 + V(0, 50, 0)
+	-- 하늘이 찢어지는 금: 지그재그 금빛 줄 여럿
+	for i = 1, 6 do
+		local a = c + V((math.random() - 0.5) * 30, (math.random() - 0.5) * 10, (math.random() - 0.5) * 6)
+		gStroke(c, a, 0.15, 0.6, 2, CR, WHITE, true, 0.9)
+	end
+	gEmit(c, TEX_SMOKE, Color3.fromRGB(200, 200, 210), Color3.fromRGB(120, 120, 130), 30, 8, 10, 1.2, 0)
+	-- 금에서 내민 천룡의 머리 (큰 빛 덩이 + 두 눈)
+	local head = piece(V(10, 8, 14), CF(c), CR, 0.2, Enum.PartType.Ball)
+	tween(head, 0.6, { CFrame = CF(c - V(0, 6, 0)) }, Enum.EasingStyle.Sine)
+	Debris:AddItem(head, (d.life or 0.9) + 0.1)
+	for s = -1, 1, 2 do
+		local eye = piece(V(1.4, 1.4, 1.4), CF(c + V(s * 2.5, 1.5, -6)), CR2, 0, Enum.PartType.Ball)
+		tween(eye, 0.6, { CFrame = CF(c + V(s * 2.5, -4.5, -6)) }, Enum.EasingStyle.Sine)
+		Debris:AddItem(eye, (d.life or 0.9) + 0.1)
+	end
+	pcall(Fx.sound, "heavy", 0.8, 0.4, c)
+	shake(0.6)
+end
+VFX.crDragonDive = function(d)
+	local from = d.from :: Vector3
+	local look = lookOf(d)
+	local len = d.length or 40
+	local start = from - look * 10 + V(0, 44, 0)
+	gSerpent(function(u)
+		local p = start:Lerp(from + look * len + V(0, 2, 0), u)
+		return p + V(-look.Z, 0, look.X) * math.sin(u * math.pi * 3) * 4
+	end, 0.45, 22, 3.2, CR, CR2, 0.03)
+	task.delay(0.35, function()
+		bloom(1, 0.5)
+		for k = 1, 8 do
+			Fx.ring(ground(from + look * (len * k / 8)) + V(0, 0.4, 0), CR, 2, 16, 0.4)
+		end
+		Fx.flash(from + look * len * 0.6, CR2, 46, 4, 0.3)
+		shake(1.2)
+	end)
+end
+VFX.crScaleBurst = function(d)
+	local g = ground(d.at) + V(0, 2, 0)
+	for i = 1, 18 do
+		local a = i / 18 * math.pi * 2
+		local sc = piece(V(1.6, 0.3, 2.2), CF(g, g + V(math.cos(a), 0.3, math.sin(a))), i % 2 == 0 and CR or CR2, 0)
+		tween(sc, 0.45, { CFrame = sc.CFrame + V(math.cos(a) * 16, 4 + math.random() * 6, math.sin(a) * 16), Transparency = 1 })
+		Debris:AddItem(sc, 0.5)
+	end
+	Fx.ring(ground(d.at) + V(0, 0.4, 0), CR, 3, (d.radius or 14) * 2.2, 0.5)
+	Fx.debris(ground(d.at), 12, 22)
+	shake(0.8)
+end
 -- 맞힐 때: 별가루 / 금모래
 -- 북두개천 (초 칠성보권 X): 북두낙성의 하늘을 더 크고 길게, 둘레에 잔별 고리를 하나 더
 VFX.dipperHeaven = function(d)

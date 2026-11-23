@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.83" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.84" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2663,8 +2663,14 @@ table.insert(Config.Styles, {
 			mech = { kind = "grabThrow", mode = "slam", range = 18, angle = 120, n = 3, reel = 0.2, hold = 0.35, hit = hit(0, 0, 0, 120, 120, 1.2, 8, 0), splashRadius = 12, splash = hit(0, 0, 0, 56, 60, 0.7, 30, 14) } },
 		R = { id = "snR", name = "지축 진각", desc = "무릎을 높이 들어 땅을 찍는다. 발밑에서 충격이 사방으로 퍼져 둘레의 적이 크게 튕겨 오른다", pose = "sn_stomp", dur = 0.7, cd = 9, chi = 26,
 			mech = { kind = "shock", delay = 0.38, dist = 0, radius = 17, hit = hit(0, 0, 0, 120, 120, 1.1, 50, 18) } },
-		G = { id = "snG", name = "천근 대회전", desc = "둘레의 적 다섯을 붙잡아 온몸으로 휘돌린다 (그동안 무적). 도는 동안 닿는 적이 모두 맞고 마지막에 사방으로 내던지면 떨어진 자리마다 땅이 터진다", pose = "cs_swing", dur = 2.6, cd = 28, chi = 100, armor = true,
-			mech = { kind = "grabThrow", mode = "spin", range = 24, angle = 360, n = 5, reel = 0.25, spin = 1.6, every = 0.2, orbit = 8, radius = 13, tick = hit(0, 0, 0, 26, 30, 0.3, 16), dist = 44, flight = 0.6, hit = hit(0, 0, 0, 260, 300, 1.2, 0, 0), splashRadius = 12, splash = hit(0, 0, 0, 110, 120, 0.8, 40, 16) } },
+		G = { id = "snG", name = "삼재천진", desc = "하늘 · 땅 · 사람 세 기둥이 둘레에 세모꼴로 솟아 둘레 22칸의 적을 끌어당긴다 (그동안 무적). 세 기둥이 차례로 빛줄기를 쏘아 안의 적을 꿰뚫고, 마지막에 세 줄기가 한가운데서 만나 터진다", pose = "sn_palm", dur = 2.4, cd = 28, chi = 100, armor = true,
+			mech = { kind = "forgeSeq", iframes = true, steps = {
+				{ t = 0.3, shape = "circle", at = "self", radius = 22, pull = 28, life = 1.6, vfx = "snTriad", hit = hit(0, 0, 0, 60, 70, 0.6, 0) },
+				{ t = 0.8, at = "each", n = 6, range = 24, radius = 6, col = 1, vfx = "snBeam", hit = hit(0, 0, 0, 110, 120, 0.6, 10, 10) },
+				{ t = 1.1, at = "each", n = 6, range = 24, radius = 6, col = 2, vfx = "snBeam", hit = hit(0, 0, 0, 110, 120, 0.6, 10, -6) },
+				{ t = 1.4, at = "each", n = 6, range = 24, radius = 6, col = 3, vfx = "snBeam", hit = hit(0, 0, 0, 110, 120, 0.6, 20) },
+				{ t = 1.9, shape = "circle", at = "self", radius = 22, vfx = "snUnity", big = true, hit = hit(0, 0, 0, 140, 160, 1.2, 50, 20) },
+			} } },
 		X = { id = "snX", name = "천지개벽", desc = "초 오의. 얻을 때의 그 동작 그대로 (그동안 무적): 둘레의 적 여섯을 붙잡아 팔을 여섯 번 휘두르며 몸째 휘돌린다. 무릎을 들어 땅을 찍는 순간 모두를 사방으로 내던져 떨어진 자리마다 천지가 갈라진다 (보스는 붙잡지 못하고 그 자리에서 맞는다)", pose = "sn_get", dur = 5.2, cd = 55, chi = 150, armor = true,
 			mech = { kind = "grabThrow", mode = "spin", range = 32, angle = 360, n = 6, reel = 0.5, spin = 3.3, every = 0.18, orbit = 9, radius = 15, tick = hit(0, 0, 0, 34, 40, 0.3, 16), dist = 40, flight = 0.5, hit = hit(0, 0, 0, 420, 480, 1.6, 0, 0), splashRadius = 15, splash = hit(0, 0, 0, 220, 260, 1.2, 60, 24) } },
 	},
@@ -3058,8 +3064,12 @@ table.insert(Config.Styles, {
 			proj = { speed = 90, life = 0.8, radius = 8, dmg = 38, posture = 50, stun = 0.7, kb = 40, size = 8, pierce = true }, hits = {} },
 		R = { id = "ccrR", name = "비룡천", desc = "용처럼 솟구치며 둘레의 적을 모두 하늘로 올려 친다", pose = "ccr_soar", dur = 0.8, cd = 10, chi = 25, jump = 40,
 			mech = { kind = "launch", delay = 0.15, radius = 14, stun = 1.2, up = 55, hitAt = 0.45, hit = hit(0, 0, 0, 42, 70, 0.8, 10, 20) } },
-		G = { id = "ccrG", name = "구룡천강", desc = "땅을 뚫고 금룡 아홉이 둘레에서 솟아 하늘로 감아 오른 뒤, 차례로 적에게 내리꽂히고 한가운데서 터진다", pose = "ccr_nine", dur = 2.4, cd = 30, chi = 100, armor = true,
-			mech = { kind = "nineDragons", n = 9, ringRadius = 15, rise = 1.0, riseHit = hit(0, 0, 0, 20, 30, 0.6, 10, 30), range = 44, dives = 9, every = 0.12, diveRadius = 9, hit = hit(0, 0, 0, 26, 40, 0.7, 20, -6), finalRadius = 24, final = hit(0, 0, 0, 90, 160, 1.4, 60, 20) } },
+		G = { id = "ccrG", name = "천룡파천", desc = "구름을 찢고 하늘보다 큰 천룡 한 마리가 머리를 내민다. 천룡이 앞으로 길게 내리꽂히며 지나는 길을 휩쓸고, 땅에 박힌 자리에서 용의 비늘이 사방으로 터진다", pose = "ccr_nine", dur = 2.0, cd = 30, chi = 100, armor = true,
+			mech = { kind = "forgeSeq", steps = {
+				{ t = 0.2, shape = "circle", at = "self", radius = 1, life = 0.9, vfx = "crSkyTear" },
+				{ t = 1.0, shape = "line", at = "self", length = 40, width = 12, vfx = "crDragonDive", big = true, hit = hit(0, 0, 0, 90, 160, 1.2, 40, 10) },
+				{ t = 1.4, shape = "circle", at = "front", dist = 34, radius = 14, vfx = "crScaleBurst", hit = hit(0, 0, 0, 60, 100, 0.9, 40, 20) },
+			} } },
 		X = { id = "ccrX", name = "천룡멸세", desc = "초 오의. 하늘이 갈라지며 산만 한 황금 천룡이 내려온다. 여덟 번 내리꽂히고 마지막에 앞으로 하늘을 태우는 숨을 뿜는다", pose = "ccr_heaven", dur = 3.4, cd = 50, chi = 140, armor = true,
 			mech = { kind = "avatar", look = "dragon", dur = 4.0, scale = 2.2, strikes = {
 				{ t = 0.9, at = "targets", n = 2, radius = 12, hit = hit(0, 0, 0, 42, 60, 0.8, 20, 30) },
@@ -3106,10 +3116,20 @@ table.insert(Config.Styles, {
 			mech = { kind = "rushChain", n = 3, range = 30, delay = 0.08, every = 0.2, hitsEach = 1, hit = hit(0, 0, 0, 34, 60, 0.7, 24, 10) } },
 		R = { id = "chpR", name = "패왕투", desc = "앞의 적을 붙잡아 머리 위로 들어 앞으로 내던진다. 날아가는 적에 부딪힌 적과 떨어진 자리의 적이 모두 다친다", pose = "ch_throw", dur = 0.9, cd = 10, chi = 25,
 			mech = { kind = "grabThrow", mode = "throw", range = 16, angle = 90, n = 1, reel = 0.18, hold = 0.3, dist = 50, flight = 0.6, hit = hit(0, 0, 0, 51, 90, 1.2, 0, 0), splashRadius = 10, splash = hit(0, 0, 0, 34, 60, 0.8, 34, 14) } },
-		G = { id = "chpG", name = "천하무쌍권", desc = "1초 동안 천하의 기를 한 주먹에 모았다가 앞으로 지른다. 앞의 모든 것이 지워진다", pose = "ch_onefist", dur = 1.8, cd = 30, chi = 100, armor = true,
-			mech = { kind = "onepunch", delay = 1.0, range = 54, angle = 40, hit = hit(0, 0, 0, 217, 460, 1.6, 140, 14) } },
-		X = { id = "chpX", name = "패천멸지", desc = "초 오의. 하늘이 패기에 갈라져 2.4초 동안 둘레의 적에게 금빛 벼락이 쉬지 않고 떨어지고 마지막에 내가 땅을 내리쳐 둘레를 모두 무너뜨린다", pose = "ch_crush", dur = 3.2, cd = 50, chi = 140, armor = true,
-			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 34, 54, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 239, 460, 1.8, 80, 30) } },
+		G = { id = "chpG", name = "패왕진각", desc = "땅을 세 번 구른다. 구를 때마다 앞의 땅이 더 길게 갈라지고, 세 번째에 갈라진 틈 끝에서 바위 기둥이 솟아 적을 하늘로 띄운다", pose = "ch_onefist", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "forgeSeq", steps = {
+				{ t = 0.3, shape = "circle", at = "self", radius = 10, vfx = "chStomp", hit = hit(0, 0, 0, 40, 90, 0.6, 20, 6) },
+				{ t = 0.7, shape = "line", at = "self", length = 20, width = 9, vfx = "chCrack", hit = hit(0, 0, 0, 50, 110, 0.7, 20, 8) },
+				{ t = 1.1, shape = "line", at = "self", length = 32, width = 12, vfx = "chCrack", hit = hit(0, 0, 0, 60, 120, 0.8, 20, 10) },
+				{ t = 1.45, shape = "circle", at = "front", dist = 32, radius = 12, vfx = "chPillars", big = true, hit = hit(0, 0, 0, 67, 140, 1.4, 40, 40) },
+			} } },
+		X = { id = "chpX", name = "천하일통", desc = "초 오의 (그동안 무적). 둘레 30칸의 적을 패기로 끌어당겨 무릎 꿇린다. 모두를 한꺼번에 하늘로 쳐올린 뒤, 하늘에서 산만 한 금빛 주먹이 내려와 내리찍고 땅이 물결처럼 뒤집힌다", pose = "ch_crush", dur = 3.2, cd = 50, chi = 140, armor = true,
+			mech = { kind = "forgeSeq", iframes = true, steps = {
+				{ t = 0.2, shape = "circle", at = "self", radius = 30, pull = 40, life = 1.0, vfx = "chAura", hit = hit(0, 0, 0, 30, 60, 0.8, 0) },
+				{ t = 1.1, shape = "circle", at = "self", radius = 30, vfx = "chLift", hit = hit(0, 0, 0, 50, 90, 0.8, 0, 50) },
+				{ t = 2.0, shape = "circle", at = "self", radius = 30, vfx = "chSkyFist", big = true, hit = hit(0, 0, 0, 280, 460, 1.8, 60, -10) },
+				{ t = 2.5, shape = "ring", at = "self", inner = 10, radius = 34, vfx = "chQuake", hit = hit(0, 0, 0, 60, 90, 0.8, 60, 20) },
+			} } },
 	},
 })
 
@@ -3146,14 +3166,31 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "ssnH", name = "사신일격", pose = "punch_r_heavy", dur = 0.6, lunge = 6, hits = { hit(0.28, 8, 7, 25, 48, 0.8, 60) } },
 	skills = {
-		E = { id = "ssnE", name = "백호질주", desc = "흰 범의 혼이 되어 앞으로 20칸을 덮치듯 내달린다 (무적). 지나온 길에 범의 발톱 자국이 줄줄이 터진다", pose = "lightning_dash", dur = 0.7, cd = 7, chi = 20,
-			mech = { kind = "lightDash", cut = 0.05, charge = 0.25, gap = 0.2, lens = { 20 }, mul = { 1 }, width = 5, hit = hit(0, 0, 0, 34, 56, 0.7, 20, 6), boomAt = 0.3, boomRadius = 7, boom = hit(0, 0, 0, 16, 24, 0.5, 14, 8) } },
-		R = { id = "ssnR", name = "주작쌍익", desc = "붉은 불새 둘을 날린다. 불새는 엇갈리는 활을 그리며 지나는 적을 태우고 앞에서 만나 불꽃 날개로 터진다", pose = "eclipse_push", dur = 0.6, cd = 10, chi = 25,
-			mech = { kind = "twinDiscs", dist = 30, swing = 9, time = 0.6, every = 0.06, radius = 5, hit = hit(0, 0, 0, 24, 34, 0.5, 12), burstRadius = 11, burst = hit(0, 0, 0, 32, 46, 0.7, 24, 8) } },
-		G = { id = "ssnG", name = "청룡승천", desc = "1초 동안 푸른 용의 기운을 주먹에 모았다가 지른다. 거대한 청룡이 앞으로 솟구치며 앞의 모든 것을 휩쓴다", pose = "one_punch", dur = 1.8, cd = 30, chi = 100, armor = true,
-			mech = { kind = "onepunch", delay = 1.0, range = 54, angle = 40, hit = hit(0, 0, 0, 215, 455, 1.6, 135, 14) } },
-		X = { id = "ssnX", name = "사신강림", desc = "초 오의. 하늘에 네 신수가 나타나 2.4초 동안 둘레를 돌며 적에게 차례로 내리꽂히고 마지막에 현무의 등껍질이 하늘에서 떨어져 둘레를 누른다", pose = "heaven_split", dur = 3.2, cd = 50, chi = 140, armor = true,
-			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 33, 53, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 235, 455, 1.8, 80, 30) } },
+		E = { id = "ssnE", name = "백호질주", desc = "흰 범의 혼이 되어 세 번 덮치며 21칸을 내달린다 (그동안 무적). 덮칠 때마다 범의 발톱이 땅을 할퀴고, 마지막엔 앞발로 내리친다", pose = "lightning_dash", dur = 0.8, cd = 7, chi = 20,
+			mech = { kind = "forgeSeq", iframes = true, steps = {
+				{ t = 0.1, dash = 7, shape = "circle", at = "self", radius = 6, vfx = "ssTigerLeap", hit = hit(0, 0, 0, 14, 22, 0.4, 10) },
+				{ t = 0.3, dash = 7, shape = "circle", at = "self", radius = 6, vfx = "ssTigerLeap", hit = hit(0, 0, 0, 14, 22, 0.4, 10) },
+				{ t = 0.5, dash = 7, shape = "circle", at = "front", dist = 3, radius = 8, vfx = "ssTigerMaul", hit = hit(0, 0, 0, 20, 30, 0.6, 22, 6) },
+			} } },
+		R = { id = "ssnR", name = "주작연익", desc = "등 뒤로 주작의 불 날개가 활짝 펼쳐지며 둘레를 태우고, 불새 넷이 날아올라 가까운 적에게 내리꽂힌 뒤 앞에서 불꽃으로 터진다", pose = "eclipse_push", dur = 0.9, cd = 10, chi = 25,
+			mech = { kind = "forgeSeq", steps = {
+				{ t = 0.15, shape = "ring", at = "self", inner = 3, radius = 13, vfx = "ssBirdWings", hit = hit(0, 0, 0, 20, 28, 0.4, 10) },
+				{ t = 0.45, at = "each", n = 4, range = 24, radius = 6, vfx = "ssBirdDive", hit = hit(0, 0, 0, 18, 26, 0.4, 8, 6) },
+				{ t = 0.75, shape = "circle", at = "front", dist = 10, radius = 10, vfx = "ssBirdBurst", hit = hit(0, 0, 0, 22, 32, 0.6, 20, 8) },
+			} } },
+		G = { id = "ssnG", name = "청룡승천", desc = "땅속에서 청룡이 깨어난다. 가장 가까운 적 발밑에서 솟구쳐 적을 하늘로 띄우고, 둘레를 한 바퀴 휘감아 적을 끌어모은 뒤 앞으로 길게 내리꽂힌다", pose = "one_punch", dur = 1.9, cd = 30, chi = 100, armor = true,
+			mech = { kind = "forgeSeq", steps = {
+				{ t = 0.3, at = "target", range = 30, shape = "circle", radius = 9, vfx = "ssDragonRise", hit = hit(0, 0, 0, 60, 120, 0.8, 10, 40) },
+				{ t = 0.9, shape = "circle", at = "self", radius = 18, pull = 22, vfx = "ssDragonCoil", hit = hit(0, 0, 0, 40, 90, 0.6, 0) },
+				{ t = 1.5, shape = "line", at = "self", length = 34, width = 10, vfx = "ssDragonDive", big = true, hit = hit(0, 0, 0, 115, 245, 1.6, 120, 14) },
+			} } },
+		X = { id = "ssnX", name = "사신강림", desc = "초 오의 (그동안 무적). 네 방위에 네 신수가 차례로 내려선다. 백호가 적 여섯을 할퀴고, 주작이 불비를 뿌리고, 청룡이 둘레를 휘감아 돈 뒤, 마지막에 하늘에서 현무의 등껍질이 내려와 둘레 30칸을 짓누른다", pose = "heaven_split", dur = 3.2, cd = 50, chi = 140, armor = true,
+			mech = { kind = "forgeSeq", iframes = true, steps = {
+				{ t = 0.3, at = "each", n = 6, range = 36, radius = 6, vfx = "ssGodTiger", hit = hit(0, 0, 0, 45, 70, 0.5, 10, 6) },
+				{ t = 0.8, at = "each", n = 6, range = 36, radius = 6, vfx = "ssGodBird", hit = hit(0, 0, 0, 45, 70, 0.5, 10, 8) },
+				{ t = 1.3, shape = "circle", at = "self", radius = 30, pull = 30, life = 0.8, vfx = "ssGodDragon", hit = hit(0, 0, 0, 45, 70, 0.5, 0) },
+				{ t = 2.4, shape = "circle", at = "self", radius = 30, vfx = "ssGodTurtle", big = true, hit = hit(0, 0, 0, 285, 455, 1.8, 80, 30) },
+			} } },
 	},
 })
 
@@ -3231,14 +3268,32 @@ table.insert(Config.Styles, {
 	heavy = { id = "hyH", name = "흑염일섬", pose = "reap_hook", dur = 0.6, lunge = 7, hits = { hit(0.28, 8.5, 6, 25, 46, 0.8, 56) } },
 	skills = {
 		-- 3.55판: E · R · G 새로 (X는 그대로)
-		E = { id = "hyE", name = "흑염발도", desc = "칼을 허리에 거두고 숨을 죽였다가, 눈에 보이지 않게 앞으로 18칸을 지나며 벤다 (무적). 한 박자 늦게 지나온 길에 베인 자국이 줄줄이 그어지며 검은 불꽃이 터진다", pose = "lightning_dash", dur = 0.7, cd = 7, chi = 20,
-			mech = { kind = "lightDash", cut = 0.05, charge = 0.3, gap = 0.2, lens = { 18 }, mul = { 1 }, width = 5, hit = hit(0, 0, 0, 34, 52, 0.7, 20, 6), boomAt = 0.3, boomRadius = 7, boom = hit(0, 0, 0, 14, 20, 0.5, 14, 8) } },
-		R = { id = "hyR", name = "쌍마비검", desc = "손의 마검 둘을 던진다. 검은 땅과 나란히 빙글빙글 돌며 엇갈리는 활을 그려 지나는 적을 베고 앞에서 십자로 부딪쳐 터진다", pose = "reap_wave", dur = 0.6, cd = 10, chi = 25,
-			mech = { kind = "twinDiscs", dist = 28, swing = 8, time = 0.6, every = 0.06, radius = 5, hit = hit(0, 0, 0, 24, 34, 0.5, 12), burstRadius = 10, burst = hit(0, 0, 0, 30, 44, 0.7, 24, 8) } },
-		G = { id = "hyG", name = "마왕참", desc = "1초 동안 등 뒤 하늘에 검은 불꽃을 모아 집채만 한 마검을 빚고 앞으로 내리찍는다. 땅이 한 줄로 갈라지며 검은 불길이 끝까지 솟는다", pose = "reap_moon", dur = 1.8, cd = 30, chi = 100, armor = true,
-			mech = { kind = "onepunch", delay = 1.0, range = 54, angle = 40, hit = hit(0, 0, 0, 210, 440, 1.6, 130, 14) } },
-		X = { id = "hyX", name = "흑염멸천", desc = "초 오의. 하늘에 검은 불의 소용돌이가 열려 2.4초 동안 둘레의 적에게 불꽃 검이 쏟아지고 마지막에 거대한 마검이 한가운데로 내리꽂히며 둘레에 마검이 솟는다", pose = "ult_sever", dur = 3.2, cd = 50, chi = 140, armor = true,
-			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 32, 52, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 230, 450, 1.8, 80, 30) } },
+		E = { id = "hyE", name = "흑염발도", desc = "칼을 허리에 거두고 숨을 죽였다가 앞으로 18칸을 지나며 벤다 (그동안 무적). 한 박자 늦게, 지나온 길에 검은 불꽃 칼자국 셋이 엇갈려 그어지며 터진다", pose = "dash", dur = 0.8, cd = 7, chi = 20,
+			mech = { kind = "forgeSeq", iframes = true, steps = {
+				{ t = 0.3, dash = 18, shape = "circle", at = "self", radius = 6, vfx = "hyDraw", hit = hit(0, 0, 0, 26, 40, 0.6, 12) },
+				{ t = 0.65, shape = "circle", at = "front", dist = -9, radius = 10, vfx = "hyLateCuts", hit = hit(0, 0, 0, 24, 36, 0.6, 14, 6) },
+			} } },
+		R = { id = "hyR", name = "마검윤무", desc = "마검 둘이 손을 떠나 몸 둘레를 돈다. 세 바퀴 돌며 점점 멀어져 둘레 14칸을 베고, 마지막에 앞으로 날아가 땅에 꽂히며 검은 불길이 솟는다", pose = "reap_wave", dur = 1.1, cd = 10, chi = 25,
+			mech = { kind = "forgeSeq", steps = {
+				{ t = 0.1, shape = "circle", at = "self", radius = 6, life = 0.8, vfx = "hyOrbit", hit = hit(0, 0, 0, 14, 20, 0.3, 6) },
+				{ t = 0.35, shape = "ring", at = "self", inner = 4, radius = 10, hit = hit(0, 0, 0, 14, 20, 0.3, 6) },
+				{ t = 0.6, shape = "ring", at = "self", inner = 7, radius = 14, hit = hit(0, 0, 0, 14, 20, 0.3, 6) },
+				{ t = 0.9, shape = "circle", at = "front", dist = 22, radius = 8, vfx = "hySwordPlant", hit = hit(0, 0, 0, 18, 30, 0.6, 20, 8) },
+			} } },
+		G = { id = "hyG", name = "마왕참", desc = "등 뒤 하늘에 검은 불꽃을 모아 집채만 한 마검을 빚고 앞으로 내리찍는다. 땅이 한 줄로 갈라지고, 갈라진 틈을 따라 검은 불길 기둥이 차례로 솟는다", pose = "reap_moon", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "forgeSeq", steps = {
+				{ t = 0.15, shape = "circle", at = "self", radius = 1, life = 0.9, vfx = "hyGiantForm" },
+				{ t = 1.0, shape = "line", at = "self", length = 40, width = 9, vfx = "hyGiantSlash", big = true, hit = hit(0, 0, 0, 150, 320, 1.6, 100, 10) },
+				{ t = 1.35, shape = "line", at = "self", length = 40, width = 9, vfx = "hyRiftFlames", hit = hit(0, 0, 0, 60, 120, 0.8, 20, 20) },
+			} } },
+		X = { id = "hyX", name = "흑염멸천", desc = "초 오의 (그동안 무적). 발밑에 검은 불의 진이 열리고 마검 여섯이 땅에서 솟아 둘레를 에워싼다. 불의 고리가 세 번 바깥으로 번져 나가며 적을 태우고, 마지막에 하늘에서 거대한 마검이 한가운데로 내리꽂혀 둘레 30칸에 검은 불기둥이 솟는다", pose = "ult_sever", dur = 3.2, cd = 50, chi = 140, armor = true,
+			mech = { kind = "forgeSeq", iframes = true, steps = {
+				{ t = 0.2, shape = "circle", at = "self", radius = 30, pull = 24, life = 2.4, vfx = "hyCircle", hit = hit(0, 0, 0, 20, 40, 0.4, 0) },
+				{ t = 0.7, shape = "ring", at = "self", inner = 0, radius = 12, vfx = "hyFlameRing", hit = hit(0, 0, 0, 40, 60, 0.5, 10) },
+				{ t = 1.2, shape = "ring", at = "self", inner = 10, radius = 22, vfx = "hyFlameRing", hit = hit(0, 0, 0, 40, 60, 0.5, 10) },
+				{ t = 1.7, shape = "ring", at = "self", inner = 18, radius = 30, vfx = "hyFlameRing", hit = hit(0, 0, 0, 40, 60, 0.5, 10) },
+				{ t = 2.5, shape = "circle", at = "self", radius = 30, vfx = "hyDemonSword", big = true, hit = hit(0, 0, 0, 280, 450, 1.8, 80, 30) },
+			} } },
 	},
 })
 -- 3.41판 강화: 단계마다 드는 비급 조각과 은자 (+1 ~ +15). 실패는 없다

@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.83" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.84" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2683,8 +2683,14 @@ table.insert(Config.Styles, {
 			mech = { kind = "grabThrow", mode = "slam", range = 18, angle = 120, n = 3, reel = 0.2, hold = 0.35, hit = hit(0, 0, 0, 120, 120, 1.2, 8, 0), splashRadius = 12, splash = hit(0, 0, 0, 56, 60, 0.7, 30, 14) } },
 		R = { id = "snR", name = "지축 진각", desc = "무릎을 높이 들어 땅을 찍는다. 발밑에서 충격이 사방으로 퍼져 둘레의 적이 크게 튕겨 오른다", pose = "sn_stomp", dur = 0.7, cd = 9, chi = 26,
 			mech = { kind = "shock", delay = 0.38, dist = 0, radius = 17, hit = hit(0, 0, 0, 120, 120, 1.1, 50, 18) } },
-		G = { id = "snG", name = "천근 대회전", desc = "둘레의 적 다섯을 붙잡아 온몸으로 휘돌린다 (그동안 무적). 도는 동안 닿는 적이 모두 맞고 마지막에 사방으로 내던지면 떨어진 자리마다 땅이 터진다", pose = "cs_swing", dur = 2.6, cd = 28, chi = 100, armor = true,
-			mech = { kind = "grabThrow", mode = "spin", range = 24, angle = 360, n = 5, reel = 0.25, spin = 1.6, every = 0.2, orbit = 8, radius = 13, tick = hit(0, 0, 0, 26, 30, 0.3, 16), dist = 44, flight = 0.6, hit = hit(0, 0, 0, 260, 300, 1.2, 0, 0), splashRadius = 12, splash = hit(0, 0, 0, 110, 120, 0.8, 40, 16) } },
+		G = { id = "snG", name = "삼재천진", desc = "하늘 · 땅 · 사람 세 기둥이 둘레에 세모꼴로 솟아 둘레 22칸의 적을 끌어당긴다 (그동안 무적). 세 기둥이 차례로 빛줄기를 쏘아 안의 적을 꿰뚫고, 마지막에 세 줄기가 한가운데서 만나 터진다", pose = "sn_palm", dur = 2.4, cd = 28, chi = 100, armor = true,
+			mech = { kind = "forgeSeq", iframes = true, steps = {
+				{ t = 0.3, shape = "circle", at = "self", radius = 22, pull = 28, life = 1.6, vfx = "snTriad", hit = hit(0, 0, 0, 60, 70, 0.6, 0) },
+				{ t = 0.8, at = "each", n = 6, range = 24, radius = 6, col = 1, vfx = "snBeam", hit = hit(0, 0, 0, 110, 120, 0.6, 10, 10) },
+				{ t = 1.1, at = "each", n = 6, range = 24, radius = 6, col = 2, vfx = "snBeam", hit = hit(0, 0, 0, 110, 120, 0.6, 10, -6) },
+				{ t = 1.4, at = "each", n = 6, range = 24, radius = 6, col = 3, vfx = "snBeam", hit = hit(0, 0, 0, 110, 120, 0.6, 20) },
+				{ t = 1.9, shape = "circle", at = "self", radius = 22, vfx = "snUnity", big = true, hit = hit(0, 0, 0, 140, 160, 1.2, 50, 20) },
+			} } },
 		X = { id = "snX", name = "천지개벽", desc = "초 오의. 얻을 때의 그 동작 그대로 (그동안 무적): 둘레의 적 여섯을 붙잡아 팔을 여섯 번 휘두르며 몸째 휘돌린다. 무릎을 들어 땅을 찍는 순간 모두를 사방으로 내던져 떨어진 자리마다 천지가 갈라진다 (보스는 붙잡지 못하고 그 자리에서 맞는다)", pose = "sn_get", dur = 5.2, cd = 55, chi = 150, armor = true,
 			mech = { kind = "grabThrow", mode = "spin", range = 32, angle = 360, n = 6, reel = 0.5, spin = 3.3, every = 0.18, orbit = 9, radius = 15, tick = hit(0, 0, 0, 34, 40, 0.3, 16), dist = 40, flight = 0.5, hit = hit(0, 0, 0, 420, 480, 1.6, 0, 0), splashRadius = 15, splash = hit(0, 0, 0, 220, 260, 1.2, 60, 24) } },
 	},
@@ -3078,8 +3084,12 @@ table.insert(Config.Styles, {
 			proj = { speed = 90, life = 0.8, radius = 8, dmg = 38, posture = 50, stun = 0.7, kb = 40, size = 8, pierce = true }, hits = {} },
 		R = { id = "ccrR", name = "비룡천", desc = "용처럼 솟구치며 둘레의 적을 모두 하늘로 올려 친다", pose = "ccr_soar", dur = 0.8, cd = 10, chi = 25, jump = 40,
 			mech = { kind = "launch", delay = 0.15, radius = 14, stun = 1.2, up = 55, hitAt = 0.45, hit = hit(0, 0, 0, 42, 70, 0.8, 10, 20) } },
-		G = { id = "ccrG", name = "구룡천강", desc = "땅을 뚫고 금룡 아홉이 둘레에서 솟아 하늘로 감아 오른 뒤, 차례로 적에게 내리꽂히고 한가운데서 터진다", pose = "ccr_nine", dur = 2.4, cd = 30, chi = 100, armor = true,
-			mech = { kind = "nineDragons", n = 9, ringRadius = 15, rise = 1.0, riseHit = hit(0, 0, 0, 20, 30, 0.6, 10, 30), range = 44, dives = 9, every = 0.12, diveRadius = 9, hit = hit(0, 0, 0, 26, 40, 0.7, 20, -6), finalRadius = 24, final = hit(0, 0, 0, 90, 160, 1.4, 60, 20) } },
+		G = { id = "ccrG", name = "천룡파천", desc = "구름을 찢고 하늘보다 큰 천룡 한 마리가 머리를 내민다. 천룡이 앞으로 길게 내리꽂히며 지나는 길을 휩쓸고, 땅에 박힌 자리에서 용의 비늘이 사방으로 터진다", pose = "ccr_nine", dur = 2.0, cd = 30, chi = 100, armor = true,
+			mech = { kind = "forgeSeq", steps = {
+				{ t = 0.2, shape = "circle", at = "self", radius = 1, life = 0.9, vfx = "crSkyTear" },
+				{ t = 1.0, shape = "line", at = "self", length = 40, width = 12, vfx = "crDragonDive", big = true, hit = hit(0, 0, 0, 90, 160, 1.2, 40, 10) },
+				{ t = 1.4, shape = "circle", at = "front", dist = 34, radius = 14, vfx = "crScaleBurst", hit = hit(0, 0, 0, 60, 100, 0.9, 40, 20) },
+			} } },
 		X = { id = "ccrX", name = "천룡멸세", desc = "초 오의. 하늘이 갈라지며 산만 한 황금 천룡이 내려온다. 여덟 번 내리꽂히고 마지막에 앞으로 하늘을 태우는 숨을 뿜는다", pose = "ccr_heaven", dur = 3.4, cd = 50, chi = 140, armor = true,
 			mech = { kind = "avatar", look = "dragon", dur = 4.0, scale = 2.2, strikes = {
 				{ t = 0.9, at = "targets", n = 2, radius = 12, hit = hit(0, 0, 0, 42, 60, 0.8, 20, 30) },
@@ -3126,10 +3136,20 @@ table.insert(Config.Styles, {
 			mech = { kind = "rushChain", n = 3, range = 30, delay = 0.08, every = 0.2, hitsEach = 1, hit = hit(0, 0, 0, 34, 60, 0.7, 24, 10) } },
 		R = { id = "chpR", name = "패왕투", desc = "앞의 적을 붙잡아 머리 위로 들어 앞으로 내던진다. 날아가는 적에 부딪힌 적과 떨어진 자리의 적이 모두 다친다", pose = "ch_throw", dur = 0.9, cd = 10, chi = 25,
 			mech = { kind = "grabThrow", mode = "throw", range = 16, angle = 90, n = 1, reel = 0.18, hold = 0.3, dist = 50, flight = 0.6, hit = hit(0, 0, 0, 51, 90, 1.2, 0, 0), splashRadius = 10, splash = hit(0, 0, 0, 34, 60, 0.8, 34, 14) } },
-		G = { id = "chpG", name = "천하무쌍권", desc = "1초 동안 천하의 기를 한 주먹에 모았다가 앞으로 지른다. 앞의 모든 것이 지워진다", pose = "ch_onefist", dur = 1.8, cd = 30, chi = 100, armor = true,
-			mech = { kind = "onepunch", delay = 1.0, range = 54, angle = 40, hit = hit(0, 0, 0, 217, 460, 1.6, 140, 14) } },
-		X = { id = "chpX", name = "패천멸지", desc = "초 오의. 하늘이 패기에 갈라져 2.4초 동안 둘레의 적에게 금빛 벼락이 쉬지 않고 떨어지고 마지막에 내가 땅을 내리쳐 둘레를 모두 무너뜨린다", pose = "ch_crush", dur = 3.2, cd = 50, chi = 140, armor = true,
-			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 34, 54, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 239, 460, 1.8, 80, 30) } },
+		G = { id = "chpG", name = "패왕진각", desc = "땅을 세 번 구른다. 구를 때마다 앞의 땅이 더 길게 갈라지고, 세 번째에 갈라진 틈 끝에서 바위 기둥이 솟아 적을 하늘로 띄운다", pose = "ch_onefist", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "forgeSeq", steps = {
+				{ t = 0.3, shape = "circle", at = "self", radius = 10, vfx = "chStomp", hit = hit(0, 0, 0, 40, 90, 0.6, 20, 6) },
+				{ t = 0.7, shape = "line", at = "self", length = 20, width = 9, vfx = "chCrack", hit = hit(0, 0, 0, 50, 110, 0.7, 20, 8) },
+				{ t = 1.1, shape = "line", at = "self", length = 32, width = 12, vfx = "chCrack", hit = hit(0, 0, 0, 60, 120, 0.8, 20, 10) },
+				{ t = 1.45, shape = "circle", at = "front", dist = 32, radius = 12, vfx = "chPillars", big = true, hit = hit(0, 0, 0, 67, 140, 1.4, 40, 40) },
+			} } },
+		X = { id = "chpX", name = "천하일통", desc = "초 오의 (그동안 무적). 둘레 30칸의 적을 패기로 끌어당겨 무릎 꿇린다. 모두를 한꺼번에 하늘로 쳐올린 뒤, 하늘에서 산만 한 금빛 주먹이 내려와 내리찍고 땅이 물결처럼 뒤집힌다", pose = "ch_crush", dur = 3.2, cd = 50, chi = 140, armor = true,
+			mech = { kind = "forgeSeq", iframes = true, steps = {
+				{ t = 0.2, shape = "circle", at = "self", radius = 30, pull = 40, life = 1.0, vfx = "chAura", hit = hit(0, 0, 0, 30, 60, 0.8, 0) },
+				{ t = 1.1, shape = "circle", at = "self", radius = 30, vfx = "chLift", hit = hit(0, 0, 0, 50, 90, 0.8, 0, 50) },
+				{ t = 2.0, shape = "circle", at = "self", radius = 30, vfx = "chSkyFist", big = true, hit = hit(0, 0, 0, 280, 460, 1.8, 60, -10) },
+				{ t = 2.5, shape = "ring", at = "self", inner = 10, radius = 34, vfx = "chQuake", hit = hit(0, 0, 0, 60, 90, 0.8, 60, 20) },
+			} } },
 	},
 })
 
@@ -3166,14 +3186,31 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "ssnH", name = "사신일격", pose = "punch_r_heavy", dur = 0.6, lunge = 6, hits = { hit(0.28, 8, 7, 25, 48, 0.8, 60) } },
 	skills = {
-		E = { id = "ssnE", name = "백호질주", desc = "흰 범의 혼이 되어 앞으로 20칸을 덮치듯 내달린다 (무적). 지나온 길에 범의 발톱 자국이 줄줄이 터진다", pose = "lightning_dash", dur = 0.7, cd = 7, chi = 20,
-			mech = { kind = "lightDash", cut = 0.05, charge = 0.25, gap = 0.2, lens = { 20 }, mul = { 1 }, width = 5, hit = hit(0, 0, 0, 34, 56, 0.7, 20, 6), boomAt = 0.3, boomRadius = 7, boom = hit(0, 0, 0, 16, 24, 0.5, 14, 8) } },
-		R = { id = "ssnR", name = "주작쌍익", desc = "붉은 불새 둘을 날린다. 불새는 엇갈리는 활을 그리며 지나는 적을 태우고 앞에서 만나 불꽃 날개로 터진다", pose = "eclipse_push", dur = 0.6, cd = 10, chi = 25,
-			mech = { kind = "twinDiscs", dist = 30, swing = 9, time = 0.6, every = 0.06, radius = 5, hit = hit(0, 0, 0, 24, 34, 0.5, 12), burstRadius = 11, burst = hit(0, 0, 0, 32, 46, 0.7, 24, 8) } },
-		G = { id = "ssnG", name = "청룡승천", desc = "1초 동안 푸른 용의 기운을 주먹에 모았다가 지른다. 거대한 청룡이 앞으로 솟구치며 앞의 모든 것을 휩쓴다", pose = "one_punch", dur = 1.8, cd = 30, chi = 100, armor = true,
-			mech = { kind = "onepunch", delay = 1.0, range = 54, angle = 40, hit = hit(0, 0, 0, 215, 455, 1.6, 135, 14) } },
-		X = { id = "ssnX", name = "사신강림", desc = "초 오의. 하늘에 네 신수가 나타나 2.4초 동안 둘레를 돌며 적에게 차례로 내리꽂히고 마지막에 현무의 등껍질이 하늘에서 떨어져 둘레를 누른다", pose = "heaven_split", dur = 3.2, cd = 50, chi = 140, armor = true,
-			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 33, 53, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 235, 455, 1.8, 80, 30) } },
+		E = { id = "ssnE", name = "백호질주", desc = "흰 범의 혼이 되어 세 번 덮치며 21칸을 내달린다 (그동안 무적). 덮칠 때마다 범의 발톱이 땅을 할퀴고, 마지막엔 앞발로 내리친다", pose = "lightning_dash", dur = 0.8, cd = 7, chi = 20,
+			mech = { kind = "forgeSeq", iframes = true, steps = {
+				{ t = 0.1, dash = 7, shape = "circle", at = "self", radius = 6, vfx = "ssTigerLeap", hit = hit(0, 0, 0, 14, 22, 0.4, 10) },
+				{ t = 0.3, dash = 7, shape = "circle", at = "self", radius = 6, vfx = "ssTigerLeap", hit = hit(0, 0, 0, 14, 22, 0.4, 10) },
+				{ t = 0.5, dash = 7, shape = "circle", at = "front", dist = 3, radius = 8, vfx = "ssTigerMaul", hit = hit(0, 0, 0, 20, 30, 0.6, 22, 6) },
+			} } },
+		R = { id = "ssnR", name = "주작연익", desc = "등 뒤로 주작의 불 날개가 활짝 펼쳐지며 둘레를 태우고, 불새 넷이 날아올라 가까운 적에게 내리꽂힌 뒤 앞에서 불꽃으로 터진다", pose = "eclipse_push", dur = 0.9, cd = 10, chi = 25,
+			mech = { kind = "forgeSeq", steps = {
+				{ t = 0.15, shape = "ring", at = "self", inner = 3, radius = 13, vfx = "ssBirdWings", hit = hit(0, 0, 0, 20, 28, 0.4, 10) },
+				{ t = 0.45, at = "each", n = 4, range = 24, radius = 6, vfx = "ssBirdDive", hit = hit(0, 0, 0, 18, 26, 0.4, 8, 6) },
+				{ t = 0.75, shape = "circle", at = "front", dist = 10, radius = 10, vfx = "ssBirdBurst", hit = hit(0, 0, 0, 22, 32, 0.6, 20, 8) },
+			} } },
+		G = { id = "ssnG", name = "청룡승천", desc = "땅속에서 청룡이 깨어난다. 가장 가까운 적 발밑에서 솟구쳐 적을 하늘로 띄우고, 둘레를 한 바퀴 휘감아 적을 끌어모은 뒤 앞으로 길게 내리꽂힌다", pose = "one_punch", dur = 1.9, cd = 30, chi = 100, armor = true,
+			mech = { kind = "forgeSeq", steps = {
+				{ t = 0.3, at = "target", range = 30, shape = "circle", radius = 9, vfx = "ssDragonRise", hit = hit(0, 0, 0, 60, 120, 0.8, 10, 40) },
+				{ t = 0.9, shape = "circle", at = "self", radius = 18, pull = 22, vfx = "ssDragonCoil", hit = hit(0, 0, 0, 40, 90, 0.6, 0) },
+				{ t = 1.5, shape = "line", at = "self", length = 34, width = 10, vfx = "ssDragonDive", big = true, hit = hit(0, 0, 0, 115, 245, 1.6, 120, 14) },
+			} } },
+		X = { id = "ssnX", name = "사신강림", desc = "초 오의 (그동안 무적). 네 방위에 네 신수가 차례로 내려선다. 백호가 적 여섯을 할퀴고, 주작이 불비를 뿌리고, 청룡이 둘레를 휘감아 돈 뒤, 마지막에 하늘에서 현무의 등껍질이 내려와 둘레 30칸을 짓누른다", pose = "heaven_split", dur = 3.2, cd = 50, chi = 140, armor = true,
+			mech = { kind = "forgeSeq", iframes = true, steps = {
+				{ t = 0.3, at = "each", n = 6, range = 36, radius = 6, vfx = "ssGodTiger", hit = hit(0, 0, 0, 45, 70, 0.5, 10, 6) },
+				{ t = 0.8, at = "each", n = 6, range = 36, radius = 6, vfx = "ssGodBird", hit = hit(0, 0, 0, 45, 70, 0.5, 10, 8) },
+				{ t = 1.3, shape = "circle", at = "self", radius = 30, pull = 30, life = 0.8, vfx = "ssGodDragon", hit = hit(0, 0, 0, 45, 70, 0.5, 0) },
+				{ t = 2.4, shape = "circle", at = "self", radius = 30, vfx = "ssGodTurtle", big = true, hit = hit(0, 0, 0, 285, 455, 1.8, 80, 30) },
+			} } },
 	},
 })
 
@@ -3251,14 +3288,32 @@ table.insert(Config.Styles, {
 	heavy = { id = "hyH", name = "흑염일섬", pose = "reap_hook", dur = 0.6, lunge = 7, hits = { hit(0.28, 8.5, 6, 25, 46, 0.8, 56) } },
 	skills = {
 		-- 3.55판: E · R · G 새로 (X는 그대로)
-		E = { id = "hyE", name = "흑염발도", desc = "칼을 허리에 거두고 숨을 죽였다가, 눈에 보이지 않게 앞으로 18칸을 지나며 벤다 (무적). 한 박자 늦게 지나온 길에 베인 자국이 줄줄이 그어지며 검은 불꽃이 터진다", pose = "lightning_dash", dur = 0.7, cd = 7, chi = 20,
-			mech = { kind = "lightDash", cut = 0.05, charge = 0.3, gap = 0.2, lens = { 18 }, mul = { 1 }, width = 5, hit = hit(0, 0, 0, 34, 52, 0.7, 20, 6), boomAt = 0.3, boomRadius = 7, boom = hit(0, 0, 0, 14, 20, 0.5, 14, 8) } },
-		R = { id = "hyR", name = "쌍마비검", desc = "손의 마검 둘을 던진다. 검은 땅과 나란히 빙글빙글 돌며 엇갈리는 활을 그려 지나는 적을 베고 앞에서 십자로 부딪쳐 터진다", pose = "reap_wave", dur = 0.6, cd = 10, chi = 25,
-			mech = { kind = "twinDiscs", dist = 28, swing = 8, time = 0.6, every = 0.06, radius = 5, hit = hit(0, 0, 0, 24, 34, 0.5, 12), burstRadius = 10, burst = hit(0, 0, 0, 30, 44, 0.7, 24, 8) } },
-		G = { id = "hyG", name = "마왕참", desc = "1초 동안 등 뒤 하늘에 검은 불꽃을 모아 집채만 한 마검을 빚고 앞으로 내리찍는다. 땅이 한 줄로 갈라지며 검은 불길이 끝까지 솟는다", pose = "reap_moon", dur = 1.8, cd = 30, chi = 100, armor = true,
-			mech = { kind = "onepunch", delay = 1.0, range = 54, angle = 40, hit = hit(0, 0, 0, 210, 440, 1.6, 130, 14) } },
-		X = { id = "hyX", name = "흑염멸천", desc = "초 오의. 하늘에 검은 불의 소용돌이가 열려 2.4초 동안 둘레의 적에게 불꽃 검이 쏟아지고 마지막에 거대한 마검이 한가운데로 내리꽂히며 둘레에 마검이 솟는다", pose = "ult_sever", dur = 3.2, cd = 50, chi = 140, armor = true,
-			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 32, 52, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 230, 450, 1.8, 80, 30) } },
+		E = { id = "hyE", name = "흑염발도", desc = "칼을 허리에 거두고 숨을 죽였다가 앞으로 18칸을 지나며 벤다 (그동안 무적). 한 박자 늦게, 지나온 길에 검은 불꽃 칼자국 셋이 엇갈려 그어지며 터진다", pose = "dash", dur = 0.8, cd = 7, chi = 20,
+			mech = { kind = "forgeSeq", iframes = true, steps = {
+				{ t = 0.3, dash = 18, shape = "circle", at = "self", radius = 6, vfx = "hyDraw", hit = hit(0, 0, 0, 26, 40, 0.6, 12) },
+				{ t = 0.65, shape = "circle", at = "front", dist = -9, radius = 10, vfx = "hyLateCuts", hit = hit(0, 0, 0, 24, 36, 0.6, 14, 6) },
+			} } },
+		R = { id = "hyR", name = "마검윤무", desc = "마검 둘이 손을 떠나 몸 둘레를 돈다. 세 바퀴 돌며 점점 멀어져 둘레 14칸을 베고, 마지막에 앞으로 날아가 땅에 꽂히며 검은 불길이 솟는다", pose = "reap_wave", dur = 1.1, cd = 10, chi = 25,
+			mech = { kind = "forgeSeq", steps = {
+				{ t = 0.1, shape = "circle", at = "self", radius = 6, life = 0.8, vfx = "hyOrbit", hit = hit(0, 0, 0, 14, 20, 0.3, 6) },
+				{ t = 0.35, shape = "ring", at = "self", inner = 4, radius = 10, hit = hit(0, 0, 0, 14, 20, 0.3, 6) },
+				{ t = 0.6, shape = "ring", at = "self", inner = 7, radius = 14, hit = hit(0, 0, 0, 14, 20, 0.3, 6) },
+				{ t = 0.9, shape = "circle", at = "front", dist = 22, radius = 8, vfx = "hySwordPlant", hit = hit(0, 0, 0, 18, 30, 0.6, 20, 8) },
+			} } },
+		G = { id = "hyG", name = "마왕참", desc = "등 뒤 하늘에 검은 불꽃을 모아 집채만 한 마검을 빚고 앞으로 내리찍는다. 땅이 한 줄로 갈라지고, 갈라진 틈을 따라 검은 불길 기둥이 차례로 솟는다", pose = "reap_moon", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "forgeSeq", steps = {
+				{ t = 0.15, shape = "circle", at = "self", radius = 1, life = 0.9, vfx = "hyGiantForm" },
+				{ t = 1.0, shape = "line", at = "self", length = 40, width = 9, vfx = "hyGiantSlash", big = true, hit = hit(0, 0, 0, 150, 320, 1.6, 100, 10) },
+				{ t = 1.35, shape = "line", at = "self", length = 40, width = 9, vfx = "hyRiftFlames", hit = hit(0, 0, 0, 60, 120, 0.8, 20, 20) },
+			} } },
+		X = { id = "hyX", name = "흑염멸천", desc = "초 오의 (그동안 무적). 발밑에 검은 불의 진이 열리고 마검 여섯이 땅에서 솟아 둘레를 에워싼다. 불의 고리가 세 번 바깥으로 번져 나가며 적을 태우고, 마지막에 하늘에서 거대한 마검이 한가운데로 내리꽂혀 둘레 30칸에 검은 불기둥이 솟는다", pose = "ult_sever", dur = 3.2, cd = 50, chi = 140, armor = true,
+			mech = { kind = "forgeSeq", iframes = true, steps = {
+				{ t = 0.2, shape = "circle", at = "self", radius = 30, pull = 24, life = 2.4, vfx = "hyCircle", hit = hit(0, 0, 0, 20, 40, 0.4, 0) },
+				{ t = 0.7, shape = "ring", at = "self", inner = 0, radius = 12, vfx = "hyFlameRing", hit = hit(0, 0, 0, 40, 60, 0.5, 10) },
+				{ t = 1.2, shape = "ring", at = "self", inner = 10, radius = 22, vfx = "hyFlameRing", hit = hit(0, 0, 0, 40, 60, 0.5, 10) },
+				{ t = 1.7, shape = "ring", at = "self", inner = 18, radius = 30, vfx = "hyFlameRing", hit = hit(0, 0, 0, 40, 60, 0.5, 10) },
+				{ t = 2.5, shape = "circle", at = "self", radius = 30, vfx = "hyDemonSword", big = true, hit = hit(0, 0, 0, 280, 450, 1.8, 80, 30) },
+			} } },
 	},
 })
 -- 3.41판 강화: 단계마다 드는 비급 조각과 은자 (+1 ~ +15). 실패는 없다
@@ -61881,6 +61936,561 @@ VFX.arrowVolley = function(d)
 	end)
 	gStroke(from, at, 0.1, 0.2, 0.05, TIME, TIME2, true, 0.25)
 end
+------------------------------------------------------------------------
+-- 3.99.84판 후반 권법 새 기술 연출 (예전엔 사신천왕권 · 천하패권 · 흑염마검장이 같은 장치를 빛깔만 바꿔 썼다)
+------------------------------------------------------------------------
+local function lookOf(d: any): Vector3
+	local dir = typeof(d.dir) == "Vector3" and V(d.dir.X, 0, d.dir.Z) or V(0, 0, -1)
+	return dir.Magnitude > 0.01 and dir.Unit or V(0, 0, -1)
+end
+-- 🐯 사신천왕권 ---------------------------------------------------------
+VFX.ssTigerLeap = function(d)
+	local g = ground(d.at)
+	local look = lookOf(d)
+	gClaw(g + V(0, 1.5, 0), look, 6, TIGER, TIGER2, 4)
+	afterimage(d.m, nil, 0.35, TIGER2)
+	gEmit(g + V(0, 1, 0), TEX_SPARK, TIGER, TIGER2, 10, 0.4, 8, 0.4)
+	pcall(Fx.sound, "swing", 0.5, 1.2, g)
+end
+VFX.ssTigerMaul = function(d)
+	local g = ground(d.at)
+	local look = lookOf(d)
+	-- 앞발 둘이 엇갈려 내리친다
+	gClaw(g + V(0, 3, 0) - V(-look.Z, 0, look.X) * 2, look, 10, TIGER, TIGER2, 4)
+	task.delay(0.08, function()
+		gClaw(g + V(0, 3, 0) + V(-look.Z, 0, look.X) * 2, look, 10, TIGER2, TIGER, 4)
+		Fx.ring(g + V(0, 0.3, 0), TIGER2, 2, 18, 0.35)
+		Fx.debris(g, 6, 12)
+		shake(0.45)
+	end)
+end
+VFX.ssBirdWings = function(d)
+	local r0 = rootOf(d.m)
+	local c = r0 and r0.Position or (d.at :: Vector3)
+	local look = lookOf(d)
+	local right = V(-look.Z, 0, look.X)
+	-- 등 뒤로 펼쳐지는 불 날개: 깃 열넷이 부채꼴로 쫙 펴진다
+	for side = -1, 1, 2 do
+		for i = 1, 7 do
+			local a = math.rad(10 + i * 14)
+			local tip = c - look * 2 + right * side * math.cos(a) * 12 + V(0, 2 + math.sin(a) * 9, 0)
+			task.delay(i * 0.015, function()
+				gStroke(c - look * 1.5 + V(0, 2.5, 0), tip, 0.12, 0.8 - i * 0.05, 0.6, BIRD2, BIRD, true, 0.5)
+			end)
+		end
+	end
+	gEmit(c + V(0, 3, 0), TEX_FIRE, BIRD2, BIRD, 30, 2, 12, 0.6, 1, V(0, 6, 0))
+	Fx.ring(ground(c) + V(0, 0.3, 0), BIRD, 2, (d.radius or 13) * 2, 0.4)
+	pcall(Fx.sound, "splash", 0.4, 1.6, c)
+end
+VFX.ssBirdDive = function(d)
+	local at = (d.at :: Vector3) + V(0, 2, 0)
+	local from = at + V((math.random() - 0.5) * 14, 18, (math.random() - 0.5) * 14)
+	gSerpent(function(u)
+		return from:Lerp(at, u) + V(0, math.sin(u * math.pi) * 3, 0)
+	end, 0.18, 6, 0.9, BIRD, BIRD2, 0.02)
+	task.delay(0.2, function()
+		gEmit(at, TEX_FIRE, BIRD2, BIRD, 16, 1.4, 10, 0.5, 1, V(0, 6, 0))
+		Fx.flash(at, BIRD, 10, 2, 0.15)
+	end)
+end
+VFX.ssBirdBurst = function(d)
+	local g = ground(d.at) + V(0, 2, 0)
+	for i = 1, 10 do
+		local a = i / 10 * math.pi * 2
+		gStroke(g, g + V(math.cos(a) * 10, 2 + math.random() * 4, math.sin(a) * 10), 0.14, 0.5, 0.4, BIRD2, BIRD, true, 0.4)
+	end
+	gEmit(g, TEX_FIRE, BIRD2, BIRD, 30, 2.2, 16, 0.7, 1, V(0, 8, 0))
+	Fx.flash(g, BIRD2, 22, 3, 0.25)
+	shake(0.4)
+end
+-- 청룡: 머리가 길을 따라가고 몸이 늦게 따라온다
+local function azure(path: (number) -> Vector3, time: number, width: number)
+	gSerpent(path, time, 16, width, AZURE, AZURE2, 0.03)
+end
+VFX.ssDragonRise = function(d)
+	local g = ground(d.at)
+	disc(g + V(0, 0.3, 0), 2, AZURE, 0.2, 0.4, d.radius or 9)
+	Fx.debris(g, 8, 14)
+	azure(function(u)
+		local a = u * math.pi * 3
+		return g + V(math.cos(a) * 3, u * 28, math.sin(a) * 3)
+	end, 0.5, 1.4)
+	pcall(Fx.sound, "splash", 0.6, 0.7, g)
+	shake(0.4)
+end
+VFX.ssDragonCoil = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 18
+	azure(function(u)
+		local a = u * math.pi * 2
+		return g + V(math.cos(a) * r * 0.8, 4 + math.sin(u * math.pi) * 6, math.sin(a) * r * 0.8)
+	end, 0.55, 1.6)
+	gSwirl(function()
+		return g + V(0, 3, 0)
+	end, 10, r * 0.8, 3, 0.55, AZURE, AZURE2, { width = 0.4, trail = 0.4, converge = true, speed = 2 })
+end
+VFX.ssDragonDive = function(d)
+	local from = (d.from :: Vector3)
+	local look = lookOf(d)
+	local len = d.length or 34
+	local start = from - look * 4 + V(0, 26, 0)
+	azure(function(u)
+		local p = start:Lerp(from + look * len, u)
+		return V(p.X, start.Y + (from.Y + 2 - start.Y) * math.min(1, u * 1.8), p.Z) + V(-look.Z, 0, look.X) * math.sin(u * math.pi * 2) * 2.5
+	end, 0.4, 2.4)
+	task.delay(0.3, function()
+		local g = ground(from + look * len * 0.6)
+		bloom(0.8, 0.5)
+		Fx.flash(g + V(0, 4, 0), AZURE2, 40, 4, 0.3)
+		for k = 1, 6 do
+			Fx.ring(ground(from + look * (len * k / 6)) + V(0, 0.4, 0), AZURE, 2, 14, 0.4)
+		end
+		Fx.debris(g, 12, 24)
+		shake(1)
+	end)
+end
+VFX.ssGodTiger = function(d)
+	local at = d.at :: Vector3
+	local dir = V(math.random() - 0.5, 0, math.random() - 0.5)
+	dir = dir.Magnitude > 0.01 and dir.Unit or V(1, 0, 0)
+	gClaw(at + V(0, 3, 0), dir, 9, TIGER, TIGER2, 4)
+	afterimage(d.m, CF(at - (rootOf(d.m) or { Position = at } :: any).Position), 0.3, TIGER2)
+	shake(0.2)
+end
+VFX.ssGodBird = function(d)
+	VFX.ssBirdDive(d, WHITE, WHITE, {})
+end
+VFX.ssGodDragon = function(d)
+	VFX.ssDragonCoil(d, WHITE, WHITE, {})
+	task.delay(0.25, function()
+		VFX.ssDragonCoil(d, WHITE, WHITE, {})
+	end)
+end
+VFX.ssGodTurtle = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 30
+	-- 하늘에서 내려오는 현무의 등껍질: 육각 무늬 판 일곱이 한꺼번에 내려앉는다
+	local shell = {}
+	for i = 0, 6 do
+		local off = i == 0 and V() or V(math.cos(i / 6 * math.pi * 2) * r * 0.45, 0, math.sin(i / 6 * math.pi * 2) * r * 0.45)
+		local hx = piece(V(1.2, r * 0.46, r * 0.46), CF(g + off + V(0, 60, 0)) * CFrame.Angles(0, i * 0.5, math.rad(90)), i == 0 and TURTLE2 or TURTLE, 0.15, Enum.PartType.Cylinder)
+		hx.Material = Enum.Material.Slate
+		table.insert(shell, hx)
+		tween(hx, 0.35, { CFrame = CF(g + off + V(0, 1.2, 0)) * CFrame.Angles(0, i * 0.5, math.rad(90)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	end
+	task.delay(0.36, function()
+		for _, hx in ipairs(shell) do
+			fadeOut(hx, 0.6)
+		end
+		bloom(1.4, 0.6)
+		Fx.flash(g + V(0, 4, 0), TURTLE2, r * 2.6, 6, 0.35)
+		Fx.ring(g + V(0, 0.4, 0), TURTLE2, 5, r * 2.4, 0.6)
+		Fx.ring(g + V(0, 0.4, 0), TIGER2, 3, r * 1.6, 0.6)
+		Fx.debris(g, 18, 34)
+		pcall(Fx.sound, "heavy", 1, 0.5, g)
+		shake(1.8)
+	end)
+end
+-- 👑 천하패권 -----------------------------------------------------------
+local CH, CH2, EARTH = Color3.fromRGB(255, 200, 80), Color3.fromRGB(255, 245, 200), Color3.fromRGB(110, 85, 60)
+VFX.chStomp = function(d)
+	local g = ground(d.at)
+	Fx.ring(g + V(0, 0.3, 0), CH, 3, (d.radius or 10) * 2.2, 0.35)
+	Fx.debris(g, 8, 14)
+	gEmit(g + V(0, 1, 0), TEX_SMOKE, EARTH, EARTH:Lerp(CH2, 0.3), 14, 3, 8, 0.8, 0)
+	pcall(Fx.sound, "heavy", 0.7, 0.7, g)
+	shake(0.5)
+end
+VFX.chCrack = function(d)
+	local from = d.from :: Vector3
+	local look = lookOf(d)
+	local len = d.length or 20
+	local right = V(-look.Z, 0, look.X)
+	local prev = ground(from)
+	for k = 1, 8 do
+		local p = ground(from + look * (len * k / 8) + right * ((math.random() - 0.5) * 3))
+		task.delay(k * 0.025, function()
+			local mid = (prev + p) / 2
+			local seg = piece(V(1.2, 0.4, (p - prev).Magnitude + 0.5), CF(mid + V(0, 0.2, 0), p + V(0, 0.2, 0)), CH, 0)
+			fadeOut(seg, 0.9)
+			gEmit(p + V(0, 1, 0), TEX_SMOKE, EARTH, EARTH, 4, 2, 5, 0.6, 0)
+			prev = p
+		end)
+	end
+	Fx.debris(ground(from + look * len), 8, 14)
+	shake(0.55)
+end
+VFX.chPillars = function(d)
+	local g = ground(d.at)
+	for i = 0, 6 do
+		local off = i == 0 and V() or V(math.cos(i) * 7, 0, math.sin(i) * 7)
+		local h = i == 0 and 18 or 9 + math.random() * 6
+		local rock = piece(V(4, h, 4), CF(g + off - V(0, h / 2, 0)) * CFrame.Angles(0, math.random() * 3, (math.random() - 0.5) * 0.4), EARTH, 0)
+		rock.Material = Enum.Material.Rock
+		tween(rock, 0.15, { CFrame = rock.CFrame + V(0, h, 0) }, Enum.EasingStyle.Back)
+		task.delay(0.9, function()
+			tween(rock, 0.4, { CFrame = rock.CFrame - V(0, h, 0), Transparency = 1 })
+			Debris:AddItem(rock, 0.45)
+		end)
+	end
+	Fx.flash(g + V(0, 6, 0), CH, 30, 3, 0.25)
+	Fx.debris(g, 14, 28)
+	bloom(0.6, 0.4)
+	shake(1)
+end
+VFX.chAura = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 30
+	disc(g + V(0, 0.3, 0), r, CH, 0.75, d.life or 1)
+	gSwirl(function()
+		return g + V(0, 2, 0)
+	end, 18, r, 3, d.life or 1, CH, CH2, { width = 0.5, trail = 0.5, converge = true, speed = 1.4, flat = true })
+	-- 무릎 꿇리는 패기: 땅이 안으로 눌린다
+	Fx.ring(g + V(0, 0.3, 0), CH2, 4, r * 2, 0.8)
+	shake(0.6)
+end
+VFX.chLift = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 30
+	for i = 1, 14 do
+		local a = i / 14 * math.pi * 2
+		local p = g + V(math.cos(a) * r * 0.6, 0, math.sin(a) * r * 0.6)
+		gStroke(p, p + V(0, 22, 0), 0.15, 0.6, 0.3, CH2, CH, true, 0.4)
+	end
+	gEmit(g + V(0, 2, 0), TEX_SMOKE, EARTH, CH, 30, 4, 20, 0.9, 0.2, V(0, 18, 0))
+	shake(0.7)
+end
+VFX.chSkyFist = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 30
+	-- 하늘에서 내려오는 금빛 주먹: 큰 덩이 (주먹) 와 손목 기둥
+	local fist = piece(V(r * 0.9, r * 0.7, r * 0.9), CF(g + V(0, 90, 0)), CH, 0.05, Enum.PartType.Ball)
+	local wrist = piece(V(r * 0.5, 80, r * 0.5), CF(g + V(0, 140, 0)), CH2, 0.3, Enum.PartType.Block)
+	fist.Material = Enum.Material.Neon
+	tween(fist, 0.3, { CFrame = CF(g + V(0, r * 0.3, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	tween(wrist, 0.3, { CFrame = CF(g + V(0, r * 0.3 + 45, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	task.delay(0.3, function()
+		fadeOut(fist, 0.5, V(r * 1.4, r * 0.4, r * 1.4))
+		fadeOut(wrist, 0.4)
+		bloom(1.8, 0.7)
+		Fx.flash(g + V(0, 6, 0), CH2, r * 3, 8, 0.4)
+		Fx.ring(g + V(0, 0.4, 0), CH, 6, r * 2.6, 0.7)
+		Fx.debris(g, 20, 36)
+		pcall(Fx.sound, "heavy", 1, 0.4, g)
+		shake(2)
+	end)
+end
+VFX.chQuake = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 34
+	for k = 1, 3 do
+		task.delay(k * 0.1, function()
+			Fx.ring(g + V(0, 0.4, 0), EARTH:Lerp(CH, 0.4), 3, r * (0.8 + k * 0.4), 0.5)
+			Fx.debris(g + V(math.random(-10, 10), 0, math.random(-10, 10)), 6, 18)
+		end)
+	end
+	shake(0.8)
+end
+-- 🗡 흑염마검장 -----------------------------------------------------------
+local HY, HY2, HYD = Color3.fromRGB(196, 70, 255), Color3.fromRGB(255, 160, 240), Color3.fromRGB(20, 8, 28)
+local function blackFlame(at: Vector3, n: number, size: number, life: number)
+	gEmit(at, TEX_FIRE, HYD, HY, n, size, size * 3, life, 0.3, V(0, 8, 0))
+	gEmit(at, TEX_FIRE, HY, HY2, math.ceil(n / 2), size * 0.6, size * 2, life * 0.7, 1, V(0, 6, 0))
+end
+local function bladePiece(len: number, cf: CFrame, alpha: number?): Part
+	local b = piece(V(len * 0.12, 0.25, len), cf, HYD, alpha or 0)
+	b.Material = Enum.Material.Glass
+	local edge = piece(V(len * 0.02, 0.3, len), cf * CF(len * 0.06, 0, 0), HY, 0)
+	edge.Parent = b
+	return b
+end
+VFX.hyDraw = function(d)
+	local to = (d.at :: Vector3) + V(0, 2.5, 0)
+	local look = lookOf(d)
+	local from = to - look * 18
+	gStroke(from, to, 0.06, 0.25, 0, HY2, HY, true, 0.5)
+	afterimage(d.m, CF(-look * 9), 0.3, HY)
+	pcall(Fx.sound, "deflect", 0.6, 0.8, to)
+end
+VFX.hyLateCuts = function(d)
+	local c = ground(d.at) + V(0, 2.5, 0)
+	local look = lookOf(d)
+	local right = V(-look.Z, 0, look.X)
+	for i = 1, 3 do
+		task.delay(i * 0.07, function()
+			local tilt = (i - 2) * 0.6
+			local a = c - look * 9 + right * (3 * tilt) + V(0, 3, 0)
+			local b = c + look * 9 - right * (3 * tilt) - V(0, 2, 0)
+			gStroke(a, b, 0.05, 0.4, 0, HY2, HY, true, 0.5)
+			blackFlame((a + b) / 2, 12, 1.4, 0.6)
+		end)
+	end
+	task.delay(0.25, function()
+		Fx.flash(c, HY, 20, 2, 0.2)
+		shake(0.4)
+	end)
+end
+VFX.hyOrbit = function(d)
+	local r0 = rootOf(d.m)
+	if not r0 then
+		return
+	end
+	local life = d.life or 0.8
+	local blades = { bladePiece(5, CF(r0.Position)), bladePiece(5, CF(r0.Position)) }
+	local trails = { gBrush(0.4, 0.25, HY, HY2, true), gBrush(0.4, 0.25, HY, HY2, true) }
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		if t > life or not r0.Parent then
+			conn:Disconnect()
+			for i = 1, 2 do
+				fadeOut(blades[i], 0.15)
+				dropBrush(trails[i], 0.25)
+			end
+			return
+		end
+		local rr = 4 + t / life * 10
+		for i = 1, 2 do
+			local a = t * 14 + i * math.pi
+			local p = r0.Position + V(math.cos(a) * rr, 1.5, math.sin(a) * rr)
+			blades[i].CFrame = CF(p, p + V(-math.sin(a), 0, math.cos(a))) * CFrame.Angles(0, math.rad(90), 0)
+			trails[i].p.CFrame = CF(p)
+		end
+	end)
+	pcall(Fx.sound, "swing", 0.6, 0.8, r0.Position)
+end
+VFX.hySwordPlant = function(d)
+	local g = ground(d.at)
+	local b = bladePiece(9, CF(g + V(0, 30, 0)) * CFrame.Angles(math.rad(90), 0, 0))
+	tween(b, 0.12, { CFrame = CF(g + V(0, 3, 0)) * CFrame.Angles(math.rad(90), 0, 0) }, Enum.EasingStyle.Linear)
+	task.delay(0.12, function()
+		blackFlame(g + V(0, 2, 0), 24, 2, 0.9)
+		Fx.ring(g + V(0, 0.3, 0), HY, 2, 18, 0.4)
+		Fx.debris(g, 6, 12)
+		shake(0.5)
+		task.delay(0.5, function()
+			fadeOut(b, 0.3)
+		end)
+	end)
+end
+VFX.hyGiantForm = function(d)
+	local r0 = rootOf(d.m)
+	if not r0 then
+		return
+	end
+	local look = lookOf(d)
+	local base = r0.Position - look * 6 + V(0, 18, 0)
+	local b = bladePiece(30, CF(base, base + V(0, 1, 0)) * CFrame.Angles(math.rad(-90), 0, 0), 1)
+	tween(b, 0.6, { Transparency = 0 })
+	Debris:AddItem(b, (d.life or 0.9) + 0.1)
+	gSwirl(function()
+		return base
+	end, 14, 10, 14, d.life or 0.9, HY, HY2, { width = 0.5, trail = 0.5, converge = true, speed = 1.5 })
+	gEmit(base, TEX_FIRE, HYD, HY, 30, 4, 6, 0.9, 0.3, V(0, 4, 0))
+end
+VFX.hyGiantSlash = function(d)
+	local from = d.from :: Vector3
+	local look = lookOf(d)
+	local len = d.length or 40
+	local b = bladePiece(34, CF(from + V(0, 30, 0), from + V(0, 31, 0) + look) * CFrame.Angles(math.rad(-80), 0, 0))
+	tween(b, 0.15, { CFrame = CF(from + look * (len * 0.5) + V(0, 2, 0), from + look * len + V(0, 2, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	task.delay(0.15, function()
+		fadeOut(b, 0.4)
+		bloom(1, 0.5)
+		for k = 1, 10 do
+			local p = ground(from + look * (len * k / 10))
+			task.delay(k * 0.02, function()
+				local seg = piece(V(1.6, 0.4, len / 10 + 0.6), CF(p + V(0, 0.2, 0), p + V(0, 0.2, 0) + look), HY, 0)
+				fadeOut(seg, 1.2)
+			end)
+		end
+		Fx.flash(from + look * len * 0.5, HY, 40, 4, 0.3)
+		pcall(Fx.sound, "shatter", 0.7, 0.6, from)
+		shake(1.2)
+	end)
+end
+VFX.hyRiftFlames = function(d)
+	local from = d.from :: Vector3
+	local look = lookOf(d)
+	local len = d.length or 40
+	for k = 1, 8 do
+		task.delay(k * 0.05, function()
+			local p = ground(from + look * (len * k / 8))
+			local col = piece(V(3, 16, 3), CF(p + V(0, 8, 0)), HYD, 0.2, Enum.PartType.Block)
+			fadeOut(col, 0.5, V(1, 22, 1))
+			blackFlame(p + V(0, 3, 0), 14, 2, 0.8)
+		end)
+	end
+end
+VFX.hyCircle = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 30
+	local life = d.life or 2.4
+	disc(g + V(0, 0.3, 0), r, HYD, 0.35, life)
+	-- 땅에서 솟는 마검 여섯
+	for i = 1, 6 do
+		local a = i / 6 * math.pi * 2
+		local p = g + V(math.cos(a) * r * 0.85, 0, math.sin(a) * r * 0.85)
+		local b = bladePiece(10, CF(p - V(0, 6, 0)) * CFrame.Angles(math.rad(90), 0, 0))
+		tween(b, 0.25, { CFrame = CF(p + V(0, 4, 0)) * CFrame.Angles(math.rad(90), 0, 0) }, Enum.EasingStyle.Back)
+		Debris:AddItem(b, life + 0.3)
+		task.delay(life, function()
+			fadeOut(b, 0.25)
+		end)
+		blackFlame(p + V(0, 1, 0), 10, 1.6, 0.8)
+	end
+	shake(0.6)
+end
+VFX.hyFlameRing = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 12
+	for i = 1, 16 do
+		local a = i / 16 * math.pi * 2
+		blackFlame(g + V(math.cos(a) * r * 0.9, 1, math.sin(a) * r * 0.9), 6, 1.8, 0.6)
+	end
+	Fx.ring(g + V(0, 0.4, 0), HY, 3, r * 2.1, 0.45)
+	shake(0.4)
+end
+VFX.hyDemonSword = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 30
+	local b = bladePiece(60, CF(g + V(0, 120, 0)) * CFrame.Angles(math.rad(90), 0, 0))
+	tween(b, 0.3, { CFrame = CF(g + V(0, 26, 0)) * CFrame.Angles(math.rad(90), 0, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	task.delay(0.3, function()
+		bloom(2, 0.8)
+		Fx.flash(g + V(0, 6, 0), HY2, r * 3, 8, 0.4)
+		Fx.ring(g + V(0, 0.4, 0), HY, 6, r * 2.6, 0.7)
+		for i = 1, 10 do
+			local a = i / 10 * math.pi * 2
+			local p = g + V(math.cos(a) * r * 0.7, 0, math.sin(a) * r * 0.7)
+			local col = piece(V(3, 30, 3), CF(p + V(0, 15, 0)), HYD, 0.15)
+			fadeOut(col, 0.8, V(1, 40, 1))
+			blackFlame(p + V(0, 2, 0), 16, 2.4, 1)
+		end
+		Fx.debris(g, 18, 34)
+		pcall(Fx.sound, "shatter", 1, 0.5, g)
+		shake(2)
+		task.delay(0.8, function()
+			fadeOut(b, 0.5)
+		end)
+	end)
+end
+-- ✨ 신 삼재권 (삼재천진) ---------------------------------------------------
+local SJ = { Color3.fromRGB(190, 225, 255), Color3.fromRGB(255, 200, 120), Color3.fromRGB(255, 245, 220) } -- 하늘 · 땅 · 사람
+local triadPts: { [any]: { Vector3 } } = {}
+VFX.snTriad = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 22
+	local life = d.life or 1.6
+	local look = lookOf(d)
+	local pts = {}
+	for i = 1, 3 do
+		local a = math.atan2(look.Z, look.X) + (i - 1) / 3 * math.pi * 2
+		local p = g + V(math.cos(a) * r * 0.85, 0, math.sin(a) * r * 0.85)
+		pts[i] = p + V(0, 12, 0)
+		local pil = piece(V(3, 24, 3), CF(p - V(0, 12, 0)), SJ[i], 0.1, Enum.PartType.Cylinder)
+		pil.CFrame = CF(p - V(0, 12, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		pil.Size = V(24, 3, 3)
+		tween(pil, 0.25, { CFrame = CF(p + V(0, 12, 0)) * CFrame.Angles(0, 0, math.rad(90)) }, Enum.EasingStyle.Back)
+		Debris:AddItem(pil, life + 0.4)
+		task.delay(life, function()
+			fadeOut(pil, 0.3)
+		end)
+		gStroke(p + V(0, 0.4, 0), g + V(math.cos(a + math.pi * 2 / 3) * r * 0.85, 0.4, math.sin(a + math.pi * 2 / 3) * r * 0.85), 0.2, 0.4, 0, SJ[i], WHITE, true, life)
+	end
+	if d.m then
+		triadPts[d.m] = pts
+	end
+	Fx.debris(g, 10, 20)
+	shake(0.6)
+end
+VFX.snBeam = function(d)
+	local col = SJ[d.col or 1] or SJ[1]
+	local pts = d.m and triadPts[d.m]
+	local from = pts and pts[d.col or 1] or ((d.at :: Vector3) + V(0, 20, 0))
+	local at = (d.at :: Vector3) + V(0, 2.5, 0)
+	gStroke(from, at, 0.08, 0.9, 0, WHITE, col, true, 0.35)
+	task.delay(0.08, function()
+		gEmit(at, TEX_SPARK, WHITE, col, 14, 0.6, 12, 0.4)
+		Fx.flash(at, col, 10, 2, 0.15)
+	end)
+end
+VFX.snUnity = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 22
+	local pts = d.m and triadPts[d.m]
+	local mid = g + V(0, 8, 0)
+	if pts then
+		for i, p in ipairs(pts) do
+			gStroke(p, mid, 0.12, 1.2, 0, WHITE, SJ[i], true, 0.4)
+		end
+		triadPts[d.m] = nil
+	end
+	task.delay(0.12, function()
+		bloom(1.4, 0.6)
+		Fx.flash(mid, WHITE, r * 3, 6, 0.35)
+		for i = 1, 3 do
+			Fx.ring(g + V(0, 0.4 + i, 0), SJ[i], 4, r * (1.6 + i * 0.4), 0.6)
+		end
+		Fx.debris(g, 16, 30)
+		shake(1.4)
+	end)
+end
+-- 🐉 초 천룡파천장 (천룡파천) ------------------------------------------------
+local CR, CR2 = Color3.fromRGB(255, 210, 80), Color3.fromRGB(120, 255, 220)
+VFX.crSkyTear = function(d)
+	local r0 = rootOf(d.m)
+	local c = (r0 and r0.Position or (d.at :: Vector3)) - lookOf(d) * 10 + V(0, 50, 0)
+	-- 하늘이 찢어지는 금: 지그재그 금빛 줄 여럿
+	for i = 1, 6 do
+		local a = c + V((math.random() - 0.5) * 30, (math.random() - 0.5) * 10, (math.random() - 0.5) * 6)
+		gStroke(c, a, 0.15, 0.6, 2, CR, WHITE, true, 0.9)
+	end
+	gEmit(c, TEX_SMOKE, Color3.fromRGB(200, 200, 210), Color3.fromRGB(120, 120, 130), 30, 8, 10, 1.2, 0)
+	-- 금에서 내민 천룡의 머리 (큰 빛 덩이 + 두 눈)
+	local head = piece(V(10, 8, 14), CF(c), CR, 0.2, Enum.PartType.Ball)
+	tween(head, 0.6, { CFrame = CF(c - V(0, 6, 0)) }, Enum.EasingStyle.Sine)
+	Debris:AddItem(head, (d.life or 0.9) + 0.1)
+	for s = -1, 1, 2 do
+		local eye = piece(V(1.4, 1.4, 1.4), CF(c + V(s * 2.5, 1.5, -6)), CR2, 0, Enum.PartType.Ball)
+		tween(eye, 0.6, { CFrame = CF(c + V(s * 2.5, -4.5, -6)) }, Enum.EasingStyle.Sine)
+		Debris:AddItem(eye, (d.life or 0.9) + 0.1)
+	end
+	pcall(Fx.sound, "heavy", 0.8, 0.4, c)
+	shake(0.6)
+end
+VFX.crDragonDive = function(d)
+	local from = d.from :: Vector3
+	local look = lookOf(d)
+	local len = d.length or 40
+	local start = from - look * 10 + V(0, 44, 0)
+	gSerpent(function(u)
+		local p = start:Lerp(from + look * len + V(0, 2, 0), u)
+		return p + V(-look.Z, 0, look.X) * math.sin(u * math.pi * 3) * 4
+	end, 0.45, 22, 3.2, CR, CR2, 0.03)
+	task.delay(0.35, function()
+		bloom(1, 0.5)
+		for k = 1, 8 do
+			Fx.ring(ground(from + look * (len * k / 8)) + V(0, 0.4, 0), CR, 2, 16, 0.4)
+		end
+		Fx.flash(from + look * len * 0.6, CR2, 46, 4, 0.3)
+		shake(1.2)
+	end)
+end
+VFX.crScaleBurst = function(d)
+	local g = ground(d.at) + V(0, 2, 0)
+	for i = 1, 18 do
+		local a = i / 18 * math.pi * 2
+		local sc = piece(V(1.6, 0.3, 2.2), CF(g, g + V(math.cos(a), 0.3, math.sin(a))), i % 2 == 0 and CR or CR2, 0)
+		tween(sc, 0.45, { CFrame = sc.CFrame + V(math.cos(a) * 16, 4 + math.random() * 6, math.sin(a) * 16), Transparency = 1 })
+		Debris:AddItem(sc, 0.5)
+	end
+	Fx.ring(ground(d.at) + V(0, 0.4, 0), CR, 3, (d.radius or 14) * 2.2, 0.5)
+	Fx.debris(ground(d.at), 12, 22)
+	shake(0.8)
+end
 -- 맞힐 때: 별가루 / 금모래
 -- 북두개천 (초 칠성보권 X): 북두낙성의 하늘을 더 크고 길게, 둘레에 잔별 고리를 하나 더
 VFX.dipperHeaven = function(d)
@@ -73863,6 +74473,24 @@ return {
 	["천시전"] = "Frozen Arrows",
 	["멈춘 시간 속에 빛의 화살 열둘이 몸 둘레에 떠오른다. 화살이 두 번에 나뉘어 가까운 적 여섯에게 쏟아지고, 마지막 한 발이 앞으로 34칸을 꿰뚫는다"] = "Twelve arrows of light rise around you in frozen time. They rain on six nearby foes in two volleys, and a final shot pierces 34 studs ahead",
 	["시간의 닻을 박고 앞으로 베며 내달렸다가 닻으로 되감겨 돌아오기를 두 번 한다 (그동안 무적). 오갈 때마다 같은 길을 벤다. 돌아온 자리에서 시계판이 크게 터진다"] = "Drive an anchor of time, then dash ahead cutting and get rewound back to the anchor, twice (invincible meanwhile). Each trip cuts the same path. A clock face bursts big where you return",
+	["삼재천진"] = "Triad of Heaven, Earth and Man",
+	["하늘 · 땅 · 사람 세 기둥이 둘레에 세모꼴로 솟아 둘레 22칸의 적을 끌어당긴다 (그동안 무적). 세 기둥이 차례로 빛줄기를 쏘아 안의 적을 꿰뚫고, 마지막에 세 줄기가 한가운데서 만나 터진다"] = "Three pillars of heaven, earth and man rise in a triangle around you and pull in foes within 22 studs (invincible meanwhile). The three pillars fire beams of light in turn to pierce the foes inside, and at last the three beams meet in the center and burst",
+	["천룡파천"] = "Heavenly Dragon Breaks the Sky",
+	["구름을 찢고 하늘보다 큰 천룡 한 마리가 머리를 내민다. 천룡이 앞으로 길게 내리꽂히며 지나는 길을 휩쓸고, 땅에 박힌 자리에서 용의 비늘이 사방으로 터진다"] = "Tearing through the clouds, a heavenly dragon larger than the sky thrusts out its head. It dives far ahead, sweeping the path, and where it strikes the ground its scales burst in every direction",
+	["패왕진각"] = "Overlord's Stomp",
+	["땅을 세 번 구른다. 구를 때마다 앞의 땅이 더 길게 갈라지고, 세 번째에 갈라진 틈 끝에서 바위 기둥이 솟아 적을 하늘로 띄운다"] = "Stomp the ground three times. Each stomp cracks the earth ahead farther, and on the third a pillar of rock erupts from the end of the crack and launches foes into the sky",
+	["천하일통"] = "Unify All Under Heaven",
+	["초 오의 (그동안 무적). 둘레 30칸의 적을 패기로 끌어당겨 무릎 꿇린다. 모두를 한꺼번에 하늘로 쳐올린 뒤, 하늘에서 산만 한 금빛 주먹이 내려와 내리찍고 땅이 물결처럼 뒤집힌다"] = "Supreme ultimate (invincible meanwhile). Your overlord spirit drags foes within 30 studs to their knees. You knock them all into the sky at once, then a golden fist as large as a mountain descends from the heavens, and the ground heaves like a wave",
+	["흰 범의 혼이 되어 세 번 덮치며 21칸을 내달린다 (그동안 무적). 덮칠 때마다 범의 발톱이 땅을 할퀴고, 마지막엔 앞발로 내리친다"] = "Become the spirit of the white tiger and pounce three times, charging 21 studs (invincible meanwhile). Each pounce rakes the ground with tiger claws, and the last one strikes down with both forepaws",
+	["주작연익"] = "Vermilion Wings",
+	["등 뒤로 주작의 불 날개가 활짝 펼쳐지며 둘레를 태우고, 불새 넷이 날아올라 가까운 적에게 내리꽂힌 뒤 앞에서 불꽃으로 터진다"] = "The fiery wings of the vermilion bird spread wide behind you and burn the area, then four firebirds take flight, dive onto the nearest foes and burst into flame ahead",
+	["땅속에서 청룡이 깨어난다. 가장 가까운 적 발밑에서 솟구쳐 적을 하늘로 띄우고, 둘레를 한 바퀴 휘감아 적을 끌어모은 뒤 앞으로 길게 내리꽂힌다"] = "The azure dragon awakens underground. It bursts up beneath the nearest foe and launches them, coils once around you to gather foes, then dives far ahead",
+	["초 오의 (그동안 무적). 네 방위에 네 신수가 차례로 내려선다. 백호가 적 여섯을 할퀴고, 주작이 불비를 뿌리고, 청룡이 둘레를 휘감아 돈 뒤, 마지막에 하늘에서 현무의 등껍질이 내려와 둘레 30칸을 짓누른다"] = "Supreme ultimate (invincible meanwhile). The four sacred beasts descend in turn from the four directions. The white tiger rakes six foes, the vermilion bird scatters a rain of fire, the azure dragon coils around you, and at last the black tortoise's shell descends from the sky and crushes everything within 30 studs",
+	["칼을 허리에 거두고 숨을 죽였다가 앞으로 18칸을 지나며 벤다 (그동안 무적). 한 박자 늦게, 지나온 길에 검은 불꽃 칼자국 셋이 엇갈려 그어지며 터진다"] = "Sheathe the blade at your waist, hold your breath, then cut through 18 studs ahead (invincible meanwhile). A beat later, three crossing black flame slashes carve along your path and explode",
+	["마검윤무"] = "Demon Blade Waltz",
+	["마검 둘이 손을 떠나 몸 둘레를 돈다. 세 바퀴 돌며 점점 멀어져 둘레 14칸을 베고, 마지막에 앞으로 날아가 땅에 꽂히며 검은 불길이 솟는다"] = "Two demon blades leave your hands and circle your body. They spin three times, drifting outward to cut within 14 studs, then fly ahead and plunge into the ground as black flames erupt",
+	["등 뒤 하늘에 검은 불꽃을 모아 집채만 한 마검을 빚고 앞으로 내리찍는다. 땅이 한 줄로 갈라지고, 갈라진 틈을 따라 검은 불길 기둥이 차례로 솟는다"] = "Gather black flames in the sky behind you to forge a demon blade as large as a house and bring it down ahead. The ground splits in a line, and pillars of black flame erupt one after another along the rift",
+	["초 오의 (그동안 무적). 발밑에 검은 불의 진이 열리고 마검 여섯이 땅에서 솟아 둘레를 에워싼다. 불의 고리가 세 번 바깥으로 번져 나가며 적을 태우고, 마지막에 하늘에서 거대한 마검이 한가운데로 내리꽂혀 둘레 30칸에 검은 불기둥이 솟는다"] = "Supreme ultimate (invincible meanwhile). A circle of black fire opens underfoot and six demon blades rise from the ground to surround you. Rings of flame spread outward three times, burning foes, and at last a colossal demon blade plunges from the sky into the center as black fire pillars erupt within 30 studs",
 }
 ]]></string>
           </Properties>
