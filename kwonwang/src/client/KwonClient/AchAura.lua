@@ -219,6 +219,9 @@ local EXTRA: { [string]: { Layer } } = {
 			life = nr(1, 1.4), rate = 2, speed = nr(2, 3), spread = Vector2.new(8, 8), light = 1, bright = 2, squash = ns({ { 0, 3 }, { 1, 2 } }), orient = VP, dir = Enum.NormalId.Top },
 	},
 	golddragon = {
+		-- 3.99.91판 대표: 발밑에서 솟는 금빛 불기둥 (크고 높게, 몸을 감싸며)
+		{ on = {}, ground = true, tex = TEX.fire, color = cs({ C3(255, 250, 220), C3(255, 200, 70), C3(230, 110, 20) }), size = ns({ { 0, 2.2 }, { 0.6, 1.6 }, { 1, 0.2 } }), alpha = ns({ { 0, 0.45 }, { 0.4, 0.3 }, { 1, 1 } }),
+			life = nr(0.7, 1.0), rate = 22, speed = nr(1, 2), accel = Vector3.new(0, 14, 0), spread = Vector2.new(14, 14), light = 1, bright = 2.2, rot = nr(-20, 20), spin = nr(-40, 40), z = 0.4 },
 		{ on = {}, ground = true, tex = TEX.fire, color = cs({ C3(255, 235, 160), C3(240, 140, 20) }), size = ns({ { 0, 1.6 }, { 1, 0.2 } }), alpha = ns({ { 0, 0.45 }, { 1, 1 } }),
 			life = nr(0.6, 0.9), rate = 20, speed = nr(4, 6), accel = Vector3.new(0, 5, 0), spread = Vector2.new(85, 85), light = 1, bright = 2.5, drag = 2.5 },
 		-- 대표: 몸을 휘감고 치솟는 금빛 불줄기
@@ -243,15 +246,8 @@ end
 ------------------------------------------------------------------------
 type Rib = { c: Color3, n: number, mode: string, r: number, w: number, speed: number, life: number, lo: number?, hi: number? }
 local RIBS: { [string]: Rib } = {
-	blooddragon = { c = C3(235, 30, 45), n = 3, mode = "spiral", r = 2.6, w = 1.0, speed = 4.2, life = 0.45 },
-	pacheon = { c = C3(150, 70, 255), n = 3, mode = "ring", r = 2.8, w = 0.8, speed = 6, life = 0.3 },
-	meteor = { c = C3(255, 130, 40), n = 2, mode = "wave", r = 2.2, w = 0.8, speed = 5, life = 0.4, lo = -2.6, hi = -0.6 },
-	rainbow = { c = C3(235, 245, 255), n = 2, mode = "ring", r = 3.2, w = 0.9, speed = 1.6, life = 0.7, lo = -2.4, hi = -2.4 },
-	samsara = { c = C3(150, 100, 255), n = 2, mode = "ring", r = 3.0, w = 0.7, speed = 2.2, life = 0.6 },
-	crown = { c = C3(170, 215, 255), n = 1, mode = "halo", r = 1.3, w = 0.3, speed = 2.4, life = 0.5 },
-	petals = { c = C3(255, 170, 215), n = 2, mode = "wave", r = 2.6, w = 0.7, speed = 2.6, life = 0.6, lo = -1.6, hi = 1.6 },
-	scripture = { c = C3(110, 200, 255), n = 2, mode = "spiral", r = 2.3, w = 0.5, speed = 2.2, life = 0.7 },
-	golddragon = { c = C3(255, 185, 40), n = 4, mode = "spiral", r = 2.8, w = 1.2, speed = 5, life = 0.45 },
+	-- 3.99.91판: 띠는 혈룡만 (아홉이 모두 띠라 얼핏 보면 같았다). 나머지는 아래 FORMS 가 저마다 다른 모양을 맡는다
+	blooddragon = { c = C3(235, 30, 45), n = 3, mode = "spiral", r = 2.6, w = 1.1, speed = 4.2, life = 0.5 },
 }
 local function ribTrail(root: BasePart, w: number, life: number, c1: Color3, c2: Color3, alpha: number): { any }
 	local a0 = Instance.new("Attachment")
@@ -329,6 +325,7 @@ local function ribClear(model: Model)
 	end
 end
 local ribConn: RBXScriptConnection? = nil
+local formStepRef: () -> () = function() end
 local function ribStep()
 	local cam = workspace.CurrentCamera
 	local now = os.clock()
@@ -351,9 +348,242 @@ local function ribStep()
 end
 local function ribStart()
 	if not ribConn then
-		ribConn = game:GetService("RunService").RenderStepped:Connect(ribStep)
+		ribConn = game:GetService("RunService").RenderStepped:Connect(function()
+			ribStep()
+			formStepRef()
+		end)
 	end
 end
+
+------------------------------------------------------------------------
+-- 3.99.91판 오라마다 다른 모양 (FORMS): 파천 번개 갈래 · 윤회 법륜 · 만권 빛의 고리 · 운석 돌 · 천서 글자
+--   부품은 몸이 아니라 따로 둔 폴더에 (물리에 걸리지 않게), 매 프레임 뿌리 (HumanoidRootPart) 를 따라 놓는다
+------------------------------------------------------------------------
+local formFolder = Instance.new("Folder")
+formFolder.Name = "KwonAuraForms"
+formFolder.Parent = workspace
+local function fpart(size: Vector3, color: Color3, alpha: number, shape: Enum.PartType?): Part
+	local p = Instance.new("Part")
+	p.Anchored, p.CanCollide, p.CanQuery, p.CanTouch, p.CastShadow = true, false, false, false, false
+	p.Material = Enum.Material.Neon
+	p.Size, p.Color, p.Transparency = size, color, alpha
+	if shape then
+		p.Shape = shape
+	end
+	p.Parent = formFolder
+	return p
+end
+-- 고리: 짧은 막대 n개를 둥글게 (Roblox 에 고리 모양 부품이 없다)
+local function ringParts(n: number, r: number, thick: number, color: Color3, alpha: number): { Part }
+	local list = {}
+	local seg = 2 * math.pi * r / n * 1.08
+	for _ = 1, n do
+		table.insert(list, fpart(Vector3.new(thick, thick, seg), color, alpha))
+	end
+	return list
+end
+local function placeRing(list: { Part }, cf: CFrame, r: number, spin: number)
+	local n = #list
+	for i, p in ipairs(list) do
+		local a = (i - 0.5) / n * math.pi * 2 + spin
+		local pos = cf:PointToWorldSpace(Vector3.new(math.cos(a) * r, math.sin(a) * r, 0))
+		local tan = cf:VectorToWorldSpace(Vector3.new(-math.sin(a), math.cos(a), 0))
+		p.CFrame = CFrame.lookAt(pos, pos + tan)
+	end
+end
+type Form = { root: BasePart, parts: { Instance }, step: (number, CFrame) -> (), t0: number }
+local FORMS: { [string]: (BasePart) -> Form } = {}
+-- ⚡ 파천: 몸 둘레에서 흰 보랏빛 번개 갈래가 지직거린다 (0.08초마다 새 갈래, 켜졌다 꺼졌다)
+FORMS.pacheon = function(root)
+	local parts: { Instance } = {}
+	local arcs = {}
+	for _ = 1, 3 do
+		local a0 = Instance.new("Attachment")
+		a0.Parent = root
+		local a1 = Instance.new("Attachment")
+		a1.Parent = root
+		local b = Instance.new("Beam")
+		b.Attachment0, b.Attachment1 = a0, a1
+		b.Segments = 10
+		b.Width0, b.Width1 = 0.18, 0.06
+		b.LightEmission, b.LightInfluence = 1, 0
+		b.FaceCamera = true
+		b.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(180, 120, 255))
+		b.Transparency = NumberSequence.new(0.05)
+		b.Parent = root
+		table.insert(arcs, { a0 = a0, a1 = a1, b = b })
+		table.insert(parts, a0)
+		table.insert(parts, a1)
+		table.insert(parts, b)
+	end
+	local last = 0
+	return { root = root, parts = parts, t0 = os.clock(), step = function(t)
+		if t - last < 0.08 then
+			return
+		end
+		last = t
+		for _, A in ipairs(arcs) do
+			local on = math.random() < 0.55
+			A.b.Enabled = on
+			if on then
+				local y = (math.random() - 0.4) * 5
+				local a = math.random() * math.pi * 2
+				A.a0.Position = Vector3.new(math.cos(a) * 1.4, y, math.sin(a) * 1.4)
+				local a2 = a + (math.random() - 0.5) * 2
+				A.a1.Position = Vector3.new(math.cos(a2) * 2.8, y + (math.random() - 0.5) * 3, math.sin(a2) * 2.8)
+				A.b.CurveSize0 = (math.random() - 0.5) * 4
+				A.b.CurveSize1 = (math.random() - 0.5) * 4
+			end
+		end
+	end }
+end
+-- ☸ 윤회: 등 뒤에 법륜 (두 겹 고리 + 바퀴살 여덟) 이 천천히 돈다
+FORMS.samsara = function(root)
+	local outer = ringParts(24, 2.2, 0.14, Color3.fromRGB(190, 150, 255), 0.25)
+	local inner = ringParts(14, 0.9, 0.12, Color3.fromRGB(255, 215, 130), 0.2)
+	local spokes = {}
+	for _ = 1, 8 do
+		table.insert(spokes, fpart(Vector3.new(0.08, 1.3, 0.08), Color3.fromRGB(255, 215, 130), 0.3))
+	end
+	local hub = fpart(Vector3.new(0.5, 0.5, 0.5), Color3.fromRGB(255, 235, 180), 0.1, Enum.PartType.Ball)
+	local parts: { Instance } = { hub }
+	for _, l in ipairs({ outer, inner, spokes }) do
+		for _, p in ipairs(l) do
+			table.insert(parts, p)
+		end
+	end
+	return { root = root, parts = parts, t0 = os.clock(), step = function(t, rcf)
+		local cf = rcf * CFrame.new(0, 1.2, 1.3) -- 등 뒤 (뿌리의 +Z 가 뒤)
+		local spin = t * 0.5
+		placeRing(outer, cf, 2.2, spin)
+		placeRing(inner, cf, 0.9, -spin * 1.5)
+		hub.CFrame = cf
+		for i, p in ipairs(spokes) do
+			local a = i / 8 * math.pi * 2 + spin
+			p.CFrame = cf * CFrame.Angles(0, 0, a) * CFrame.new(0, 1.55, 0)
+		end
+	end }
+end
+-- ◯ 만권: 머리 위에 가는 빛의 고리 하나가 떠서 천천히 돌며 오르내린다
+FORMS.crown = function(root)
+	local ring = ringParts(20, 0.95, 0.1, Color3.fromRGB(225, 240, 255), 0.15)
+	return { root = root, parts = ring, t0 = os.clock(), step = function(t, rcf)
+		local cf = CFrame.new(rcf.Position + Vector3.new(0, 3.9 + math.sin(t * 1.6) * 0.12, 0)) * CFrame.Angles(math.rad(90), 0, 0)
+		placeRing(ring, cf, 0.95, t * 0.8)
+	end }
+end
+-- ☄ 운석: 안이 불타는 작은 돌 셋이 몸 둘레를 돈다 (불티를 끌며)
+FORMS.meteor = function(root)
+	local parts: { Instance } = {}
+	local rocks = {}
+	for i = 1, 3 do
+		local r = fpart(Vector3.new(0.7, 0.6, 0.65), Color3.fromRGB(60, 40, 32), 0, Enum.PartType.Block)
+		r.Material = Enum.Material.CrackedLava
+		r.Color = Color3.fromRGB(255, 120, 40)
+		local e = Instance.new("ParticleEmitter")
+		e.Texture = TEX.fire
+		e.Color = ColorSequence.new(Color3.fromRGB(255, 200, 100), Color3.fromRGB(200, 60, 20))
+		e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(1, 0) })
+		e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 1) })
+		e.Lifetime = NumberRange.new(0.3, 0.5)
+		e.Rate = 30
+		e.Speed = NumberRange.new(0, 0.5)
+		e.LightEmission = 1
+		e.Parent = r
+		table.insert(parts, r)
+		table.insert(rocks, { p = r, ph = (i - 1) / 3 * math.pi * 2, h = -0.5 + i * 0.6, sp = 1.4 + i * 0.25 })
+	end
+	return { root = root, parts = parts, t0 = os.clock(), step = function(t, rcf)
+		for _, R in ipairs(rocks) do
+			local a = t * R.sp + R.ph
+			R.p.CFrame = CFrame.new(rcf.Position + Vector3.new(math.cos(a) * 2.8, R.h + math.sin(t * 2 + R.ph) * 0.3, math.sin(a) * 2.8)) * CFrame.Angles(t * 2, t * 1.3, 0)
+		end
+	end }
+end
+-- 📜 천서: 빛나는 글자 다섯이 몸 둘레를 떠돌며 천천히 나타났다 사라진다
+local GLYPHS = { "天", "道", "武", "心", "經" }
+FORMS.scripture = function(root)
+	local parts: { Instance } = {}
+	local gl = {}
+	for i, ch in ipairs(GLYPHS) do
+		local a = Instance.new("Attachment")
+		a.Parent = root
+		local bb = Instance.new("BillboardGui")
+		bb.Size = UDim2.fromScale(1.6, 1.6)
+		bb.LightInfluence = 0
+		bb.Adornee = a
+		bb.AlwaysOnTop = false
+		bb.MaxDistance = 120
+		bb.Parent = a
+		local l = Instance.new("TextLabel")
+		l.BackgroundTransparency = 1
+		l.Size = UDim2.fromScale(1, 1)
+		l.Font = Enum.Font.Antique
+		l.TextScaled = true
+		l.Text = ch
+		l.TextColor3 = Color3.fromRGB(200, 235, 255)
+		l.TextStrokeColor3 = Color3.fromRGB(60, 140, 220)
+		l.TextStrokeTransparency = 0.3
+		l.Parent = bb
+		table.insert(parts, a)
+		table.insert(gl, { a = a, l = l, ph = (i - 1) / #GLYPHS * math.pi * 2 })
+	end
+	return { root = root, parts = parts, t0 = os.clock(), step = function(t)
+		for _, G in ipairs(gl) do
+			local a = t * 0.45 + G.ph
+			G.a.Position = Vector3.new(math.cos(a) * 2.6, 0.6 + math.sin(t * 0.7 + G.ph) * 1.4, math.sin(a) * 2.6)
+			-- 천천히 나타났다 사라진다 (글자마다 박자가 다르다)
+			local v = 0.5 + 0.5 * math.sin(t * 0.9 + G.ph * 1.7)
+			G.l.TextTransparency = 1 - v * 0.95
+			G.l.TextStrokeTransparency = 1 - v * 0.6
+		end
+	end }
+end
+local forms: { [Model]: Form } = {}
+local function formBuild(model: Model, id: string)
+	local mk = FORMS[id]
+	local root = model:FindFirstChild("HumanoidRootPart")
+	if not mk or not root or not root:IsA("BasePart") or (Perf and Perf.low) then
+		return
+	end
+	forms[model] = mk(root)
+	ribStart()
+end
+local function formClear(model: Model)
+	local f = forms[model]
+	if f then
+		for _, x in ipairs(f.parts) do
+			x:Destroy()
+		end
+		forms[model] = nil
+	end
+end
+local function formStep()
+	local cam = workspace.CurrentCamera
+	local now = os.clock()
+	for model, f in pairs(forms) do
+		local hide = model:GetAttribute("Vanish") == true or f.root.Parent == nil
+			or (cam ~= nil and (cam.CFrame.Position - f.root.Position).Magnitude > 140)
+		for _, x in ipairs(f.parts) do
+			if x:IsA("BasePart") then
+				x.LocalTransparencyModifier = hide and 1 or 0
+			elseif x:IsA("Beam") then
+				if hide then
+					x.Enabled = false
+				end
+			elseif x:IsA("Attachment") then
+				local bb = x:FindFirstChildOfClass("BillboardGui")
+				if bb then
+					bb.Enabled = not hide
+				end
+			end
+		end
+		if not hide then
+			f.step(now - f.t0, f.root.CFrame)
+		end
+	end
+end
+formStepRef = formStep
 local function scaleSeq(seq: NumberSequence, k: number): NumberSequence
 	local kp = {}
 	for _, p in ipairs(seq.Keypoints) do
@@ -379,6 +609,7 @@ local function partOf(model: Model, name: string): BasePart?
 end
 local function clear(model: Model)
 	ribClear(model)
+	formClear(model)
 	local a = active[model]
 	if a then
 		for _, e in ipairs(a.emitters) do
@@ -485,6 +716,7 @@ local function apply(model: Model, force: boolean?)
 			ribSets[model] = rs
 			ribStart()
 		end
+		formBuild(model, id)
 		setOn(model, model:GetAttribute("Vanish") ~= true)
 	end
 end
