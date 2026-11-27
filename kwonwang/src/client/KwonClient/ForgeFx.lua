@@ -5586,6 +5586,183 @@ VFX.phHatch = function(d)
 		shake(2)
 	end)
 end
+------------------------------------------------------------------------
+-- 3.99.87판 신의 모습 (신 삼재권) 기술 연출: 금빛 후광 · 하늘의 손가락 · 만다라
+------------------------------------------------------------------------
+local GD, GD2, GDW = Color3.fromRGB(255, 214, 120), Color3.fromRGB(255, 244, 210), Color3.fromRGB(190, 225, 255)
+local function haloRing(at: Vector3, r: number, life: number, look: Vector3?)
+	local cf = look and CFrame.lookAt(at, at + look) or (CF(at) * CFrame.Angles(0, 0, math.rad(90)))
+	local ring = piece(V(0.2, r * 2, r * 2), cf * (look and CFrame.Angles(0, math.rad(90), 0) or CFrame.new()), GD, 0.3, Enum.PartType.Cylinder)
+	local hole = piece(V(0.25, r * 1.7, r * 1.7), ring.CFrame, GD2, 0.85, Enum.PartType.Cylinder)
+	fadeOut(ring, life, V(0.05, r * 2.6, r * 2.6))
+	fadeOut(hole, life, V(0.05, r * 2.2, r * 2.2))
+end
+VFX.godStep = function(d)
+	local r0 = rootOf(d.m)
+	local at = d.at :: Vector3
+	local g = ground(at)
+	if r0 then
+		local to = V(at.X, r0.Position.Y, at.Z)
+		local away = (r0.Position - to)
+		away = away.Magnitude > 0.1 and V(away.X, 0, away.Z).Unit or V(0, 0, 1)
+		afterimage(d.m, CF(to + away * 3, to) * r0.CFrame:Inverse(), 0.3, GD2)
+	end
+	-- 하늘에서 내려온 빛 한 줄기와 금빛 발자국
+	gStroke(at + V(0, 30, 0), at + V(0, 2, 0), 0.06, 0.8, 0, WHITE, GD, true, 0.3)
+	disc(g + V(0, 0.2, 0), 1, GD, 0.2, 0.9, 3.5)
+	gEmit(at + V(0, 2.5, 0), TEX_SPARK, GD2, GD, 10, 0.5, 10, 0.4)
+	pcall(Fx.sound, "ping", 0.3, 1.8, at)
+end
+VFX.godHalo = function(d)
+	local r0 = rootOf(d.m)
+	local c = r0 and r0.Position or (d.at :: Vector3)
+	local r = d.radius or 18
+	-- 머리 뒤의 후광이 커지며 둘레로 퍼진다
+	haloRing(c + V(0, 4, 0) - lookOf(d) * 1.2, 3, 0.5, lookOf(d))
+	task.delay(0.12, function()
+		haloRing(ground(c) + V(0, 0.4, 0), r, 0.55)
+		Fx.flash(c + V(0, 3, 0), GD2, r * 2.4, 4, 0.3)
+		gEmit(c + V(0, 3, 0), TEX_SPARK, WHITE, GD, 30, 0.7, 20, 0.6)
+		shake(0.7)
+	end)
+end
+VFX.godFinger = function(d)
+	local at = d.at :: Vector3
+	local g = ground(at)
+	local r = d.radius or 13
+	-- 하늘이 둥글게 열리고, 그 사이로 거대한 손가락 하나가 내려온다
+	local sky = g + V(0, 70, 0)
+	haloRing(sky, 14, 1.0)
+	local finger = piece(V(r * 0.9, 60, r * 0.9), CF(sky + V(0, 30, 0)), GD2, 0.1, Enum.PartType.Block)
+	finger.Material = Enum.Material.Neon
+	local tip = piece(V(r * 0.9, r * 0.9, r * 0.9), CF(sky), GD2, 0.1, Enum.PartType.Ball)
+	tween(finger, 0.25, { CFrame = CF(g + V(0, 30 + r * 0.45, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	tween(tip, 0.25, { CFrame = CF(g + V(0, r * 0.45, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	task.delay(0.25, function()
+		bloom(1.2, 0.5)
+		Fx.flash(g + V(0, 4, 0), GD2, r * 3, 5, 0.3)
+		Fx.ring(g + V(0, 0.4, 0), GD, 4, r * 2.4, 0.5)
+		Fx.debris(g, 14, 24)
+		pcall(Fx.sound, "heavy", 1, 0.5, g)
+		shake(1.3)
+		task.delay(0.25, function()
+			tween(finger, 0.4, { CFrame = finger.CFrame + V(0, 70, 0), Transparency = 1 })
+			tween(tip, 0.4, { CFrame = tip.CFrame + V(0, 70, 0), Transparency = 1 })
+			Debris:AddItem(finger, 0.45)
+			Debris:AddItem(tip, 0.45)
+		end)
+	end)
+end
+VFX.godCrossCrack = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 16
+	for i = 0, 3 do
+		local dir = V(math.cos(i * math.pi / 2), 0, math.sin(i * math.pi / 2))
+		local prev = g
+		for k = 1, 6 do
+			local p = ground(g + dir * (r * 1.6 * k / 6) + V(-dir.Z, 0, dir.X) * ((math.random() - 0.5) * 2))
+			local a = prev
+			task.delay(k * 0.03, function()
+				local seg = piece(V(1, 0.4, (p - a).Magnitude + 0.4), CF((a + p) / 2 + V(0, 0.25, 0), p + V(0, 0.25, 0)), GD, 0)
+				fadeOut(seg, 1)
+				gEmit(p + V(0, 1, 0), TEX_SPARK, GD2, GD, 4, 0.4, 8, 0.4)
+			end)
+			prev = p
+		end
+	end
+	shake(0.6)
+end
+-- 만다라: 둘레의 두 겹 고리 · 열두 문양 · 가운데 연꽃 (천천히 돈다)
+local mandalaOf: { [any]: { center: Vector3, r: number, t0: number } } = {}
+VFX.godMandala = function(d)
+	local g = ground(d.at) + V(0, 0.4, 0)
+	local r = d.radius or 30
+	local life = d.life or 2.4
+	if d.m then
+		mandalaOf[d.m] = { center = g, r = r, t0 = os.clock() }
+	end
+	local parts = {}
+	local function add(p: BasePart)
+		table.insert(parts, p)
+		Debris:AddItem(p, life + 0.4)
+	end
+	add(piece(V(0.2, r * 2, r * 2), CF(g) * CFrame.Angles(0, 0, math.rad(90)), GD, 0.55, Enum.PartType.Cylinder))
+	add(piece(V(0.25, r * 1.86, r * 1.86), CF(g + V(0, 0.05, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(40, 30, 20), 0.75, Enum.PartType.Cylinder))
+	add(piece(V(0.3, r * 1.2, r * 1.2), CF(g + V(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90)), GDW, 0.6, Enum.PartType.Cylinder))
+	local sig = {}
+	for i = 1, 12 do
+		local p = piece(V(2.4, 0.3, 2.4), CF(g), GD2, 0.1)
+		p.Material = Enum.Material.Neon
+		add(p)
+		table.insert(sig, p)
+	end
+	local petals = {}
+	for i = 1, 8 do
+		local p = piece(V(1.2, 0.3, r * 0.35), CF(g), GD, 0.2)
+		add(p)
+		table.insert(petals, p)
+	end
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		if t > life then
+			conn:Disconnect()
+			for _, p in ipairs(parts) do
+				fadeOut(p, 0.3)
+			end
+			return
+		end
+		for i, p in ipairs(sig) do
+			local a = i / 12 * math.pi * 2 + t * 0.6
+			p.CFrame = CF(g + V(math.cos(a) * r * 0.93, 0.3, math.sin(a) * r * 0.93)) * CFrame.Angles(0, -a + math.pi / 4, 0)
+		end
+		for i, p in ipairs(petals) do
+			local a = i / 8 * math.pi * 2 - t * 0.9
+			p.CFrame = CF(g + V(math.cos(a) * r * 0.2, 0.35, math.sin(a) * r * 0.2), g + V(math.cos(a) * r, 0.35, math.sin(a) * r))
+		end
+	end)
+	pcall(Fx.sound, "ping", 0.8, 0.5, g)
+	shake(0.6)
+end
+VFX.godSigilBeam = function(d)
+	local at = (d.at :: Vector3) + V(0, 2.5, 0)
+	local M = d.m and mandalaOf[d.m]
+	local from
+	if M then
+		local a = math.random() * math.pi * 2
+		from = M.center + V(math.cos(a) * M.r * 0.93, 1, math.sin(a) * M.r * 0.93)
+	else
+		from = at + V(0, 20, 0)
+	end
+	gStroke(from, at, 0.08, 0.9, 0, WHITE, GD, true, 0.3)
+	task.delay(0.08, function()
+		gEmit(at, TEX_SPARK, GD2, GD, 12, 0.5, 12, 0.35)
+		Fx.flash(at, GD, 10, 2, 0.15)
+	end)
+end
+VFX.godMandalaClose = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 30
+	if d.m then
+		mandalaOf[d.m] = nil
+	end
+	-- 만다라가 한 점으로 접힌다: 둘레에서 가운데로 빛줄기 열둘
+	for i = 1, 12 do
+		local a = i / 12 * math.pi * 2
+		gStroke(g + V(math.cos(a) * r, 1, math.sin(a) * r), g + V(0, 4, 0), 0.15, 1, 0.3, GD2, GD, true, 0.35)
+	end
+	task.delay(0.16, function()
+		bloom(2, 0.8)
+		Fx.flash(g + V(0, 6, 0), GD2, r * 3, 8, 0.4)
+		haloRing(g + V(0, 0.5, 0), r * 1.2, 0.7)
+		Fx.ring(g + V(0, 0.5, 0), GDW, 4, r * 2, 0.6)
+		gStroke(g + V(0, 2, 0), g + V(0, 80, 0), 0.12, 3, 0, WHITE, GD, true, 0.6)
+		Fx.debris(g, 18, 32)
+		pcall(Fx.sound, "shatter", 1, 0.6, g)
+		shake(1.8)
+	end)
+end
 -- 맞힐 때: 별가루 / 금모래
 -- 북두개천 (초 칠성보권 X): 북두낙성의 하늘을 더 크고 길게, 둘레에 잔별 고리를 하나 더
 VFX.dipperHeaven = function(d)

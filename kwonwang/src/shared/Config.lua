@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.86" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.87" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -8680,6 +8680,7 @@ do
 		}, true),
 	})
 	setSkill("sinsamjae", "X", {
+		name = "삼재귀일", -- 3.99.87판: 신의 모습 초 오의 '천지개벽 · 신' 과 헷갈려 이름을 바꿨다
 		desc = "초 오의 (그동안 무적). 하늘 · 땅 · 사람이 차례로 친다. 하늘에서 빛기둥이 적 여섯에게 꽂히고, 땅이 내 둘레로 갈라져 솟구치고, 거대한 신의 주먹이 적 여섯을 내리친다. 마지막에 셋이 하나로 모여 천지가 다시 열린다",
 		pose = "sn_get", dur = 3.8,
 		mech = seq({
@@ -8821,6 +8822,37 @@ do
 		if st and st.twilight then
 			st.twilight.skills = sk
 		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 3.99.87판 신의 모습 기술을 새로: 신 삼재권이 신이 되면 E 는 천하패권 E 와 같은 돌진 연쇄, R 은 초·벽력신권 R 과 같은 벼락 낙하를
+--   빌려 썼고 G 는 신만의 그림이 없었다. 금빛 후광 · 하늘의 손가락 · 만다라로 (세기는 그대로). X 천지개벽 · 신은 얻을 때의 그 동작이라 그대로
+------------------------------------------------------------------------
+do
+	local st = Config.STYLE_BY_ID.sinsamjae
+	local tw = st and st.twilight
+	local sk = tw and (tw.skills or tw)
+	if sk then
+		sk.E = { id = "snsE", name = "신보", desc = "신의 걸음 (그동안 무적). 몸이 빛이 되어 가까운 적 다섯 앞에 차례로 내려서며 두 번 친다. 내려선 자리마다 금빛 발자국이 남고, 마지막에 머리 뒤의 후광이 둘레로 터진다", pose = "flying_kick", dur = 0.95, cd = 5, chi = 22,
+			mech = { kind = "forgeSeq", iframes = true, steps = {
+				{ t = 0.06, at = "each", n = 5, range = 44, radius = 7, vfx = "godStep", hit = hit(0, 0, 0, 110, 90, 0.6, 20, 10) },
+				{ t = 0.4, at = "each", n = 5, range = 44, radius = 7, vfx = "godStep", hit = hit(0, 0, 0, 110, 90, 0.6, 26, 12) },
+				{ t = 0.8, shape = "circle", at = "self", radius = 18, vfx = "godHalo", hit = hit(0, 0, 0, 230, 200, 1.0, 50, 18) },
+			} } }
+		sk.R = { id = "snsR", name = "신벌", desc = "하늘이 열리고 하늘만 한 손가락 하나가 가장 가까운 적을 내리누른다 (그동안 무적). 눌린 자리에서 땅이 열십자로 금빛으로 갈라진다", pose = "point_sky", dur = 1.0, cd = 8, chi = 26,
+			mech = { kind = "forgeSeq", iframes = true, steps = {
+				{ t = 0.4, at = "each", n = 1, range = 40, radius = 13, vfx = "godFinger", hit = hit(0, 0, 0, 180, 170, 1.2, 70, -10) },
+				{ t = 0.75, at = "each", n = 1, range = 40, radius = 16, vfx = "godCrossCrack", hit = hit(0, 0, 0, 100, 100, 0.8, 50, 14) },
+			} } }
+		sk.G = { id = "snsG", name = "신역", desc = "몸이 떠오르며 둘레 30칸에 금빛 만다라가 펼쳐져 천천히 돈다 (그동안 무적). 만다라의 열두 문양이 세 번 빛줄기를 쏘아 안의 적을 꿰뚫고, 마지막에 만다라가 한 점으로 접히며 터진다", pose = "air_spin", dur = 3.0, cd = 24, chi = 100, armor = true,
+			mech = { kind = "forgeSeq", iframes = true, steps = {
+				{ t = 0.2, shape = "circle", at = "self", radius = 30, pull = 26, life = 2.4, vfx = "godMandala", hit = hit(0, 0, 0, 100, 100, 0.6, 0) },
+				{ t = 0.9, at = "each", n = 8, range = 30, radius = 7, vfx = "godSigilBeam", hit = hit(0, 0, 0, 200, 180, 0.8, 20, 10) },
+				{ t = 1.4, at = "each", n = 8, range = 30, radius = 7, vfx = "godSigilBeam", hit = hit(0, 0, 0, 200, 180, 0.8, 20, 10) },
+				{ t = 1.9, at = "each", n = 8, range = 30, radius = 7, vfx = "godSigilBeam", hit = hit(0, 0, 0, 200, 180, 0.8, 20, 10) },
+				{ t = 2.6, shape = "circle", at = "self", radius = 30, vfx = "godMandalaClose", big = true, hit = hit(0, 0, 0, 640, 600, 1.8, 50, 24) },
+			} } }
 	end
 end
 
