@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.87" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.88" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -47087,6 +47087,9 @@ type Layer = {
 	drag: number?,
 	z: number?,
 	dir: Enum.NormalId?,
+	squash: NumberSequence?, -- 3.99.88판: 길게 늘인 빛줄기 (VelocityParallel 과 함께)
+	orient: Enum.ParticleOrientation?,
+	ground: boolean?, -- 3.99.88판: 발밑 (뿌리 아래 땅 높이) 에서 낮게 퍼진다
 }
 local DEFS: { [string]: { Layer } } = {}
 
@@ -47174,9 +47177,102 @@ DEFS.golddragon = {
 		life = nr(0.8, 1.4), rate = 8, speed = nr(5, 8), accel = Vector3.new(0, 5, 0), spread = Vector2.new(45, 45), light = 1, bright = 4, drag = 1.2 },
 }
 ------------------------------------------------------------------------
+-- 3.99.88판 오라를 티 나게: 너무 은은해서 안 보였다. 빛깔 · 결은 그대로 두고
+--   ① 가슴의 은은한 빛 (둘레를 오라 빛깔로 물들인다) ② 발밑에 낮게 퍼지는 기운 ③ 오라마다 대표 빛줄기 하나 ④ 입자 양 ×1.5 · 크기 ×1.2
+------------------------------------------------------------------------
+local STREAK = ns({ { 0, 2.4 }, { 1, 1.2 } }) -- 빛줄기: 세로로 늘인다
+local VP = Enum.ParticleOrientation.VelocityParallel
+local GLOW: { [string]: { any } } = {
+	blooddragon = { C3(255, 50, 50), 1.6 }, pacheon = { C3(170, 90, 255), 1.4 }, meteor = { C3(255, 150, 60), 1.6 },
+	rainbow = { C3(255, 250, 235), 1.0 }, samsara = { C3(170, 130, 255), 1.4 }, crown = { C3(190, 225, 255), 1.4 },
+	petals = { C3(255, 190, 225), 1.1 }, scripture = { C3(130, 210, 255), 1.4 }, golddragon = { C3(255, 200, 80), 1.8 },
+}
+local EXTRA: { [string]: { Layer } } = {
+	blooddragon = {
+		-- 발밑: 핏빛 불씨가 낮게 번진다
+		{ on = {}, ground = true, tex = TEX.fire, color = cs({ C3(255, 70, 50), C3(120, 0, 15) }), size = ns({ { 0, 1.2 }, { 1, 0.2 } }), alpha = ns({ { 0, 0.5 }, { 1, 1 } }),
+			life = nr(0.5, 0.8), rate = 18, speed = nr(4, 6), accel = Vector3.new(0, 3, 0), spread = Vector2.new(85, 85), light = 1, bright = 2, drag = 3 },
+		-- 대표: 몸을 타고 솟는 핏빛 불줄기
+		{ on = CORE, tex = TEX.spark, color = cs({ C3(255, 200, 160), C3(255, 40, 40) }), size = ns({ { 0, 0.35 }, { 1, 0 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
+			life = nr(0.5, 0.8), rate = 6, speed = nr(8, 12), accel = Vector3.new(0, 6, 0), spread = Vector2.new(25, 25), light = 1, bright = 4, squash = STREAK, orient = VP },
+	},
+	pacheon = {
+		{ on = {}, ground = true, tex = TEX.smoke, color = cs({ C3(110, 50, 190), C3(30, 10, 50) }), size = ns({ { 0, 1.5 }, { 1, 3 } }), alpha = ns({ { 0, 0.7 }, { 1, 1 } }),
+			life = nr(1, 1.5), rate = 10, speed = nr(3, 5), accel = Vector3.new(0, 0.5, 0), spread = Vector2.new(88, 88), light = 0.3, rot = nr(0, 360), spin = nr(-40, 40), drag = 2.5 },
+		-- 대표: 몸을 따라 위아래로 튀는 흰 번갯줄기
+		{ on = BODY, tex = TEX.spark, color = cs({ C3(255, 255, 255), C3(190, 140, 255) }), size = ns({ { 0, 0.3 }, { 1, 0.1 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
+			life = nr(0.08, 0.16), rate = 3, speed = nr(18, 26), spread = Vector2.new(180, 180), light = 1, bright = 6, squash = ns({ { 0, 3 }, { 1, 3 } }), orient = VP },
+	},
+	meteor = {
+		{ on = {}, ground = true, tex = TEX.spark, color = cs({ C3(255, 210, 110), C3(255, 110, 40) }), size = ns({ { 0, 0.3 }, { 1, 0 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
+			life = nr(0.5, 0.9), rate = 14, speed = nr(4, 7), accel = Vector3.new(0, 4, 0), spread = Vector2.new(80, 80), light = 1, bright = 3, drag = 2 },
+		-- 대표: 머리 위에서 비스듬히 떨어지는 작은 유성 (불꼬리)
+		{ on = { "Head" }, tex = TEX.spark, color = cs({ C3(255, 240, 200), C3(255, 120, 40) }), size = ns({ { 0, 0.4 }, { 1, 0.1 } }), alpha = ns({ { 0, 0 }, { 0.7, 0.2 }, { 1, 1 } }),
+			life = nr(0.4, 0.6), rate = 2, speed = nr(10, 14), accel = Vector3.new(0, -20, 0), spread = Vector2.new(50, 50), light = 1, bright = 4, squash = STREAK, orient = VP, dir = Enum.NormalId.Top },
+	},
+	rainbow = {
+		{ on = {}, ground = true, tex = TEX.smoke, color = cs({ C3(255, 255, 255), C3(240, 245, 255) }), size = ns({ { 0, 1.6 }, { 1, 3.6 } }), alpha = ns({ { 0, 0.45 }, { 1, 1 } }),
+			life = nr(1.4, 2), rate = 10, speed = nr(2.5, 4), accel = Vector3.new(0, 0.4, 0), spread = Vector2.new(88, 88), light = 0.4, rot = nr(0, 360), spin = nr(-15, 15), drag = 2 },
+		-- 대표: 발밑 구름 위로 퍼지는 일곱 빛 고리 (낮고 넓게)
+		{ on = {}, ground = true, tex = TEX.spark, color = cs({ C3(255, 90, 110), C3(255, 200, 80), C3(120, 235, 150), C3(110, 180, 255), C3(190, 130, 255) }), size = ns({ { 0, 0.35 }, { 1, 0.1 } }), alpha = ns({ { 0, 0.1 }, { 1, 1 } }),
+			life = nr(0.9, 1.2), rate = 12, speed = nr(5, 6), accel = Vector3.new(0, 0.5, 0), spread = Vector2.new(89, 89), light = 1, bright = 2.5, drag = 1.5 },
+	},
+	samsara = {
+		{ on = {}, ground = true, tex = TEX.fire, color = cs({ C3(190, 160, 255), C3(80, 40, 170) }), size = ns({ { 0, 1.0 }, { 1, 0.2 } }), alpha = ns({ { 0, 0.6 }, { 1, 1 } }),
+			life = nr(0.8, 1.1), rate = 14, speed = nr(3, 5), accel = Vector3.new(0, 2, 0), spread = Vector2.new(86, 86), light = 0.9, bright = 1.8, drag = 2.5 },
+		-- 대표: 금빛 별이 몸 둘레를 느리게 오르는 긴 줄기
+		{ on = CORE, tex = TEX.spark, color = cs({ C3(255, 240, 180), C3(255, 200, 90) }), size = ns({ { 0, 0.25 }, { 1, 0.05 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
+			life = nr(1, 1.4), rate = 4, speed = nr(3, 4), accel = Vector3.new(0, 1, 0), spread = Vector2.new(40, 40), light = 1, bright = 3, squash = STREAK, orient = VP },
+	},
+	crown = {
+		{ on = {}, ground = true, tex = TEX.fire, color = cs({ C3(235, 248, 255), C3(140, 190, 255) }), size = ns({ { 0, 0.9 }, { 1, 0.15 } }), alpha = ns({ { 0, 0.6 }, { 1, 1 } }),
+			life = nr(0.6, 0.9), rate = 14, speed = nr(3, 5), accel = Vector3.new(0, 3, 0), spread = Vector2.new(86, 86), light = 1, bright = 2, drag = 2.5 },
+		-- 대표: 정수리 위로 곧게 솟는 흰 · 금빛 빛줄기 (관처럼)
+		{ on = { "Head" }, tex = TEX.spark, color = cs({ C3(255, 255, 255), C3(255, 215, 110) }), size = ns({ { 0, 0.3 }, { 1, 0.05 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
+			life = nr(0.5, 0.7), rate = 6, speed = nr(5, 7), spread = Vector2.new(12, 12), light = 1, bright = 4, squash = STREAK, orient = VP, dir = Enum.NormalId.Top },
+	},
+	petals = {
+		-- 발밑에 내려앉는 꽃잎 (넓게 깔린다)
+		{ on = {}, ground = true, tex = TEX.spark, color = cs({ C3(255, 185, 220), C3(255, 225, 240) }), size = ns({ { 0, 0.4 }, { 0.5, 0.25 }, { 1, 0.35 } }), alpha = ns({ { 0, 0.1 }, { 0.8, 0.2 }, { 1, 1 } }),
+			life = nr(1.6, 2.2), rate = 8, speed = nr(3, 5), accel = Vector3.new(0, -0.3, 0), spread = Vector2.new(85, 85), light = 0.6, bright = 1.6, rot = nr(0, 360), spin = nr(-150, 150), drag = 1.8 },
+		-- 대표: 몸 둘레를 휘감아 도는 꽃바람
+		{ on = CORE, tex = TEX.spark, color = cs({ C3(255, 200, 230), C3(200, 235, 255) }), size = ns({ { 0, 0.4 }, { 0.5, 0.25 }, { 1, 0.35 } }), alpha = ns({ { 0, 0.1 }, { 1, 1 } }),
+			life = nr(1.2, 1.6), rate = 6, speed = nr(4, 6), accel = Vector3.new(2, 1, -2), spread = Vector2.new(180, 180), light = 0.6, bright = 1.6, rot = nr(0, 360), spin = nr(-260, 260), drag = 1 },
+	},
+	scripture = {
+		{ on = {}, ground = true, tex = TEX.smoke, color = cs({ C3(170, 230, 255), C3(90, 160, 230) }), size = ns({ { 0, 1.4 }, { 1, 3 } }), alpha = ns({ { 0, 0.65 }, { 1, 1 } }),
+			life = nr(1.2, 1.8), rate = 10, speed = nr(3, 4.5), accel = Vector3.new(0, 0.3, 0), spread = Vector2.new(88, 88), light = 0.5, rot = nr(0, 360), spin = nr(-15, 15), drag = 2.2 },
+		-- 대표: 곧게 떠오르는 빛의 글줄 (가늘고 길다)
+		{ on = BODY, tex = TEX.spark, color = cs({ C3(230, 250, 255), C3(120, 210, 255) }), size = ns({ { 0, 0.2 }, { 1, 0.05 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
+			life = nr(1, 1.4), rate = 2, speed = nr(2, 3), spread = Vector2.new(8, 8), light = 1, bright = 3, squash = ns({ { 0, 3 }, { 1, 2 } }), orient = VP, dir = Enum.NormalId.Top },
+	},
+	golddragon = {
+		{ on = {}, ground = true, tex = TEX.fire, color = cs({ C3(255, 235, 160), C3(240, 140, 20) }), size = ns({ { 0, 1.6 }, { 1, 0.2 } }), alpha = ns({ { 0, 0.45 }, { 1, 1 } }),
+			life = nr(0.6, 0.9), rate = 20, speed = nr(4, 6), accel = Vector3.new(0, 5, 0), spread = Vector2.new(85, 85), light = 1, bright = 2.5, drag = 2.5 },
+		-- 대표: 몸을 휘감고 치솟는 금빛 불줄기
+		{ on = CORE, tex = TEX.spark, color = cs({ C3(255, 250, 220), C3(255, 190, 50) }), size = ns({ { 0, 0.4 }, { 1, 0.05 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
+			life = nr(0.6, 0.9), rate = 8, speed = nr(10, 14), accel = Vector3.new(0, 8, 0), spread = Vector2.new(30, 30), light = 1, bright = 4, squash = STREAK, orient = VP },
+	},
+}
+for id, list in pairs(EXTRA) do
+	if DEFS[id] then
+		for _, L in ipairs(list) do
+			table.insert(DEFS[id], L)
+		end
+	end
+end
+local function scaleSeq(seq: NumberSequence, k: number): NumberSequence
+	local kp = {}
+	for _, p in ipairs(seq.Keypoints) do
+		table.insert(kp, NumberSequenceKeypoint.new(p.Time, p.Value * k, p.Envelope * k))
+	end
+	return NumberSequence.new(kp)
+end
+
+------------------------------------------------------------------------
 -- 몸마다 붙이고 떼기
 ------------------------------------------------------------------------
-local active: { [Model]: { id: string, emitters: { ParticleEmitter } } } = {}
+local active: { [Model]: { id: string, emitters: { any } } } = {}
 local ALT = { UpperTorso = "Torso", LowerTorso = "Torso", LeftUpperArm = "Left Arm", RightUpperArm = "Right Arm", LeftLowerLeg = "Left Leg", RightLowerLeg = "Right Leg", LeftHand = "Left Arm", RightHand = "Right Arm", LeftFoot = "Left Leg", RightFoot = "Right Leg" }
 local function partOf(model: Model, name: string): BasePart?
 	local p = model:FindFirstChild(name)
@@ -47197,36 +47293,77 @@ local function clear(model: Model)
 		active[model] = nil
 	end
 end
-local function build(model: Model, id: string): { ParticleEmitter }
+local function build(model: Model, id: string): { any }
 	local out = {}
-	local k = (Perf and Perf.low) and 0.4 or 1
+	local low = Perf and Perf.low
+	local k = low and 0.4 or 1.5 -- 3.99.88판: 양 ×1.5 (가벼운 그래픽은 예전처럼 줄인다)
+	local sk = low and 1 or 1.2 -- 크기 ×1.2
+	local root = model:FindFirstChild("HumanoidRootPart")
+	local feet: Attachment? = nil
 	for _, L in ipairs(DEFS[id] or {}) do
-		for _, pn in ipairs(L.on) do
-			local p = partOf(model, pn)
-			if p then
-				local e = Instance.new("ParticleEmitter")
-				e.Name = "AchAura"
-				e.Texture = L.tex
-				e.Color = L.color
-				e.Size = L.size
-				e.Transparency = L.alpha
-				e.Lifetime = L.life
-				e.Rate = math.max(1, L.rate * k)
-				e.Speed = L.speed
-				e.Acceleration = L.accel or Vector3.zero
-				e.SpreadAngle = L.spread or Vector2.new(30, 30)
-				e.LightEmission = L.light or 0
-				e.Brightness = L.bright or 1
-				e.Rotation = L.rot or nr(0, 0)
-				e.RotSpeed = L.spin or nr(0, 0)
-				e.Drag = L.drag or 0
-				e.ZOffset = L.z or 0
-				e.EmissionDirection = L.dir or Enum.NormalId.Top
-				e.LockedToPart = false
-				e.Parent = p
-				table.insert(out, e)
+		local hosts: { Instance } = {}
+		if L.ground then
+			if root and root:IsA("BasePart") and not low then
+				if not feet then
+					local a = Instance.new("Attachment")
+					a.Name = "AchAuraFeet"
+					a.Position = Vector3.new(0, -2.7, 0)
+					a.Parent = root
+					feet = a
+					table.insert(out, a)
+				end
+				table.insert(hosts, feet :: Attachment)
+			end
+		else
+			for _, pn in ipairs(L.on) do
+				local p = partOf(model, pn)
+				if p then
+					table.insert(hosts, p)
+				end
 			end
 		end
+		for _, host in ipairs(hosts) do
+			local e = Instance.new("ParticleEmitter")
+			e.Name = "AchAura"
+			e.Texture = L.tex
+			e.Color = L.color
+			e.Size = sk ~= 1 and scaleSeq(L.size, sk) or L.size
+			e.Transparency = L.alpha
+			e.Lifetime = L.life
+			e.Rate = math.max(1, L.rate * k)
+			e.Speed = L.speed
+			e.Acceleration = L.accel or Vector3.zero
+			e.SpreadAngle = L.spread or Vector2.new(30, 30)
+			e.LightEmission = L.light or 0
+			e.Brightness = L.bright or 1
+			e.Rotation = L.rot or nr(0, 0)
+			e.RotSpeed = L.spin or nr(0, 0)
+			e.Drag = L.drag or 0
+			e.ZOffset = L.z or 0
+			e.EmissionDirection = L.dir or Enum.NormalId.Top
+			if L.squash then
+				e.Squash = L.squash
+			end
+			if L.orient then
+				e.Orientation = L.orient
+			end
+			e.LockedToPart = false
+			e.Parent = host
+			table.insert(out, e)
+		end
+	end
+	-- 가슴의 은은한 빛: 둘레를 오라 빛깔로 물들인다
+	local gl = GLOW[id]
+	local chest = partOf(model, "UpperTorso")
+	if gl and chest and not low then
+		local l = Instance.new("PointLight")
+		l.Name = "AchAuraLight"
+		l.Color = gl[1]
+		l.Brightness = gl[2]
+		l.Range = 11
+		l.Shadows = false
+		l.Parent = chest
+		table.insert(out, l)
 	end
 	return out
 end
@@ -47234,7 +47371,9 @@ local function setOn(model: Model, on: boolean)
 	local a = active[model]
 	if a then
 		for _, e in ipairs(a.emitters) do
-			e.Enabled = on
+			if e:IsA("ParticleEmitter") or e:IsA("Light") then
+				(e :: any).Enabled = on
+			end
 		end
 	end
 end
