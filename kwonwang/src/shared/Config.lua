@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.85" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.86" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -8717,6 +8717,111 @@ do
 			{ t = 1.15, shape = "circle", at = "self", radius = 14, pull = 16, vfx = "galeTornado", big = true, hit = hit(0, 0, 0, 34, 44, 0.9, 10, 18) },
 		}, true),
 	})
+end
+
+------------------------------------------------------------------------
+-- 3.99.86판 화신 기술을 새로: 혼돈화신 · 만검귀종 · 불사조 화신의 기술이 평소 기술을 키우거나 평소 연출을 섞어 써서,
+--   모습이 바뀌어도 새로 보이는 것이 없었다. 화신의 기술 넷을 평소와 겹치지 않는 장치 · 연출로 (세기는 예전 화신 기술 그대로)
+------------------------------------------------------------------------
+do
+	local function seq(steps: { any }, iframes: boolean?): any
+		return { kind = "forgeSeq", iframes = iframes, steps = steps }
+	end
+	local NEW: { [string]: any } = {}
+	-- 🖌 혼돈화신: 먹비 · 먹의 분신 · 한 획의 글자 · 하늘에서 내려오는 먹의 그물
+	NEW.hondon = {
+		E = { id = "hdTE", name = "묵우", desc = "혼돈화신의 기술. 하늘에서 먹비가 쏟아져 가까운 적 여섯을 두 번 적시고, 앞의 땅에 먹이 크게 번진다", pose = "void_point", dur = 0.9, cd = 5.6, chi = 20,
+			mech = seq({
+				{ t = 0.15, at = "each", n = 6, range = 28, radius = 6, vfx = "inkRain", hit = hit(0, 0, 0, 45, 40, 0.4, 6, 4) },
+				{ t = 0.45, at = "each", n = 6, range = 28, radius = 6, vfx = "inkRain", hit = hit(0, 0, 0, 45, 40, 0.4, 6, 4) },
+				{ t = 0.75, shape = "circle", at = "front", dist = 16, radius = 10, vfx = "inkSplash", hit = hit(0, 0, 0, 40, 40, 0.5, 14, 6) },
+			}) },
+		R = { id = "hdTR", name = "묵영분신", desc = "혼돈화신의 기술. 몸에서 먹으로 된 분신 셋이 갈라져 나와 가까운 적에게 차례로 덮쳐 든다. 세 번 덮치고 먹물로 흩어진다", pose = "void_sink", dur = 1.0, cd = 7.2, chi = 26,
+			mech = seq({
+				{ t = 0.1, at = "each", n = 3, range = 26, radius = 6, vfx = "inkClone", hit = hit(0, 0, 0, 48, 48, 0.5, 10, 6) },
+				{ t = 0.4, at = "each", n = 3, range = 26, radius = 6, vfx = "inkClone", hit = hit(0, 0, 0, 48, 48, 0.5, 10, 6) },
+				{ t = 0.7, at = "each", n = 3, range = 26, radius = 6, vfx = "inkClone", hit = hit(0, 0, 0, 48, 48, 0.5, 14, 10) },
+			}) },
+		G = { id = "hdTG", name = "일필휘지", desc = "혼돈화신의 기술. 하늘만 한 붓이 둘레 30칸 땅에 한 획으로 커다란 글자를 써 내려가며 적을 끌어모으고, 글자가 다 쓰이는 순간 먹이 금빛으로 터진다", pose = "ult_taiji", dur = 2.2, cd = 22, chi = 100, armor = true,
+			mech = seq({
+				{ t = 0.2, shape = "circle", at = "self", radius = 30, pull = 30, life = 1.3, vfx = "inkGlyph", hit = hit(0, 0, 0, 60, 60, 0.5, 0) },
+				{ t = 1.6, shape = "circle", at = "self", radius = 30, vfx = "inkGlyphBurst", big = true, hit = hit(0, 0, 0, 263, 280, 1.5, 60, 26) },
+			}) },
+		X = { id = "hdTX", name = "만묵천라", desc = "혼돈화신의 초 오의 (그동안 무적). 하늘에서 글자로 엮인 먹의 그물이 둘레 44칸을 덮는다. 그물에 걸린 적 열에게 봉인의 글자가 두 번 찍혀 터지고, 마지막에 그물이 한 점으로 조여들며 산산이 흩어진다", pose = "ult_star", dur = 3.4, cd = 44, chi = 150, armor = true,
+			mech = seq({
+				{ t = 0.05, shape = "circle", at = "self", radius = 44, life = 3.0, vfx = "inkNet" },
+				{ t = 1.0, at = "each", n = 10, range = 44, radius = 6, vfx = "inkSeal", hit = hit(0, 0, 0, 60, 60, 0.6, 6, 8) },
+				{ t = 1.8, at = "each", n = 10, range = 44, radius = 6, vfx = "inkSeal", hit = hit(0, 0, 0, 60, 60, 0.6, 6, 8) },
+				{ t = 2.8, shape = "circle", at = "self", radius = 44, vfx = "inkNetBurst", big = true, hit = hit(0, 0, 0, 427, 440, 1.8, 80, 30) },
+			}, true) },
+	}
+	-- 🗡 만검귀종: 검을 버린 검. 지평선을 가르는 한 줄 · 사라졌다 나타나는 걸음 · 검 만 자루가 하나로 · 아무것도 없는 베기
+	NEW.geuksword = {
+		E = { id = "gsTE", name = "일섬천리", desc = "만검귀종의 기술. 아무것도 보이지 않다가, 한 박자 뒤 앞으로 50칸에 지평선 같은 흰 줄이 그어지고 세상이 그 줄을 따라 어긋나며 갈라진다", pose = "push_palm", dur = 0.8, cd = 6, chi = 20,
+			mech = seq({
+				{ t = 0.15, shape = "line", at = "self", length = 50, width = 5, vfx = "swHorizon", hit = hit(0, 0, 0, 120, 90, 0.4, 0) },
+				{ t = 0.55, shape = "line", at = "self", length = 50, width = 7, vfx = "swHorizonSplit", hit = hit(0, 0, 0, 240, 160, 0.7, 16, 6) },
+			}) },
+		R = { id = "gsTR", name = "검심보", desc = "만검귀종의 기술 (그동안 무적). 몸이 사라졌다가 가까운 적 넷의 등 뒤에 차례로 나타나 벤다. 세 번 돌고 제자리에서 칼을 거두면 둘레가 한꺼번에 베인다", pose = "back_spin_kick", dur = 1.0, cd = 8, chi = 22,
+			mech = seq({
+				{ t = 0.1, at = "each", n = 4, range = 30, radius = 6, vfx = "swBlink", hit = hit(0, 0, 0, 54, 40, 0.5, 8) },
+				{ t = 0.35, at = "each", n = 4, range = 30, radius = 6, vfx = "swBlink", hit = hit(0, 0, 0, 54, 40, 0.5, 8) },
+				{ t = 0.6, at = "each", n = 4, range = 30, radius = 6, vfx = "swBlink", hit = hit(0, 0, 0, 54, 40, 0.5, 8) },
+				{ t = 0.85, shape = "circle", at = "self", radius = 14, vfx = "swSheath", hit = hit(0, 0, 0, 54, 60, 0.6, 30, 8) },
+			}, true) },
+		G = { id = "gsTG", name = "만검귀일", desc = "만검귀종의 기술. 머리 위 검의 고리가 손으로 모여 한 자루의 거대한 검이 된다. 그 검으로 둘레 26칸을 두 바퀴 베어 돌고, 마지막에 앞으로 46칸을 꿰뚫어 찌른다", pose = "ult_star", dur = 2.2, cd = 22, chi = 100, armor = true,
+			mech = seq({
+				{ t = 0.2, shape = "circle", at = "self", radius = 1, life = 0.6, vfx = "swGather" },
+				{ t = 0.85, shape = "circle", at = "self", radius = 26, vfx = "swSpinCut", hit = hit(0, 0, 0, 120, 100, 0.6, 20) },
+				{ t = 1.25, shape = "circle", at = "self", radius = 26, vfx = "swSpinCut", hit = hit(0, 0, 0, 120, 100, 0.6, 20) },
+				{ t = 1.75, shape = "line", at = "self", length = 46, width = 12, vfx = "swGiantThrust", big = true, hit = hit(0, 0, 0, 210, 220, 1.4, 60, 10) },
+			}) },
+		X = { id = "gsTX", name = "무검", desc = "만검귀종의 초 오의 (그동안 무적). 검의 고리도, 빛도, 소리도 사라진다. 하얗게 멈춘 세상에서 둘레 50칸의 적 열둘에게 가는 칼금만 두 번 그어지고, 세상이 다시 흐르는 순간 그어진 모든 칼금이 한꺼번에 터진다", pose = "ult_star", dur = 3.6, cd = 45, chi = 150, armor = true,
+			mech = seq({
+				{ t = 0.05, shape = "circle", at = "self", radius = 50, life = 3.0, vfx = "swVoid" },
+				{ t = 1.0, at = "each", n = 12, range = 50, radius = 5, vfx = "swSilentMark", hit = hit(0, 0, 0, 50, 40, 0.3, 0) },
+				{ t = 1.6, at = "each", n = 12, range = 50, radius = 5, vfx = "swSilentMark", hit = hit(0, 0, 0, 50, 40, 0.3, 0) },
+				{ t = 3.0, shape = "circle", at = "self", radius = 50, vfx = "swAfterSilence", big = true, hit = hit(0, 0, 0, 800, 600, 1.8, 70, 26) },
+			}, true) },
+	}
+	-- 🐦 불사조 화신: 불새 떼 · 불꽃 회오리 · 해가 되어 떨어지기 · 천 마리 새가 돌아와 알을 깨고 나온다
+	NEW.geukphoenix = {
+		E = { id = "gpTE", name = "불새떼", desc = "불사조 화신의 기술. 날개깃에서 작은 불새 떼가 쏟아져 나와 나선을 그리며 가까운 적 여섯에게 세 번 덮친다", pose = "push_palm", dur = 0.9, cd = 6, chi = 20,
+			mech = seq({
+				{ t = 0.15, at = "each", n = 6, range = 30, radius = 5, vfx = "phSwarm", hit = hit(0, 0, 0, 40, 30, 0.4, 6) },
+				{ t = 0.4, at = "each", n = 6, range = 30, radius = 5, vfx = "phSwarm", hit = hit(0, 0, 0, 40, 30, 0.4, 6) },
+				{ t = 0.65, at = "each", n = 6, range = 30, radius = 5, vfx = "phSwarm", hit = hit(0, 0, 0, 40, 30, 0.4, 10) },
+			}) },
+		R = { id = "gpTR", name = "화염선회", desc = "불사조 화신의 기술 (그동안 무적). 두 날개로 몸을 감싸고 불꽃 회오리가 되어 네 번 휘돌며 앞으로 나아간다. 마지막에 날개를 활짝 펴며 불꽃을 털어 낸다", pose = "flame_dash", dur = 1.1, cd = 8, chi = 22,
+			mech = seq({
+				{ t = 0.1, dash = 7, shape = "circle", at = "self", radius = 10, vfx = "phSpin", hit = hit(0, 0, 0, 45, 30, 0.4, 6, 4) },
+				{ t = 0.3, dash = 7, shape = "circle", at = "self", radius = 10, vfx = "phSpin", hit = hit(0, 0, 0, 45, 30, 0.4, 6, 4) },
+				{ t = 0.5, dash = 7, shape = "circle", at = "self", radius = 10, vfx = "phSpin", hit = hit(0, 0, 0, 45, 30, 0.4, 6, 4) },
+				{ t = 0.7, dash = 7, shape = "circle", at = "self", radius = 10, vfx = "phSpin", hit = hit(0, 0, 0, 45, 30, 0.4, 6, 4) },
+				{ t = 0.95, shape = "circle", at = "self", radius = 16, vfx = "phWingBurst", hit = hit(0, 0, 0, 50, 60, 0.6, 30, 10) },
+			}, true) },
+		G = { id = "gpTG", name = "낙일조", desc = "불사조 화신의 기술. 하늘 높이 날아올라 작은 해가 된다. 해가 되어 둘레 30칸에 그대로 떨어져 땅을 녹이고, 녹은 땅에서 재의 물결이 바깥으로 번진다", pose = "ult_star", dur = 2.0, cd = 22, chi = 100, armor = true,
+			mech = seq({
+				{ t = 0.15, shape = "circle", at = "self", radius = 1, life = 1.1, vfx = "phAscend" },
+				{ t = 1.3, shape = "circle", at = "self", radius = 30, vfx = "phSunDive", big = true, hit = hit(0, 0, 0, 340, 300, 1.5, 50, 18) },
+				{ t = 1.6, shape = "ring", at = "self", inner = 10, radius = 34, vfx = "phAshWave", hit = hit(0, 0, 0, 100, 80, 0.6, 30, 6) },
+			}) },
+		X = { id = "gpTX", name = "만조귀소", desc = "불사조 화신의 초 오의 (그동안 무적). 하늘을 가득 메운 불새 천 마리가 사방에서 돌아와 적 여덟에게 네 번 꽂힌다. 마지막에 새들이 모두 내 둘레에 모여 불꽃의 알이 되고, 알이 깨지며 둘레 50칸이 타오른다", pose = "ult_star", dur = 3.6, cd = 45, chi = 150, armor = true,
+			mech = seq({
+				{ t = 0.05, shape = "circle", at = "self", radius = 50, life = 3.0, vfx = "phFlock" },
+				{ t = 0.8, at = "each", n = 8, range = 45, radius = 7, vfx = "phConverge", hit = hit(0, 0, 0, 60, 50, 0.5, 8, 6) },
+				{ t = 1.3, at = "each", n = 8, range = 45, radius = 7, vfx = "phConverge", hit = hit(0, 0, 0, 60, 50, 0.5, 8, 6) },
+				{ t = 1.8, at = "each", n = 8, range = 45, radius = 7, vfx = "phConverge", hit = hit(0, 0, 0, 60, 50, 0.5, 8, 6) },
+				{ t = 2.3, at = "each", n = 8, range = 45, radius = 7, vfx = "phConverge", hit = hit(0, 0, 0, 60, 50, 0.5, 8, 6) },
+				{ t = 3.0, shape = "circle", at = "self", radius = 50, vfx = "phHatch", big = true, hit = hit(0, 0, 0, 660, 560, 1.8, 70, 26) },
+			}, true) },
+	}
+	for id, sk in pairs(NEW) do
+		local st = Config.STYLE_BY_ID[id]
+		if st and st.twilight then
+			st.twilight.skills = sk
+		end
+	end
 end
 
 return Config

@@ -5102,6 +5102,490 @@ VFX.jlBreath = function(d)
 	Fx.flash(from + look * len * 0.5, JL, 30, 3, 0.25)
 	shake(0.6)
 end
+------------------------------------------------------------------------
+-- 3.99.86판 화신 기술 연출 (평소 기술의 연출은 쓰지 않는다)
+------------------------------------------------------------------------
+local function camNear(at: Vector3, r: number): boolean
+	local cam = workspace.CurrentCamera
+	return cam ~= nil and (cam.CFrame.Position - at).Magnitude < r
+end
+-- 🖌 혼돈화신 -----------------------------------------------------------
+VFX.inkRain = function(d)
+	local at = d.at :: Vector3
+	for i = 1, 7 do
+		local x, z = (math.random() - 0.5) * 6, (math.random() - 0.5) * 6
+		task.delay(i * 0.03, function()
+			local top = at + V(x, 26, z)
+			local drop = piece(V(0.4, 3.5, 0.4), CF(top), INK2, 0.05)
+			tween(drop, 0.16, { CFrame = CF(ground(at + V(x, 0, z)) + V(0, 1, 0)) }, Enum.EasingStyle.Linear)
+			task.delay(0.16, function()
+				fadeOut(drop, 0.1)
+				disc(ground(at + V(x, 0, z)) + V(0, 0.2, 0), 0.6, INK2, 0.1, 0.7, 2.4)
+			end)
+		end)
+	end
+	task.delay(0.22, function()
+		gEmit(at + V(0, 2, 0), TEX_SMOKE, INK2, INKEDGE, 8, 1.6, 4, 0.6, 0)
+	end)
+end
+VFX.inkSplash = function(d)
+	local g = ground(d.at) + V(0, 0.3, 0)
+	local r = d.radius or 10
+	disc(g, 1, INK2, 0.05, 1.2, r)
+	for i = 1, 10 do
+		local a = i / 10 * math.pi * 2
+		inkStroke(g + V(0, 0.5, 0), g + V(math.cos(a) * r * 1.2, 0.5, math.sin(a) * r * 1.2), 0.12, 0.7, 0.6, i % 4 == 0)
+	end
+	pcall(Fx.sound, "splash", 0.6, 0.6, g)
+	shake(0.35)
+end
+VFX.inkClone = function(d)
+	local r0 = rootOf(d.m)
+	local at = d.at :: Vector3
+	if r0 then
+		local to = V(at.X, r0.Position.Y, at.Z)
+		local start = r0.Position + V((math.random() - 0.5) * 6, 0, (math.random() - 0.5) * 6)
+		afterimage(d.m, CF(start, to) * r0.CFrame:Inverse(), 0.3, INK2, (to - start) * 0.9)
+		inkStroke(start + V(0, 2.5, 0), at + V(0, 2.5, 0), 0.14, 0.6, 1.2, false)
+	end
+	task.delay(0.15, function()
+		gEmit(at + V(0, 2.5, 0), TEX_SMOKE, INK2, INKEDGE, 14, 2, 8, 0.6, 0)
+		gEmit(at + V(0, 2.5, 0), TEX_SPARK, INKGOLD, INKGOLD, 6, 0.4, 8, 0.3)
+	end)
+end
+-- 땅에 한 획으로 쓰는 큰 글자: 원을 그리고 가운데로 힘 있게 긋는 다섯 획
+local GLYPH = { { V(-0.8, 0, -0.7), V(0.8, 0, -0.7) }, { V(0, 0, -0.95), V(0, 0, 0.95) }, { V(-0.7, 0, 0.1), V(0.7, 0, 0.1) }, { V(-0.6, 0, 0.75), V(0.2, 0, 0.35) }, { V(0.1, 0, 0.35), V(0.75, 0, 0.8) } }
+VFX.inkGlyph = function(d)
+	local g = ground(d.at) + V(0, 0.5, 0)
+	local r = d.radius or 30
+	local life = d.life or 1.3
+	disc(g - V(0, 0.2, 0), r, Color3.fromRGB(235, 228, 210), 0.6, life + 0.3)
+	-- 하늘의 붓: 획마다 붓끝이 하늘에서 내려와 긋는다
+	for i, s in ipairs(GLYPH) do
+		task.delay((i - 1) * life / #GLYPH, function()
+			local a, b = g + s[1] * r * 0.8, g + s[2] * r * 0.8
+			inkStroke(a + V(0, 30, 0), a, 0.06, 1.2, 0.3, false)
+			task.delay(0.06, function()
+				inkStroke(a, b, life / #GLYPH * 0.9, 3.2, 1.5, i == #GLYPH)
+			end)
+			pcall(Fx.sound, "swing", 0.5, 0.5, a)
+		end)
+	end
+	shake(0.4)
+end
+VFX.inkGlyphBurst = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 30
+	bloom(1.2, 0.6)
+	Fx.flash(g + V(0, 4, 0), INKGOLD, r * 2.6, 6, 0.35)
+	for i, s in ipairs(GLYPH) do
+		local a, b = g + s[1] * r * 0.8, g + s[2] * r * 0.8
+		for k = 0, 4 do
+			local p = a:Lerp(b, k / 4)
+			gEmit(p + V(0, 1, 0), TEX_SMOKE, INK2, INKGOLD, 6, 2.4, 12, 0.7, 0.3, V(0, 10, 0))
+		end
+		gStroke(a + V(0, 1, 0), b + V(0, 1, 0), 0.08, 1.4, 0, INKGOLD, WHITE, true, 0.4)
+		local _ = i
+	end
+	Fx.ring(g + V(0, 0.5, 0), INKGOLD, 5, r * 2.4, 0.6)
+	Fx.debris(g, 14, 26)
+	shake(1.4)
+end
+VFX.inkNet = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 44
+	local life = d.life or 3
+	if camNear(g, 170) then
+		domainTitle("萬墨天羅", "만묵천라 · 먹의 그물", 2)
+	end
+	inkScreen(math.min(life, 3))
+	-- 하늘에서 천천히 내려앉는 그물: 가로 · 세로 먹줄 일곱씩 + 교차점마다 작은 글자
+	local top = g + V(0, 40, 0)
+	for i = -3, 3 do
+		local off = i / 3 * r * 0.85
+		task.delay(0.05 * (i + 3), function()
+			inkStroke(top + V(-r * 0.85, 0, off), top + V(r * 0.85, 0, off), 0.3, 0.8, 2, false)
+			inkStroke(top + V(off, 0, -r * 0.85), top + V(off, 0, r * 0.85), 0.3, 0.8, 2, false)
+		end)
+	end
+	task.delay(0.5, function()
+		calligraphy(top + V(0, 6, 0), "封", life - 0.6)
+	end)
+	gSwirl(function()
+		return g + V(0, 20, 0)
+	end, 16, r * 0.9, 20, life, INK2, INKEDGE, { width = 0.6, trail = 0.8, speed = 0.3, glow = false })
+	shake(0.6)
+end
+VFX.inkSeal = function(d)
+	local at = (d.at :: Vector3) + V(0, 3, 0)
+	-- 봉인의 글자: 먹 동그라미에 금빛 가로획 · 세로획
+	local ring = piece(V(0.3, 7, 7), CF(at) * CFrame.Angles(0, 0, math.rad(90)), INK2, 0.1, Enum.PartType.Cylinder)
+	fadeOut(ring, 0.5, V(0.1, 10, 10))
+	gStroke(at + V(-2.5, 1.5, 0), at + V(2.5, 1.5, 0), 0.08, 0.5, 0.1, INKGOLD, WHITE, true, 0.35)
+	gStroke(at + V(0, 3, 0), at + V(0, -2.5, 0), 0.1, 0.5, 0.1, INKGOLD, WHITE, true, 0.35)
+	task.delay(0.15, function()
+		gEmit(at, TEX_SMOKE, INK2, INKGOLD, 14, 2, 10, 0.6, 0.3)
+		Fx.flash(at, INKGOLD, 12, 2, 0.15)
+	end)
+end
+VFX.inkNetBurst = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 44
+	-- 그물이 한 점으로 조였다가 산산이 흩어진다
+	gSwirl(function()
+		return g + V(0, 10, 0)
+	end, 24, r, 12, 0.35, INK2, INKGOLD, { width = 0.8, trail = 0.4, converge = true, speed = 3, glow = false })
+	task.delay(0.35, function()
+		bloom(1.6, 0.7)
+		Fx.flash(g + V(0, 8, 0), INKGOLD, r * 2.8, 8, 0.4)
+		for i = 1, 24 do
+			local a = i / 24 * math.pi * 2
+			inkStroke(g + V(0, 8, 0), g + V(math.cos(a) * r, 2 + math.random() * 12, math.sin(a) * r), 0.2, 1.4, 2, i % 3 == 0)
+		end
+		Fx.ring(g + V(0, 0.5, 0), INK2, 6, r * 2.4, 0.7)
+		Fx.debris(g, 18, 34)
+		pcall(Fx.sound, "splash", 1, 0.4, g)
+		shake(1.8)
+	end)
+end
+-- 🗡 만검귀종 -----------------------------------------------------------
+VFX.swHorizon = function(d)
+	local from = (d.from :: Vector3) + V(0, 2.6, 0)
+	local look = lookOf(d)
+	local len = d.length or 50
+	-- 아무것도 없다가, 아주 가는 흰 줄 하나
+	local line = piece(V(0.05, 0.05, len), CFrame.lookAt(from + look * len / 2, from + look * len), WHITE, 0)
+	tween(line, 0.12, { Size = V(0.12, 0.12, len) })
+	Debris:AddItem(line, 0.6)
+	task.delay(0.4, function()
+		fadeOut(line, 0.1)
+	end)
+end
+VFX.swHorizonSplit = function(d)
+	local from = (d.from :: Vector3) + V(0, 2.6, 0)
+	local look = lookOf(d)
+	local len = d.length or 50
+	local right = V(-look.Z, 0, look.X)
+	-- 세상이 줄을 따라 어긋난다: 위아래 두 장의 빛판이 반대로 밀리며 사라진다
+	for s = -1, 1, 2 do
+		local plate = piece(V(len, 6, 0.1), CFrame.lookAt(from + look * len / 2 + V(0, s * 3, 0), from + look * len / 2 + V(0, s * 3, 0) + right) , SW_B, 0.6)
+		tween(plate, 0.35, { CFrame = plate.CFrame + look * (s * 4), Transparency = 1 })
+		Debris:AddItem(plate, 0.4)
+	end
+	qiSlash(from, from + look * len, 2.2, 0.35)
+	for k = 1, 8 do
+		gEmit(from + look * (len * k / 8), TEX_SPARK, SW_W, SW_B, 6, 0.4, 10, 0.35)
+	end
+	Fx.flash(from + look * len * 0.5, SW_W, 40, 3, 0.2)
+	pcall(Fx.sound, "deflect", 0.8, 0.6, from)
+	shake(0.8)
+end
+VFX.swBlink = function(d)
+	local r0 = rootOf(d.m)
+	local at = d.at :: Vector3
+	if r0 then
+		local to = V(at.X, r0.Position.Y, at.Z)
+		local away = r0.Position - to
+		away = away.Magnitude > 0.1 and V(away.X, 0, away.Z).Unit or V(0, 0, 1)
+		local spot = to - away * 3.5 -- 적의 등 뒤
+		afterimage(d.m, CF(spot, to) * r0.CFrame:Inverse(), 0.25, SW_W)
+	end
+	qiSlash(at + V(-3, 4.5, 0), at + V(3, 0.5, 0), 1.2, 0.2)
+	gEmit(at + V(0, 2.5, 0), TEX_SPARK, SW_W, SW_B, 8, 0.4, 10, 0.3)
+end
+VFX.swSheath = function(d)
+	local g = ground(d.at) + V(0, 2.5, 0)
+	local r = d.radius or 14
+	-- 칼을 거두는 소리와 함께 둘레에 칼금 여덟이 한꺼번에
+	pcall(Fx.sound, "deflect", 1, 1.3, g)
+	for i = 1, 8 do
+		local a = i / 8 * math.pi * 2
+		local p = g + V(math.cos(a) * r * 0.6, 0, math.sin(a) * r * 0.6)
+		local t = V(-math.sin(a), 0, math.cos(a))
+		qiSlash(p - t * 4 + V(0, 1.5, 0), p + t * 4 - V(0, 1, 0), 1.4, 0.25)
+	end
+	Fx.ring(g - V(0, 2, 0), SW_B, 2, r * 2.2, 0.35)
+	shake(0.5)
+end
+VFX.swGather = function(d)
+	local r0 = rootOf(d.m)
+	if not r0 then
+		return
+	end
+	local hand = r0.Position + V(0, 3, 0)
+	-- 머리 위 고리의 검 열둘이 손으로 빨려 든다
+	for i = 1, 12 do
+		local a = i / 12 * math.pi * 2
+		local p = r0.Position + V(math.cos(a) * 6, 9, math.sin(a) * 6)
+		local parts, _ = lightSword(CF(p) * CFrame.Angles(math.pi, 0, 0), 4, 0.6)
+		moveParts(parts, CF(p) * CFrame.Angles(math.pi, 0, 0), CF(hand) * CFrame.Angles(math.pi, 0, 0), 0.4)
+		task.delay(0.4, function()
+			fadeParts(parts, 0.1)
+		end)
+	end
+	task.delay(0.45, function()
+		Fx.flash(hand, SW_W, 18, 3, 0.2)
+		pcall(Fx.sound, "deflect", 0.8, 0.5, hand)
+	end)
+end
+VFX.swSpinCut = function(d)
+	local r0 = rootOf(d.m)
+	local c = (r0 and r0.Position or (d.at :: Vector3))
+	local r = d.radius or 26
+	-- 손의 거대한 검이 몸 둘레를 한 바퀴 돈다
+	local parts, _ = lightSword(CF(c), r * 0.9, 2.2)
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local k = math.min(1, (os.clock() - t0) / 0.28)
+		local a = k * math.pi * 2
+		local cf = CF(c + V(0, 2.5, 0)) * CFrame.Angles(0, -a, 0) * CFrame.Angles(0, 0, math.rad(90))
+		for _, pt in ipairs(parts) do
+			pt.CFrame = cf * CF(0, -r * 0.45, 0)
+		end
+		if k >= 1 then
+			conn:Disconnect()
+			fadeParts(parts, 0.15)
+		end
+	end)
+	Fx.ring(ground(c) + V(0, 0.4, 0), SW_W, 2.5, r * 2.1, 0.35)
+	pcall(Fx.sound, "swing", 0.9, 0.6, c)
+	shake(0.6)
+end
+VFX.swGiantThrust = function(d)
+	local from = (d.from :: Vector3) + V(0, 2.5, 0)
+	local look = lookOf(d)
+	local len = d.length or 46
+	local base = CFrame.lookAt(from, from + look) * CFrame.Angles(math.rad(-90), 0, 0)
+	local parts, _ = lightSword(base, 14, 2.6)
+	moveParts(parts, base, base + look * len, 0.15)
+	task.delay(0.15, function()
+		fadeParts(parts, 0.3)
+		qiSlash(from, from + look * len, 4, 0.4)
+		bloom(1, 0.5)
+		Fx.flash(from + look * len, SW_W, 30, 4, 0.3)
+		Fx.ring(ground(from + look * len) + V(0, 0.4, 0), SW_B, 3, 24, 0.4)
+		shake(1.2)
+	end)
+end
+-- 무검: 세상이 하얗게 멈춘다 (빛 · 소리 없음)
+local function whiteOut(dur: number)
+	local cc = Instance.new("ColorCorrectionEffect")
+	cc.Parent = Lighting
+	tween(cc, 0.12, { Saturation = -1, Brightness = 0.25, Contrast = -0.3 })
+	task.delay(dur, function()
+		tween(cc, 0.08, { Saturation = 0, Brightness = 0, Contrast = 0 })
+		Debris:AddItem(cc, 0.2)
+	end)
+end
+VFX.swVoid = function(d)
+	local g = ground(d.at)
+	local life = d.life or 3
+	if camNear(g, 180) then
+		whiteOut(life - 0.05)
+		domainTitle("無劍", "무검 · 칼이 없다", 2)
+	end
+	-- 머리 위 검의 고리가 흩어져 사라진다
+	local r0 = rootOf(d.m)
+	if r0 then
+		for i = 1, 12 do
+			local a = i / 12 * math.pi * 2
+			gEmit(r0.Position + V(math.cos(a) * 6, 9, math.sin(a) * 6), TEX_SPARK, SW_W, SW_W, 4, 0.4, 3, 0.8)
+		end
+	end
+end
+VFX.swSilentMark = function(d)
+	local at = (d.at :: Vector3) + V(0, 2.5, 0)
+	local a = math.random() * math.pi
+	local u = V(math.cos(a), (math.random() - 0.5) * 0.8, math.sin(a))
+	-- 소리 없이 그어지는 가는 칼금 (터지지 않고 남는다)
+	local cut = piece(V(0.06, 0.06, 7), CFrame.lookAt(at, at + u), Color3.fromRGB(40, 40, 50), 0)
+	Debris:AddItem(cut, 2.2)
+	task.delay(2, function()
+		fadeOut(cut, 0.15)
+	end)
+end
+VFX.swAfterSilence = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 50
+	-- 세상이 다시 흐르는 순간: 둘레의 모든 칼금이 한꺼번에 터진다
+	bloom(2.4, 0.9)
+	Fx.flash(g + V(0, 6, 0), SW_W, r * 3, 10, 0.45)
+	for i = 1, 30 do
+		local p = g + V((math.random() - 0.5) * r * 1.6, 2 + math.random() * 6, (math.random() - 0.5) * r * 1.6)
+		local a = math.random() * math.pi
+		local u = V(math.cos(a), (math.random() - 0.5), math.sin(a))
+		task.delay(math.random() * 0.12, function()
+			qiSlash(p - u * 6, p + u * 6, 1.6, 0.3)
+		end)
+	end
+	Fx.ring(g + V(0, 0.4, 0), SW_W, 6, r * 2.4, 0.7)
+	Fx.debris(g, 16, 30)
+	pcall(Fx.sound, "shatter", 1, 0.7, g)
+	shake(2)
+end
+-- 🐦 불사조 화신 ---------------------------------------------------------
+-- 작은 불새: 가벼운 불꽃 줄기 (머리) + 두 날개 줄기. fireBody 는 새 하나에 입자 서른넷이라 떼로 쓰기엔 무겁다
+local function miniBird(path: (number) -> Vector3, time: number, k: number)
+	gSerpent(path, time, 6, 0.5 + k, PH_R, PH_G, 0.025)
+	local wing = math.max(1.5, k * 6)
+	gSerpent(function(u)
+		local p = path(u)
+		local q = path(math.min(1, u + 0.05))
+		local dir = (q - p).Magnitude > 0.01 and (q - p).Unit or V(0, 0, -1)
+		local right = dir:Cross(V(0, 1, 0))
+		right = right.Magnitude > 0.01 and right.Unit or V(1, 0, 0)
+		return p + right * wing * math.abs(math.sin(u * 18)) + V(0, wing * 0.4, 0)
+	end, time, 3, 0.3 + k * 0.5, PH_G, PH_R, 0.02)
+end
+VFX.phSwarm = function(d)
+	local r0 = rootOf(d.m)
+	local at = (d.at :: Vector3) + V(0, 2.5, 0)
+	local from = r0 and (r0.Position + V(0, 3, 0)) or (at + V(0, 10, 0))
+	local side = math.random() < 0.5 and -1 or 1
+	miniBird(function(u)
+		local p = from:Lerp(at, u)
+		local dir = (at - from)
+		local right = dir.Magnitude > 0.01 and dir.Unit:Cross(V(0, 1, 0)) or V(1, 0, 0)
+		return p + right * side * math.sin(u * math.pi) * 5 + V(0, math.sin(u * math.pi) * 3, 0)
+	end, 0.22, 0.18)
+	task.delay(0.22, function()
+		blackFire(at, 8, 1.6, 6, 0.5)
+	end)
+end
+VFX.phSpin = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 10
+	-- 날개로 감싼 불꽃 회오리
+	gSwirl(function()
+		return g + V(0, 3, 0)
+	end, 14, r * 0.7, 6, 0.3, PH_R, PH_G, { width = 0.7, trail = 0.3, speed = 4, rise = 6 })
+	blackFire(g + V(0, 2, 0), 10, 2, 10, 0.5)
+end
+VFX.phWingBurst = function(d)
+	local r0 = rootOf(d.m)
+	local c = (r0 and r0.Position or (d.at :: Vector3)) + V(0, 3, 0)
+	local look = lookOf(d)
+	local right = V(-look.Z, 0, look.X)
+	for s = -1, 1, 2 do
+		for i = 1, 6 do
+			local a = math.rad(5 + i * 15)
+			gStroke(c, c + right * s * math.cos(a) * 14 + V(0, math.sin(a) * 10, 0), 0.1, 0.9 - i * 0.08, 0.5, PH_G, PH_R, true, 0.45)
+		end
+	end
+	blackFire(c, 24, 2.6, 16, 0.7)
+	Fx.ring(ground(c) + V(0, 0.4, 0), PH_R, 3, (d.radius or 16) * 2, 0.4)
+	shake(0.6)
+end
+VFX.phAscend = function(d)
+	local r0 = rootOf(d.m)
+	if not r0 then
+		return
+	end
+	local life = d.life or 1.1
+	local c = r0.Position
+	-- 불새가 하늘로 솟아 작은 해가 된다
+	miniBird(function(u)
+		return c + V(math.sin(u * 8) * 3, u * 60, math.cos(u * 8) * 3)
+	end, life * 0.5, 0.6)
+	task.delay(life * 0.5, function()
+		local sun = piece(V(2, 2, 2), CF(c + V(0, 60, 0)), PH_G, 0, Enum.PartType.Ball)
+		tween(sun, life * 0.5, { Size = V(16, 16, 16) })
+		Debris:AddItem(sun, life * 0.5 + 0.4)
+		task.delay(life * 0.5, function()
+			tween(sun, 0.2, { CFrame = CF(ground(c) + V(0, 4, 0)), Size = V(24, 24, 24) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		end)
+		gEmit(c + V(0, 60, 0), TEX_FIRE, PH_G, PH_R, 30, 6, 8, life * 0.5, 1, V(0, 0, 0))
+	end)
+end
+VFX.phSunDive = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 30
+	bloom(1.8, 0.8)
+	Fx.flash(g + V(0, 6, 0), PH_G, r * 3, 8, 0.4)
+	-- 녹아내린 땅: 붉게 빛나는 원판이 천천히 식는다
+	local melt = disc(g + V(0, 0.3, 0), r * 0.9, PH_R, 0.05, 1.6, r)
+	melt.Material = Enum.Material.Neon
+	for i = 1, 10 do
+		local a = i / 10 * math.pi * 2
+		blackFire(g + V(math.cos(a) * r * 0.6, 1, math.sin(a) * r * 0.6), 10, 2.6, 14, 0.9)
+	end
+	Fx.ring(g + V(0, 0.5, 0), PH_G, 5, r * 2.4, 0.6)
+	Fx.debris(g, 16, 30)
+	pcall(Fx.sound, "heavy", 1, 0.5, g)
+	shake(1.8)
+end
+VFX.phAshWave = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 34
+	for k = 1, 3 do
+		task.delay(k * 0.08, function()
+			Fx.ring(g + V(0, 0.6, 0), PH_ASH, 3, r * (1.2 + k * 0.4), 0.6)
+		end)
+	end
+	gEmit(g + V(0, 1, 0), TEX_SMOKE, PH_ASH, PH_K, 40, 4, 24, 1.2, 0, V(0, 2, 0))
+	shake(0.6)
+end
+VFX.phFlock = function(d)
+	local g = ground(d.at)
+	local life = d.life or 3
+	if camNear(g, 180) then
+		domainTitle("萬鳥歸巢", "만조귀소 · 천 마리 새가 돌아온다", 2)
+	end
+	-- 하늘을 가득 메운 불새 떼: 둘레 높이 천천히 도는 불티 고리 셋
+	for k = 1, 3 do
+		gSwirl(function()
+			return g + V(0, 22 + k * 8, 0)
+		end, 18, 20 + k * 8, 4, life, PH_R, PH_G, { width = 0.5, trail = 0.6, speed = 0.4 + k * 0.15 })
+	end
+	gEmit(g + V(0, 30, 0), TEX_FIRE, PH_K, PH_R, 40, 6, 4, life, 0.3, V(0, 0, 0))
+	shake(0.5)
+end
+VFX.phConverge = function(d)
+	local at = (d.at :: Vector3) + V(0, 2.5, 0)
+	local a = math.random() * math.pi * 2
+	local from = at + V(math.cos(a) * 30, 24 + math.random() * 10, math.sin(a) * 30)
+	miniBird(function(u)
+		return from:Lerp(at, u * u)
+	end, 0.3, 0.35)
+	task.delay(0.3, function()
+		blackFire(at, 12, 2, 10, 0.5)
+		Fx.flash(at, PH_G, 12, 2, 0.15)
+	end)
+end
+VFX.phHatch = function(d)
+	local g = ground(d.at)
+	local r = d.radius or 50
+	local r0 = rootOf(d.m)
+	local c = (r0 and r0.Position or g) + V(0, 3, 0)
+	-- 새들이 모여 이룬 불꽃의 알: 커지며 금이 가다가 깨진다
+	local egg = piece(V(10, 14, 10), CF(c), PH_R, 0.2, Enum.PartType.Ball)
+	egg.Material = Enum.Material.Neon
+	tween(egg, 0.3, { Size = V(16, 22, 16) })
+	for i = 1, 6 do
+		local a = i / 6 * math.pi * 2
+		task.delay(i * 0.04, function()
+			gStroke(c + V(0, 10, 0), c + V(math.cos(a) * 8, -2, math.sin(a) * 8), 0.08, 0.3, 0.6, PH_G, WHITE, true, 0.3)
+		end)
+	end
+	task.delay(0.32, function()
+		fadeOut(egg, 0.2, V(30, 40, 30))
+		bloom(2.4, 0.9)
+		Fx.flash(c, PH_G, r * 3, 10, 0.45)
+		Fx.ring(g + V(0, 0.5, 0), PH_G, 6, r * 2.4, 0.7)
+		Fx.ring(g + V(0, 0.5, 0), PH_R, 4, r * 1.6, 0.8)
+		for i = 1, 8 do
+			local a = i / 8 * math.pi * 2
+			miniBird(function(u)
+				return c + V(math.cos(a) * u * 40, u * 20, math.sin(a) * u * 40)
+			end, 0.5, 0.5)
+		end
+		blackFire(c, 40, 4, 24, 1)
+		Fx.debris(g, 18, 34)
+		pcall(Fx.sound, "shatter", 1, 0.6, g)
+		shake(2)
+	end)
+end
 -- 맞힐 때: 별가루 / 금모래
 -- 북두개천 (초 칠성보권 X): 북두낙성의 하늘을 더 크고 길게, 둘레에 잔별 고리를 하나 더
 VFX.dipperHeaven = function(d)
