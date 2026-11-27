@@ -1725,7 +1725,7 @@ function handlers.tower(data: any?)
 		local boss = data.boss == true
 		local sub = boss and "👹 이 층의 주인이 기다린다" or "모든 적을 쓰러뜨려라"
 		if data.floor == 1 and data.curse then
-			sub = "이번 주 " .. data.curse .. " · " .. (data.curseDesc or "")
+			sub = string.format("이번 주 %s · %s", tostring(data.curse), data.curseDesc or "")
 		end
 		UI.banner(string.format("😈 악몽 %d층", data.floor), sub, boss and Color3.fromRGB(255, 50, 70) or Color3.fromRGB(200, 120, 255))
 		return

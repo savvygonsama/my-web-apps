@@ -823,3 +823,44 @@
 하늘이 열리고 하늘만 한 손가락 하나가 가장 가까운 적을 내리누른다 (그동안 무적). 눌린 자리에서 땅이 열십자로 금빛으로 갈라진다	The sky opens and a single finger as large as the heavens presses down on the nearest foe (invincible meanwhile). The ground where it pressed splits into a golden cross
 신역	Divine Domain
 몸이 떠오르며 둘레 30칸에 금빛 만다라가 펼쳐져 천천히 돈다 (그동안 무적). 만다라의 열두 문양이 세 번 빛줄기를 쏘아 안의 적을 꿰뚫고, 마지막에 만다라가 한 점으로 접히며 터진다	You rise into the air as a golden mandala spreads within 30 studs and slowly turns (invincible meanwhile). Its twelve sigils fire beams of light three times to pierce the foes inside, and at last the mandala folds to a single point and bursts
+사부에게 배우는 권법이 아니다. 재료를 모아 직접 벼린다.	This art is not learned from a master. Gather the materials and forge it yourself.
+<font color="#FFD66E">☸ %s은(는) 천겁의 길 %d겁을 넘어야 한다 (지금 %d겁)</font>	<font color="#FFD66E">☸ %s requires clearing kalpa %d on the Path of a Thousand Kalpas (now kalpa %d)</font>
+<font color="#8CE68C">✔ 해독</font>	<font color="#8CE68C">✔ Deciphered</font>
+<font color="#FFD27A">쌓인 것 (%d시간 %d분%s)</font>\n%s	<font color="#FFD27A">Collected (%dh %dm%s)</font>\n%s
+<font color="#FFD27A">🔨 정련 +%d · 피해 +%d%% (끝)</font>	<font color="#FFD27A">🔨 Refine +%d · damage +%d%% (max)</font>
+<font color="#FFD27A">🔨 정련 +%d → +%d · 피해 +%d%%</font>	<font color="#FFD27A">🔨 Refine +%d → +%d · damage +%d%%</font>
+🧩 비급 조각	🧩 Manual Fragments
+💠 천정	💠 Sky Gems
+💰 은자	💰 Silver
+🧩 비급 조각 %d/%d	🧩 Manual Fragments %d/%d
+💠 천정 %s/%s	💠 Sky Gems %s/%s
+💰 은자 %s/%s	💰 Silver %s/%s
+<font color="#B9A8FF">🖌 이 단로에서는 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라</font>	<font color="#B9A8FF">🖌 It cannot be forged at this furnace. Find the place where ink seeps under the ground</font>
+먹물 굴	Ink Cave
+📜 이미 이룬 장: %s	📜 Chapters already completed: %s
+조각이 제단에 스며들자 땅이 갈라진다. 잠들어 있던 것이 눈을 뜬다. · %s	As the fragment seeps into the altar the ground splits. What was sleeping opens its eyes. · %s
+⚒ %s은(는) 이미 익혔어요	⚒ You already know %s
+🖌 %s은(는) 이 단로에서 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라	🖌 %s cannot be forged at this furnace. Find the place where ink seeps under the ground
+⚒ 재료가 모자라요: %s	⚒ Not enough materials: %s
+⚒ %s은(는) 더 정련할 수 없어요 (+%d)	⚒ %s cannot be refined further (+%d)
+🧑‍🎓 %s: 아직 가져온 것이 없어요	🧑‍🎓 %s: nothing brought back yet
+🧑‍🎓 %s을(를) 제자로 들였어요! 문하생 마당에서 일을 맡기세요	🧑‍🎓 You took %s as a disciple! Give them work in the disciple courtyard
+사신승천권	Four Gods Ascending Fist
+청아	Cheong-a
+소운	So-un
+백린	Baek-rin
+무진	Mu-jin
+하랑	Ha-rang
+설화	Seol-hwa
+도윤	Do-yun
+연비	Yeon-bi
+진혁	Jin-hyeok
+운서	Un-seo
+단아	Dan-a
+효월	Hyo-wol
+강모	Gang-mo
+초희	Cho-hui
+석우	Seok-u
+한결	Han-gyeol
+두 번 깨달은 뒤, 한 번 환생한 몸으로	after two enlightenments and one rebirth,
+두 번 깨달은 뒤,	after two enlightenments,

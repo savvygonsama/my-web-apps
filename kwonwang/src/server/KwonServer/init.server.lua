@@ -1885,7 +1885,7 @@ function Story.advance(player: Player, line: string?)
 		L.story = math.min(#list, L.story + 1)
 	end
 	if #skipped > 0 then
-		toast(player, "📜 이미 이룬 장: " .. table.concat(skipped, " · "))
+		toast(player, string.format("📜 이미 이룬 장: %s", table.concat(skipped, " · ")))
 	end
 	-- 3.30판: 다음 이야기는 저절로 뜨지 않는다 (싸우는 중에 창이 겹쳐 불편했다). 그 줄기의 사람에게 가서 받아야 이어진다
 	local nxt = list[L.story]
@@ -2195,7 +2195,7 @@ MiniQuest.init({
 		Combat.sync(ef)
 		st.mqBoss[sid] = ef
 		Push:FireClient(player, "skillfx", { kind = "mqLight", at = step.at })
-		Push:FireClient(player, "dialog", { who = "🔮 봉인 제단", title = "", text = "조각이 제단에 스며들자 땅이 갈라진다. 잠들어 있던 것이 눈을 뜬다. · " .. ef.name })
+		Push:FireClient(player, "dialog", { who = "🔮 봉인 제단", title = "", text = string.format("조각이 제단에 스며들자 땅이 갈라진다. 잠들어 있던 것이 눈을 뜬다. · %s", ef.name) })
 		task.delay(300, function()
 			if not ef.dead and ef.model and ef.model.Parent then
 				pcall(Npc.despawn, ef)
@@ -3402,7 +3402,7 @@ function Actions.forge(player: Player, id: any)
 		return
 	end
 	if p.styles[style.id] then
-		toast(player, "⚒ " .. style.name .. "은(는) 이미 익혔어요")
+		toast(player, string.format("⚒ %s은(는) 이미 익혔어요", style.name))
 		return
 	end
 	local f0 = Combat.fighterOfPlayer(player)
@@ -3410,7 +3410,7 @@ function Actions.forge(player: Player, id: any)
 	local site = Config.forgeSite(r)
 	if not pos or (pos - site).Magnitude > 40 then
 		if r.hidden == "ink" then
-			toast(player, "🖌 " .. style.name .. "은(는) 이 단로에서 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라")
+			toast(player, string.format("🖌 %s은(는) 이 단로에서 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라", style.name))
 		else
 			toast(player, "⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요")
 		end
@@ -3446,7 +3446,7 @@ function Actions.forge(player: Player, id: any)
 		table.insert(miss, string.format("💰 은자 %s/%s", Config.formatNumber(p.coins), Config.formatNumber(coins)))
 	end
 	if #miss > 0 then
-		toast(player, "⚒ 재료가 모자라요: " .. table.concat(miss, " · "))
+		toast(player, string.format("⚒ 재료가 모자라요: %s", table.concat(miss, " · ")))
 		return
 	end
 	p.shards = (p.shards or 0) - r.shards
@@ -3473,7 +3473,7 @@ function Actions.refine(player: Player, id: any)
 	local site = Config.forgeSite(r)
 	if not pos or (pos - site).Magnitude > 40 then
 		if r.hidden == "ink" then
-			toast(player, "🖌 " .. style.name .. "은(는) 이 단로에서 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라")
+			toast(player, string.format("🖌 %s은(는) 이 단로에서 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라", style.name))
 		else
 			toast(player, "⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요")
 		end
@@ -3482,7 +3482,7 @@ function Actions.refine(player: Player, id: any)
 	p.refine = p.refine or {}
 	local lv = (p.refine :: any)[style.id] or 0
 	if lv >= Config.REFINE.max then
-		toast(player, "⚒ " .. style.name .. "은(는) 더 정련할 수 없어요 (+" .. Config.REFINE.max .. ")")
+		toast(player, string.format("⚒ %s은(는) 더 정련할 수 없어요 (+%d)", style.name, Config.REFINE.max))
 		return
 	end
 	local cost = Config.refineCost(r, lv)
@@ -3505,7 +3505,7 @@ function Actions.refine(player: Player, id: any)
 		table.insert(miss, string.format("💰 은자 %s/%s", Config.formatNumber(p.coins), Config.formatNumber(coins)))
 	end
 	if #miss > 0 then
-		toast(player, "⚒ 재료가 모자라요: " .. table.concat(miss, " · "))
+		toast(player, string.format("⚒ 재료가 모자라요: %s", table.concat(miss, " · ")))
 		return
 	end
 	p.shards = (p.shards or 0) - cost.shards
@@ -3560,7 +3560,7 @@ function Actions.discipleClaim(player: Player, quiet: boolean?)
 	end
 	if secs < 60 then
 		if not quiet then
-			toast(player, "🧑‍🎓 " .. d.name .. ": 아직 가져온 것이 없어요")
+			toast(player, string.format("🧑‍🎓 %s: 아직 가져온 것이 없어요", d.name))
 		end
 		return
 	end
@@ -3644,7 +3644,7 @@ function Actions.disciple(player: Player, what: any, arg: any)
 		p.coins -= cost
 		p.disciple = { name = D.names[math.random(#D.names)], robe = math.random(#D.robes), style = D.styles[math.random(#D.styles)], lv = 1, xp = 0, job = "train", since = os.time(), frac = 0 }
 		Npc.spawnDisciple(player, p.disciple)
-		toast(player, "🧑‍🎓 " .. p.disciple.name .. "을(를) 제자로 들였어요! 문하생 마당에서 일을 맡기세요")
+		toast(player, string.format("🧑‍🎓 %s을(를) 제자로 들였어요! 문하생 마당에서 일을 맡기세요", p.disciple.name))
 	elseif not p.disciple then
 		return
 	elseif what == "claim" then
@@ -7099,7 +7099,7 @@ function Board.update()
 	local sub = nb and nb:FindFirstChild("Sub")
 	if sub and sub:IsA("TextLabel") then
 		local cu = Config.nightmareCurse()
-		sub.Text = "이번 주: " .. cu.icon .. " " .. cu.name .. " · " .. cu.desc
+		sub.Text = string.format("이번 주: %s %s · %s", cu.icon, cu.name, cu.desc)
 	end
 	for key, valueOf in pairs(BOARD_VALUE) do
 		local gui = boards[key]

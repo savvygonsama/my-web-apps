@@ -229,8 +229,129 @@ local EXTRA: { [string]: { Layer } } = {
 for id, list in pairs(EXTRA) do
 	if DEFS[id] then
 		for _, L in ipairs(list) do
-			table.insert(DEFS[id], L)
+			-- 3.99.90판: 가는 빛줄기 (squash) 는 빼고 발밑 기운만. 대표 모습은 아래의 빛의 띠가 맡는다
+			if not L.squash then
+				table.insert(DEFS[id], L)
+			end
 		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 3.99.90판 빛의 띠: 작은 입자를 흩뿌리는 대신, 굵고 긴 빛의 띠가 몸 둘레를 휘돈다 (가운데는 희고 바깥은 그 오라의 빛깔 하나)
+--   오라마다 궤도가 다르다. spiral = 아래에서 위로 감아 오른다 · ring = 기울어진 고리를 돈다 · halo = 머리 위 가는 고리 · wave = 다리 둘레를 물결치듯
+------------------------------------------------------------------------
+type Rib = { c: Color3, n: number, mode: string, r: number, w: number, speed: number, life: number, lo: number?, hi: number? }
+local RIBS: { [string]: Rib } = {
+	blooddragon = { c = C3(235, 30, 45), n = 3, mode = "spiral", r = 2.6, w = 1.0, speed = 4.2, life = 0.45 },
+	pacheon = { c = C3(150, 70, 255), n = 3, mode = "ring", r = 2.8, w = 0.8, speed = 6, life = 0.3 },
+	meteor = { c = C3(255, 130, 40), n = 2, mode = "wave", r = 2.2, w = 0.8, speed = 5, life = 0.4, lo = -2.6, hi = -0.6 },
+	rainbow = { c = C3(235, 245, 255), n = 2, mode = "ring", r = 3.2, w = 0.9, speed = 1.6, life = 0.7, lo = -2.4, hi = -2.4 },
+	samsara = { c = C3(150, 100, 255), n = 2, mode = "ring", r = 3.0, w = 0.7, speed = 2.2, life = 0.6 },
+	crown = { c = C3(170, 215, 255), n = 1, mode = "halo", r = 1.3, w = 0.3, speed = 2.4, life = 0.5 },
+	petals = { c = C3(255, 170, 215), n = 2, mode = "wave", r = 2.6, w = 0.7, speed = 2.6, life = 0.6, lo = -1.6, hi = 1.6 },
+	scripture = { c = C3(110, 200, 255), n = 2, mode = "spiral", r = 2.3, w = 0.5, speed = 2.2, life = 0.7 },
+	golddragon = { c = C3(255, 185, 40), n = 4, mode = "spiral", r = 2.8, w = 1.2, speed = 5, life = 0.45 },
+}
+local function ribTrail(root: BasePart, w: number, life: number, c1: Color3, c2: Color3, alpha: number): { any }
+	local a0 = Instance.new("Attachment")
+	a0.Name = "AchRib"
+	a0.Parent = root
+	local a1 = Instance.new("Attachment")
+	a1.Name = "AchRib"
+	a1.Parent = root
+	local tr = Instance.new("Trail")
+	tr.Name = "AchRib"
+	tr.Attachment0, tr.Attachment1 = a0, a1
+	tr.Lifetime = life
+	tr.MinLength = 0.05
+	tr.FaceCamera = true
+	tr.LightEmission = 1
+	tr.LightInfluence = 0
+	tr.Color = ColorSequence.new(c1, c2)
+	tr.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, alpha), NumberSequenceKeypoint.new(0.6, math.min(1, alpha + 0.35)), NumberSequenceKeypoint.new(1, 1) })
+	tr.WidthScale = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0.2) })
+	tr.Parent = root
+	return { a0 = a0, a1 = a1, tr = tr, w = w }
+end
+type RibSet = { root: BasePart, def: Rib, strands: { { outer: any, core: any, ph: number, tilt: number } }, t0: number }
+local ribSets: { [Model]: RibSet } = {}
+local function ribPos(R: Rib, k: number, ph: number, tilt: number, t: number): Vector3
+	local a = t * R.speed + ph
+	if R.mode == "spiral" then
+		-- 아래에서 위로 감아 오르고 다시 내려온다 (가닥마다 박자가 다르다)
+		local y = -2.4 + (math.sin(t * R.speed * 0.35 + ph) * 0.5 + 0.5) * 5.4
+		local r = R.r * (0.75 + 0.25 * math.cos(y * 0.6))
+		return Vector3.new(math.cos(a) * r, y, math.sin(a) * r)
+	elseif R.mode == "ring" then
+		local lo, hi = R.lo or -0.5, R.hi or 0.5
+		local y0 = (lo + hi) / 2
+		local p = Vector3.new(math.cos(a) * R.r, 0, math.sin(a) * R.r)
+		-- 기울어진 고리 (가닥마다 기울기가 다르다)
+		return (CFrame.Angles(tilt, ph, 0) * p) + Vector3.new(0, y0, 0)
+	elseif R.mode == "halo" then
+		return Vector3.new(math.cos(a) * R.r, 3.6, math.sin(a) * R.r)
+	end
+	-- wave: 다리 · 몸 둘레를 위아래로 물결치며 돈다
+	local lo, hi = R.lo or -2, R.hi or 0
+	local y = lo + (math.sin(a * 2.2 + k) * 0.5 + 0.5) * (hi - lo)
+	return Vector3.new(math.cos(a) * R.r, y, math.sin(a) * R.r)
+end
+local function ribBuild(model: Model, id: string): RibSet?
+	local R = RIBS[id]
+	local root = model:FindFirstChild("HumanoidRootPart")
+	if not R or not root or not root:IsA("BasePart") or (Perf and Perf.low) then
+		return nil
+	end
+	local core = R.c:Lerp(Color3.new(1, 1, 1), 0.85)
+	local set: RibSet = { root = root, def = R, strands = {}, t0 = os.clock() }
+	for i = 1, R.n do
+		table.insert(set.strands, {
+			outer = ribTrail(root, R.w, R.life, R.c, R.c:Lerp(Color3.new(0, 0, 0), 0.25), 0.15),
+			core = ribTrail(root, R.w * 0.3, R.life * 0.8, core, R.c, 0),
+			ph = (i - 1) / R.n * math.pi * 2,
+			tilt = math.rad(-35 + (i - 1) * (70 / math.max(1, R.n - 1))),
+		})
+	end
+	return set
+end
+local function ribClear(model: Model)
+	local set = ribSets[model]
+	if set then
+		for _, st in ipairs(set.strands) do
+			for _, x in ipairs({ st.outer, st.core }) do
+				x.tr:Destroy()
+				x.a0:Destroy()
+				x.a1:Destroy()
+			end
+		end
+		ribSets[model] = nil
+	end
+end
+local ribConn: RBXScriptConnection? = nil
+local function ribStep()
+	local cam = workspace.CurrentCamera
+	local now = os.clock()
+	for model, set in pairs(ribSets) do
+		local on = model:GetAttribute("Vanish") ~= true and set.root.Parent ~= nil
+		local far = cam and (cam.CFrame.Position - set.root.Position).Magnitude > 140
+		for k, st in ipairs(set.strands) do
+			st.outer.tr.Enabled = on and not far
+			st.core.tr.Enabled = on and not far
+			if on and not far then
+				local p = ribPos(set.def, k, st.ph, st.tilt, now - set.t0)
+				-- 띠의 폭은 위아래 (FaceCamera 라 늘 화면을 본다)
+				for _, x in ipairs({ st.outer, st.core }) do
+					x.a0.Position = p - Vector3.new(0, x.w / 2, 0)
+					x.a1.Position = p + Vector3.new(0, x.w / 2, 0)
+				end
+			end
+		end
+	end
+end
+local function ribStart()
+	if not ribConn then
+		ribConn = game:GetService("RunService").RenderStepped:Connect(ribStep)
 	end
 end
 local function scaleSeq(seq: NumberSequence, k: number): NumberSequence
@@ -257,6 +378,7 @@ local function partOf(model: Model, name: string): BasePart?
 	return (q and q:IsA("BasePart")) and q or nil
 end
 local function clear(model: Model)
+	ribClear(model)
 	local a = active[model]
 	if a then
 		for _, e in ipairs(a.emitters) do
@@ -358,6 +480,11 @@ local function apply(model: Model, force: boolean?)
 	clear(model)
 	if type(id) == "string" and DEFS[id] and model.Parent then
 		active[model] = { id = id, emitters = build(model, id) }
+		local rs = ribBuild(model, id)
+		if rs then
+			ribSets[model] = rs
+			ribStart()
+		end
 		setOn(model, model:GetAttribute("Vanish") ~= true)
 	end
 end

@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.89" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.90" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -13906,7 +13906,7 @@ function Story.advance(player: Player, line: string?)
 		L.story = math.min(#list, L.story + 1)
 	end
 	if #skipped > 0 then
-		toast(player, "📜 이미 이룬 장: " .. table.concat(skipped, " · "))
+		toast(player, string.format("📜 이미 이룬 장: %s", table.concat(skipped, " · ")))
 	end
 	-- 3.30판: 다음 이야기는 저절로 뜨지 않는다 (싸우는 중에 창이 겹쳐 불편했다). 그 줄기의 사람에게 가서 받아야 이어진다
 	local nxt = list[L.story]
@@ -14216,7 +14216,7 @@ MiniQuest.init({
 		Combat.sync(ef)
 		st.mqBoss[sid] = ef
 		Push:FireClient(player, "skillfx", { kind = "mqLight", at = step.at })
-		Push:FireClient(player, "dialog", { who = "🔮 봉인 제단", title = "", text = "조각이 제단에 스며들자 땅이 갈라진다. 잠들어 있던 것이 눈을 뜬다. · " .. ef.name })
+		Push:FireClient(player, "dialog", { who = "🔮 봉인 제단", title = "", text = string.format("조각이 제단에 스며들자 땅이 갈라진다. 잠들어 있던 것이 눈을 뜬다. · %s", ef.name) })
 		task.delay(300, function()
 			if not ef.dead and ef.model and ef.model.Parent then
 				pcall(Npc.despawn, ef)
@@ -15423,7 +15423,7 @@ function Actions.forge(player: Player, id: any)
 		return
 	end
 	if p.styles[style.id] then
-		toast(player, "⚒ " .. style.name .. "은(는) 이미 익혔어요")
+		toast(player, string.format("⚒ %s은(는) 이미 익혔어요", style.name))
 		return
 	end
 	local f0 = Combat.fighterOfPlayer(player)
@@ -15431,7 +15431,7 @@ function Actions.forge(player: Player, id: any)
 	local site = Config.forgeSite(r)
 	if not pos or (pos - site).Magnitude > 40 then
 		if r.hidden == "ink" then
-			toast(player, "🖌 " .. style.name .. "은(는) 이 단로에서 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라")
+			toast(player, string.format("🖌 %s은(는) 이 단로에서 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라", style.name))
 		else
 			toast(player, "⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요")
 		end
@@ -15467,7 +15467,7 @@ function Actions.forge(player: Player, id: any)
 		table.insert(miss, string.format("💰 은자 %s/%s", Config.formatNumber(p.coins), Config.formatNumber(coins)))
 	end
 	if #miss > 0 then
-		toast(player, "⚒ 재료가 모자라요: " .. table.concat(miss, " · "))
+		toast(player, string.format("⚒ 재료가 모자라요: %s", table.concat(miss, " · ")))
 		return
 	end
 	p.shards = (p.shards or 0) - r.shards
@@ -15494,7 +15494,7 @@ function Actions.refine(player: Player, id: any)
 	local site = Config.forgeSite(r)
 	if not pos or (pos - site).Magnitude > 40 then
 		if r.hidden == "ink" then
-			toast(player, "🖌 " .. style.name .. "은(는) 이 단로에서 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라")
+			toast(player, string.format("🖌 %s은(는) 이 단로에서 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라", style.name))
 		else
 			toast(player, "⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요")
 		end
@@ -15503,7 +15503,7 @@ function Actions.refine(player: Player, id: any)
 	p.refine = p.refine or {}
 	local lv = (p.refine :: any)[style.id] or 0
 	if lv >= Config.REFINE.max then
-		toast(player, "⚒ " .. style.name .. "은(는) 더 정련할 수 없어요 (+" .. Config.REFINE.max .. ")")
+		toast(player, string.format("⚒ %s은(는) 더 정련할 수 없어요 (+%d)", style.name, Config.REFINE.max))
 		return
 	end
 	local cost = Config.refineCost(r, lv)
@@ -15526,7 +15526,7 @@ function Actions.refine(player: Player, id: any)
 		table.insert(miss, string.format("💰 은자 %s/%s", Config.formatNumber(p.coins), Config.formatNumber(coins)))
 	end
 	if #miss > 0 then
-		toast(player, "⚒ 재료가 모자라요: " .. table.concat(miss, " · "))
+		toast(player, string.format("⚒ 재료가 모자라요: %s", table.concat(miss, " · ")))
 		return
 	end
 	p.shards = (p.shards or 0) - cost.shards
@@ -15581,7 +15581,7 @@ function Actions.discipleClaim(player: Player, quiet: boolean?)
 	end
 	if secs < 60 then
 		if not quiet then
-			toast(player, "🧑‍🎓 " .. d.name .. ": 아직 가져온 것이 없어요")
+			toast(player, string.format("🧑‍🎓 %s: 아직 가져온 것이 없어요", d.name))
 		end
 		return
 	end
@@ -15665,7 +15665,7 @@ function Actions.disciple(player: Player, what: any, arg: any)
 		p.coins -= cost
 		p.disciple = { name = D.names[math.random(#D.names)], robe = math.random(#D.robes), style = D.styles[math.random(#D.styles)], lv = 1, xp = 0, job = "train", since = os.time(), frac = 0 }
 		Npc.spawnDisciple(player, p.disciple)
-		toast(player, "🧑‍🎓 " .. p.disciple.name .. "을(를) 제자로 들였어요! 문하생 마당에서 일을 맡기세요")
+		toast(player, string.format("🧑‍🎓 %s을(를) 제자로 들였어요! 문하생 마당에서 일을 맡기세요", p.disciple.name))
 	elseif not p.disciple then
 		return
 	elseif what == "claim" then
@@ -19120,7 +19120,7 @@ function Board.update()
 	local sub = nb and nb:FindFirstChild("Sub")
 	if sub and sub:IsA("TextLabel") then
 		local cu = Config.nightmareCurse()
-		sub.Text = "이번 주: " .. cu.icon .. " " .. cu.name .. " · " .. cu.desc
+		sub.Text = string.format("이번 주: %s %s · %s", cu.icon, cu.name, cu.desc)
 	end
 	for key, valueOf in pairs(BOARD_VALUE) do
 		local gui = boards[key]
@@ -45413,7 +45413,7 @@ function handlers.tower(data: any?)
 		local boss = data.boss == true
 		local sub = boss and "👹 이 층의 주인이 기다린다" or "모든 적을 쓰러뜨려라"
 		if data.floor == 1 and data.curse then
-			sub = "이번 주 " .. data.curse .. " · " .. (data.curseDesc or "")
+			sub = string.format("이번 주 %s · %s", tostring(data.curse), data.curseDesc or "")
 		end
 		UI.banner(string.format("😈 악몽 %d층", data.floor), sub, boss and Color3.fromRGB(255, 50, 70) or Color3.fromRGB(200, 120, 255))
 		return
@@ -47248,8 +47248,129 @@ local EXTRA: { [string]: { Layer } } = {
 for id, list in pairs(EXTRA) do
 	if DEFS[id] then
 		for _, L in ipairs(list) do
-			table.insert(DEFS[id], L)
+			-- 3.99.90판: 가는 빛줄기 (squash) 는 빼고 발밑 기운만. 대표 모습은 아래의 빛의 띠가 맡는다
+			if not L.squash then
+				table.insert(DEFS[id], L)
+			end
 		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 3.99.90판 빛의 띠: 작은 입자를 흩뿌리는 대신, 굵고 긴 빛의 띠가 몸 둘레를 휘돈다 (가운데는 희고 바깥은 그 오라의 빛깔 하나)
+--   오라마다 궤도가 다르다. spiral = 아래에서 위로 감아 오른다 · ring = 기울어진 고리를 돈다 · halo = 머리 위 가는 고리 · wave = 다리 둘레를 물결치듯
+------------------------------------------------------------------------
+type Rib = { c: Color3, n: number, mode: string, r: number, w: number, speed: number, life: number, lo: number?, hi: number? }
+local RIBS: { [string]: Rib } = {
+	blooddragon = { c = C3(235, 30, 45), n = 3, mode = "spiral", r = 2.6, w = 1.0, speed = 4.2, life = 0.45 },
+	pacheon = { c = C3(150, 70, 255), n = 3, mode = "ring", r = 2.8, w = 0.8, speed = 6, life = 0.3 },
+	meteor = { c = C3(255, 130, 40), n = 2, mode = "wave", r = 2.2, w = 0.8, speed = 5, life = 0.4, lo = -2.6, hi = -0.6 },
+	rainbow = { c = C3(235, 245, 255), n = 2, mode = "ring", r = 3.2, w = 0.9, speed = 1.6, life = 0.7, lo = -2.4, hi = -2.4 },
+	samsara = { c = C3(150, 100, 255), n = 2, mode = "ring", r = 3.0, w = 0.7, speed = 2.2, life = 0.6 },
+	crown = { c = C3(170, 215, 255), n = 1, mode = "halo", r = 1.3, w = 0.3, speed = 2.4, life = 0.5 },
+	petals = { c = C3(255, 170, 215), n = 2, mode = "wave", r = 2.6, w = 0.7, speed = 2.6, life = 0.6, lo = -1.6, hi = 1.6 },
+	scripture = { c = C3(110, 200, 255), n = 2, mode = "spiral", r = 2.3, w = 0.5, speed = 2.2, life = 0.7 },
+	golddragon = { c = C3(255, 185, 40), n = 4, mode = "spiral", r = 2.8, w = 1.2, speed = 5, life = 0.45 },
+}
+local function ribTrail(root: BasePart, w: number, life: number, c1: Color3, c2: Color3, alpha: number): { any }
+	local a0 = Instance.new("Attachment")
+	a0.Name = "AchRib"
+	a0.Parent = root
+	local a1 = Instance.new("Attachment")
+	a1.Name = "AchRib"
+	a1.Parent = root
+	local tr = Instance.new("Trail")
+	tr.Name = "AchRib"
+	tr.Attachment0, tr.Attachment1 = a0, a1
+	tr.Lifetime = life
+	tr.MinLength = 0.05
+	tr.FaceCamera = true
+	tr.LightEmission = 1
+	tr.LightInfluence = 0
+	tr.Color = ColorSequence.new(c1, c2)
+	tr.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, alpha), NumberSequenceKeypoint.new(0.6, math.min(1, alpha + 0.35)), NumberSequenceKeypoint.new(1, 1) })
+	tr.WidthScale = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0.2) })
+	tr.Parent = root
+	return { a0 = a0, a1 = a1, tr = tr, w = w }
+end
+type RibSet = { root: BasePart, def: Rib, strands: { { outer: any, core: any, ph: number, tilt: number } }, t0: number }
+local ribSets: { [Model]: RibSet } = {}
+local function ribPos(R: Rib, k: number, ph: number, tilt: number, t: number): Vector3
+	local a = t * R.speed + ph
+	if R.mode == "spiral" then
+		-- 아래에서 위로 감아 오르고 다시 내려온다 (가닥마다 박자가 다르다)
+		local y = -2.4 + (math.sin(t * R.speed * 0.35 + ph) * 0.5 + 0.5) * 5.4
+		local r = R.r * (0.75 + 0.25 * math.cos(y * 0.6))
+		return Vector3.new(math.cos(a) * r, y, math.sin(a) * r)
+	elseif R.mode == "ring" then
+		local lo, hi = R.lo or -0.5, R.hi or 0.5
+		local y0 = (lo + hi) / 2
+		local p = Vector3.new(math.cos(a) * R.r, 0, math.sin(a) * R.r)
+		-- 기울어진 고리 (가닥마다 기울기가 다르다)
+		return (CFrame.Angles(tilt, ph, 0) * p) + Vector3.new(0, y0, 0)
+	elseif R.mode == "halo" then
+		return Vector3.new(math.cos(a) * R.r, 3.6, math.sin(a) * R.r)
+	end
+	-- wave: 다리 · 몸 둘레를 위아래로 물결치며 돈다
+	local lo, hi = R.lo or -2, R.hi or 0
+	local y = lo + (math.sin(a * 2.2 + k) * 0.5 + 0.5) * (hi - lo)
+	return Vector3.new(math.cos(a) * R.r, y, math.sin(a) * R.r)
+end
+local function ribBuild(model: Model, id: string): RibSet?
+	local R = RIBS[id]
+	local root = model:FindFirstChild("HumanoidRootPart")
+	if not R or not root or not root:IsA("BasePart") or (Perf and Perf.low) then
+		return nil
+	end
+	local core = R.c:Lerp(Color3.new(1, 1, 1), 0.85)
+	local set: RibSet = { root = root, def = R, strands = {}, t0 = os.clock() }
+	for i = 1, R.n do
+		table.insert(set.strands, {
+			outer = ribTrail(root, R.w, R.life, R.c, R.c:Lerp(Color3.new(0, 0, 0), 0.25), 0.15),
+			core = ribTrail(root, R.w * 0.3, R.life * 0.8, core, R.c, 0),
+			ph = (i - 1) / R.n * math.pi * 2,
+			tilt = math.rad(-35 + (i - 1) * (70 / math.max(1, R.n - 1))),
+		})
+	end
+	return set
+end
+local function ribClear(model: Model)
+	local set = ribSets[model]
+	if set then
+		for _, st in ipairs(set.strands) do
+			for _, x in ipairs({ st.outer, st.core }) do
+				x.tr:Destroy()
+				x.a0:Destroy()
+				x.a1:Destroy()
+			end
+		end
+		ribSets[model] = nil
+	end
+end
+local ribConn: RBXScriptConnection? = nil
+local function ribStep()
+	local cam = workspace.CurrentCamera
+	local now = os.clock()
+	for model, set in pairs(ribSets) do
+		local on = model:GetAttribute("Vanish") ~= true and set.root.Parent ~= nil
+		local far = cam and (cam.CFrame.Position - set.root.Position).Magnitude > 140
+		for k, st in ipairs(set.strands) do
+			st.outer.tr.Enabled = on and not far
+			st.core.tr.Enabled = on and not far
+			if on and not far then
+				local p = ribPos(set.def, k, st.ph, st.tilt, now - set.t0)
+				-- 띠의 폭은 위아래 (FaceCamera 라 늘 화면을 본다)
+				for _, x in ipairs({ st.outer, st.core }) do
+					x.a0.Position = p - Vector3.new(0, x.w / 2, 0)
+					x.a1.Position = p + Vector3.new(0, x.w / 2, 0)
+				end
+			end
+		end
+	end
+end
+local function ribStart()
+	if not ribConn then
+		ribConn = game:GetService("RunService").RenderStepped:Connect(ribStep)
 	end
 end
 local function scaleSeq(seq: NumberSequence, k: number): NumberSequence
@@ -47276,6 +47397,7 @@ local function partOf(model: Model, name: string): BasePart?
 	return (q and q:IsA("BasePart")) and q or nil
 end
 local function clear(model: Model)
+	ribClear(model)
 	local a = active[model]
 	if a then
 		for _, e in ipairs(a.emitters) do
@@ -47377,6 +47499,11 @@ local function apply(model: Model, force: boolean?)
 	clear(model)
 	if type(id) == "string" and DEFS[id] and model.Parent then
 		active[model] = { id = id, emitters = build(model, id) }
+		local rs = ribBuild(model, id)
+		if rs then
+			ribSets[model] = rs
+			ribStart()
+		end
 		setOn(model, model:GetAttribute("Vanish") ~= true)
 	end
 end
@@ -74653,7 +74780,7 @@ return {
 	["📋 숨긴 퀘스트 %d"] = "📋 Hidden quests %d",
 	["📋 숨긴 퀘스트"] = "📋 Hidden quests",
 	["%s에게 가서 다음 이야기를 받으세요"] = "Go to %s for the next story",
-	["📜 이미 이룬 장: %s"] = "📜 Already done: %s",
+	["📜 이미 이룬 장: %s"] = "📜 Chapters already completed: %s",
 	["%s %s이(가) 이야기를 들려줄 사람을 기다린다 (%s)"] = "%s %s: someone is waiting to tell you a story (%s)",
 	["⚔ 싸우는 중에는 만물상을 쓸 수 없어요 (마지막으로 맞거나 때린 뒤 %d초)"] = "⚔ You can't use the shop while fighting (%ds after your last hit taken or dealt)",
 	["천궁 선관"] = "Celestial Palace Official",
@@ -74741,7 +74868,7 @@ return {
 	["%s %s이(가) 떨어졌다 (%d/%d)"] = "%s %s dropped (%d/%d)",
 	["👁 이미 깨어나 있다. 쓰러뜨려라"] = "👁 It is already awake. Defeat it",
 	["🔮 봉인 제단"] = "🔮 Sealed Altar",
-	["조각이 제단에 스며들자 땅이 갈라진다. 잠들어 있던 것이 눈을 뜬다. · %s"] = "As the shards sink into the altar, the ground splits open. What slept there opens its eyes. · %s",
+	["조각이 제단에 스며들자 땅이 갈라진다. 잠들어 있던 것이 눈을 뜬다. · %s"] = "As the fragment seeps into the altar the ground splits. What was sleeping opens its eyes. · %s",
 	["👁 깨어난 것이 다시 잠들었다. 제단에서 다시 깨울 수 있다"] = "👁 The awakened one has fallen asleep again. You can wake it again at the altar",
 	["빙혼마 · 얼음에 갇힌 넋"] = "Ice Wraith · Soul Trapped in Ice",
 	["👁 빙혼마 · 얼음에 갇힌 넋"] = "👁 Ice Wraith · Soul Trapped in Ice",
@@ -74896,7 +75023,7 @@ return {
 	["⚒ 벼리기"] = "⚒ Forge",
 	["♻ 환생"] = "♻ Rebirth",
 	["🔥 세 사부의 기술을 한 몸에 녹인 권법. 재료와 은자는 벼리는 순간 녹아 사라진다"] = "🔥 Styles that melt three masters' arts into one body. Materials and silver are consumed the moment you forge",
-	["사부에게 배우는 권법이 아니다. 재료를 모아 직접 벼린다."] = "This style isn't taught by a master. Gather materials and forge it yourself.",
+	["사부에게 배우는 권법이 아니다. 재료를 모아 직접 벼린다."] = "This art is not learned from a master. Gather the materials and forge it yourself.",
 	["⚒ %s은(는) 이미 익혔어요"] = "⚒ You already know %s",
 	["⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요"] = "⚒ You can only forge at the furnace of the Style Forge in southwest Cheongun Village",
 	["⚒ %s은(는) 환생 %d번을 넘긴 몸이어야 벼릴 수 있어요 (지금 %d번)"] = "⚒ %s needs %d rebirths to forge (you have %d)",
@@ -75007,7 +75134,7 @@ return {
 	[" · 경지가 올라 %s!"] = "· rose to %s!",
 	["🧑‍🎓 제자는 한 명만 들일 수 있어요"] = "🧑‍🎓 You can only take one disciple",
 	["💰 제자를 들이려면 은자 %s가 필요해요"] = "💰 You need %s silver to take a disciple",
-	["🧑‍🎓 %s을(를) 제자로 들였어요! 문하생 마당에서 일을 맡기세요"] = "🧑‍🎓 You took %s as your disciple! Give them work at the Disciple Yard",
+	["🧑‍🎓 %s을(를) 제자로 들였어요! 문하생 마당에서 일을 맡기세요"] = "🧑‍🎓 You took %s as a disciple! Give them work in the disciple courtyard",
 	["🧑‍🎓 문하생 마당"] = "🧑‍🎓 Disciple Yard",
 	["제자를 들이고 일을 맡긴다"] = "Take a disciple and give them work",
 	["제자 보기"] = "See disciple",
@@ -75197,7 +75324,7 @@ return {
 	["구름이 둘레 22칸에 소용돌이치며 적을 끌어당긴다. 구름 기둥이 세 번 적 여섯의 발밑에서 솟구치고, 마지막에 모든 구름이 한꺼번에 터져 흩어진다"] = "Clouds swirl within 22 studs and pull foes in. Cloud pillars burst up under six foes three times, then every cloud explodes at once",
 	["쇠사슬 여섯 줄을 둘레로 던져 적을 한가운데로 끌어온다. 끌려온 적을 사슬로 두 번 휘감아 조이고, 마지막에 사슬째 땅에 내리꽂는다"] = "Hurl six chains around you and reel foes to the center. Bind them tight twice, then slam them into the ground, chains and all",
 	["바람이 되어 사라진다 (무적). 둘레의 적 여섯을 바람의 칼날이 세 번 가로지르고, 마지막에 한가운데서 회오리가 솟아 모두 띄운다"] = "Vanish into the wind (invincible). Wind blades slash through six nearby foes three times, then a tornado rises in the middle and lifts them all",
-	["🖌 %s은(는) 이 단로에서 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라"] = "🖌 %s cannot be forged at this furnace. Find the place where ink seeps under the earth",
+	["🖌 %s은(는) 이 단로에서 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라"] = "🖌 %s cannot be forged at this furnace. Find the place where ink seeps under the ground",
 	["🖌 손끝에서 먹물이 번지더니, 땅이 꺼지듯 아래로 빨려 들어갔다"] = "🖌 Ink bleeds from your fingertips, and the ground gives way as you are pulled under",
 	["🖌 이 단로에서는 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라"] = "🖌 It cannot be forged at this furnace. Find the place where ink seeps under the earth",
 	["손을 댄다"] = "Touch",
@@ -75638,6 +75765,39 @@ return {
 	["하늘이 열리고 하늘만 한 손가락 하나가 가장 가까운 적을 내리누른다 (그동안 무적). 눌린 자리에서 땅이 열십자로 금빛으로 갈라진다"] = "The sky opens and a single finger as large as the heavens presses down on the nearest foe (invincible meanwhile). The ground where it pressed splits into a golden cross",
 	["신역"] = "Divine Domain",
 	["몸이 떠오르며 둘레 30칸에 금빛 만다라가 펼쳐져 천천히 돈다 (그동안 무적). 만다라의 열두 문양이 세 번 빛줄기를 쏘아 안의 적을 꿰뚫고, 마지막에 만다라가 한 점으로 접히며 터진다"] = "You rise into the air as a golden mandala spreads within 30 studs and slowly turns (invincible meanwhile). Its twelve sigils fire beams of light three times to pierce the foes inside, and at last the mandala folds to a single point and bursts",
+	["<font color=\"#FFD66E\">☸ %s은(는) 천겁의 길 %d겁을 넘어야 한다 (지금 %d겁)</font>"] = "<font color=\"#FFD66E\">☸ %s requires clearing kalpa %d on the Path of a Thousand Kalpas (now kalpa %d)</font>",
+	["<font color=\"#8CE68C\">✔ 해독</font>"] = "<font color=\"#8CE68C\">✔ Deciphered</font>",
+	["<font color=\"#FFD27A\">쌓인 것 (%d시간 %d분%s)</font>\n%s"] = "<font color=\"#FFD27A\">Collected (%dh %dm%s)</font>\n%s",
+	["<font color=\"#FFD27A\">🔨 정련 +%d · 피해 +%d%% (끝)</font>"] = "<font color=\"#FFD27A\">🔨 Refine +%d · damage +%d%% (max)</font>",
+	["<font color=\"#FFD27A\">🔨 정련 +%d → +%d · 피해 +%d%%</font>"] = "<font color=\"#FFD27A\">🔨 Refine +%d → +%d · damage +%d%%</font>",
+	["🧩 비급 조각"] = "🧩 Manual Fragments",
+	["💠 천정"] = "💠 Sky Gems",
+	["💰 은자"] = "💰 Silver",
+	["🧩 비급 조각 %d/%d"] = "🧩 Manual Fragments %d/%d",
+	["💠 천정 %s/%s"] = "💠 Sky Gems %s/%s",
+	["💰 은자 %s/%s"] = "💰 Silver %s/%s",
+	["<font color=\"#B9A8FF\">🖌 이 단로에서는 벼려지지 않는다. 먹물이 땅 밑으로 스며드는 곳을 찾아라</font>"] = "<font color=\"#B9A8FF\">🖌 It cannot be forged at this furnace. Find the place where ink seeps under the ground</font>",
+	["먹물 굴"] = "Ink Cave",
+	["⚒ %s은(는) 더 정련할 수 없어요 (+%d)"] = "⚒ %s cannot be refined further (+%d)",
+	["사신승천권"] = "Four Gods Ascending Fist",
+	["청아"] = "Cheong-a",
+	["소운"] = "So-un",
+	["백린"] = "Baek-rin",
+	["무진"] = "Mu-jin",
+	["하랑"] = "Ha-rang",
+	["설화"] = "Seol-hwa",
+	["도윤"] = "Do-yun",
+	["연비"] = "Yeon-bi",
+	["진혁"] = "Jin-hyeok",
+	["운서"] = "Un-seo",
+	["단아"] = "Dan-a",
+	["효월"] = "Hyo-wol",
+	["강모"] = "Gang-mo",
+	["초희"] = "Cho-hui",
+	["석우"] = "Seok-u",
+	["한결"] = "Han-gyeol",
+	["두 번 깨달은 뒤, 한 번 환생한 몸으로"] = "after two enlightenments and one rebirth,",
+	["두 번 깨달은 뒤,"] = "after two enlightenments,",
 }
 ]]></string>
           </Properties>
