@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.91" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.92" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -61973,6 +61973,46 @@ local function idleAura(model: Model)
 	end)
 end
 ------------------------------------------------------------------------
+-- 3.99.92판 새 기술들을 덜 싸 보이게: 꽉 찬 네온 덩어리 (공 · 원통 · 막대) 가 장난감처럼 보였다.
+--   epiece: 두께 0.5칸 이상이면 일렁이는 기운 재질 (ForceField) 로, 4칸 넘게 크면 그 모양대로 빛가루가 피어오른다 (가는 선은 네온 그대로)
+--   flashL: 화면에 색을 덮는 것에 더해 둘레를 실제로 밝히는 빛이 확 켜졌다 사그라진다
+------------------------------------------------------------------------
+local function epiece(size: Vector3, cf: CFrame, color: Color3, alpha: number?, shape: Enum.PartType?): Part
+	local p = piece(size, cf, color, alpha, shape)
+	local thin = math.min(size.X, size.Y, size.Z)
+	local big = math.max(size.X, size.Y, size.Z)
+	if thin >= 0.5 then
+		p.Material = Enum.Material.ForceField
+		if big >= 4 then
+			local e = Instance.new("ParticleEmitter")
+			e.Texture = TEX_SPARK
+			e.Color = ColorSequence.new(color:Lerp(WHITE, 0.5), color)
+			e.LightEmission = 1
+			e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, math.clamp(big * 0.06, 0.4, 2.2)), NumberSequenceKeypoint.new(1, 0) })
+			e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1) })
+			e.Lifetime = NumberRange.new(0.35, 0.7)
+			e.Rate = math.clamp(big * 3, 15, 90)
+			e.Speed = NumberRange.new(0.5, 2.5)
+			e.SpreadAngle = Vector2.new(180, 180)
+			e.Shape = Enum.ParticleEmitterShape.Box
+			e.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+			e.Drag = 2
+			e.Parent = p
+		end
+	end
+	return p
+end
+local function flashL(at: Vector3, color: Color3, size: number, strength: number?, dur: number?)
+	pcall(Fx.flash, at, color, size, strength or 2, dur or 0.3)
+	-- 빛은 Fx.flash 하나로 (3.24.1판에 번쩍임을 줄였다). 대신 기운 껍질이 확 퍼졌다 사라진다
+	local r = math.clamp(size * 0.3, 3, 24)
+	local shell = piece(V(r * 0.3, r * 0.3, r * 0.3), CF(at), color:Lerp(WHITE, 0.3), 0.2, Enum.PartType.Ball)
+	shell.Material = Enum.Material.ForceField
+	tween(shell, 0.25, { Size = V(r, r, r), Transparency = 1 })
+	Debris:AddItem(shell, 0.3)
+end
+
+------------------------------------------------------------------------
 -- 3.99.79판 출석 권법 연출
 --   🌟 칠성보권: 별 (빛 공 + 십자 빛살) · 별을 잇는 빛의 실 · 하늘에 걸리는 북두칠성 · 떨어지는 별
 --   ⏳ 광음신권: 시계판 (눈금 열둘 · 거꾸로 도는 바늘) · 금모래 · 조금 전의 나 (잔상) · 시간이 멈춘 화면
@@ -61992,14 +62032,14 @@ local function starPal(d: any): (Color3, Color3)
 end
 local function star(at: Vector3, size: number, life: number, c: Color3?)
 	local col = c or STAR2
-	local core = piece(V(size, size, size), CF(at), WHITE, 0, Enum.PartType.Ball)
+	local core = epiece(V(size, size, size), CF(at), WHITE, 0, Enum.PartType.Ball)
 	fadeOut(core, life, V(size * 0.3, size * 0.3, size * 0.3))
-	local halo = piece(V(size * 2.4, size * 2.4, size * 2.4), CF(at), col, 0.55, Enum.PartType.Ball)
+	local halo = epiece(V(size * 2.4, size * 2.4, size * 2.4), CF(at), col, 0.55, Enum.PartType.Ball)
 	fadeOut(halo, life * 0.8, V(size * 3.4, size * 3.4, size * 3.4))
 	-- 십자 빛살 (세 축): 반짝 커졌다 가늘어진다
 	for i = 1, 3 do
 		local sz = i == 1 and V(size * 5, size * 0.12, size * 0.12) or (i == 2 and V(size * 0.12, size * 5, size * 0.12) or V(size * 0.12, size * 0.12, size * 5))
-		local ray = piece(sz * 0.4, CF(at) * CFrame.Angles(0, math.rad(45), 0), col, 0.1)
+		local ray = epiece(sz * 0.4, CF(at) * CFrame.Angles(0, math.rad(45), 0), col, 0.1)
 		tween(ray, life * 0.25, { Size = sz })
 		task.delay(life * 0.25, function()
 			fadeOut(ray, life * 0.75, sz * V(0.6, 0.6, 0.6))
@@ -62026,7 +62066,7 @@ VFX.starFall = function(d)
 	local STAR, STAR2 = starPal(d)
 	local at = (d.at :: Vector3) + V(0, 2, 0)
 	local from = at + V((math.random() - 0.5) * 16, 34, (math.random() - 0.5) * 16)
-	local b = piece(V(1.6, 1.6, 1.6), CF(from), WHITE, 0, Enum.PartType.Ball)
+	local b = epiece(V(1.6, 1.6, 1.6), CF(from), WHITE, 0, Enum.PartType.Ball)
 	local tr = gBrush(0.9, 0.35, STAR2, STAR, true)
 	local t0 = os.clock()
 	local dur = d.delay or 0.35
@@ -62070,7 +62110,7 @@ VFX.starChain = function(d)
 		for _, p in ipairs(pts) do
 			star(p, 1.8, 0.5, STAR2)
 		end
-		Fx.flash(base, STAR2, 26, 2, 0.25)
+		flashL(base, STAR2, 26, 2, 0.25)
 		shake(0.35)
 	end)
 end
@@ -62158,7 +62198,7 @@ VFX.dipperFall = function(d)
 		if i == 4 then
 			task.delay(0.2, function()
 				bloom(1.2, 0.5)
-				Fx.flash(g + V(0, 4, 0), STAR2, r * 2.6, 6, 0.35)
+				flashL(g + V(0, 4, 0), STAR2, r * 2.6, 6, 0.35)
 				Fx.ring(g + V(0, 0.4, 0), STAR2, 4, r * 2.4, 0.5)
 				Fx.ring(g + V(0, 0.4, 0), STAR, 3, r * 1.6, 0.6)
 				gEmit(g + V(0, 3, 0), TEX_SPARK, STAR2, STAR, 60, 1, 26, 0.9)
@@ -62196,7 +62236,7 @@ local function afterimage(model: Instance?, shift: CFrame?, life: number, c: Col
 				break
 			end
 			local cf = shift and (shift * bp.CFrame) or bp.CFrame
-			local g = piece(bp.Size, cf, c or TIME, 0.45)
+			local g = epiece(bp.Size, cf, c or TIME, 0.45)
 			g.Material = Enum.Material.ForceField
 			local goal: { [string]: any } = { Transparency = 1 }
 			if push then
@@ -62213,13 +62253,13 @@ end
 -- 시계판: 둘레 고리 · 눈금 열둘 · 거꾸로 (또는 바로) 도는 두 바늘
 local function clockFace(g: Vector3, r: number, life: number, reverse: boolean, tilt: CFrame?, c1: Color3, c2: Color3)
 	local base = CF(g) * (tilt or CFrame.new())
-	local face = piece(V(0.3, r * 2, r * 2), base * CFrame.Angles(0, 0, math.rad(90)), TIMED, 0.5, Enum.PartType.Cylinder)
+	local face = epiece(V(0.3, r * 2, r * 2), base * CFrame.Angles(0, 0, math.rad(90)), TIMED, 0.5, Enum.PartType.Cylinder)
 	face.Material = Enum.Material.Glass
 	Debris:AddItem(face, life + 0.3)
 	task.delay(life, function()
 		fadeOut(face, 0.25)
 	end)
-	local rim = piece(V(0.4, r * 2.04, r * 2.04), base * CFrame.Angles(0, 0, math.rad(90)) * CF(0.1, 0, 0), c1, 0.2, Enum.PartType.Cylinder)
+	local rim = epiece(V(0.4, r * 2.04, r * 2.04), base * CFrame.Angles(0, 0, math.rad(90)) * CF(0.1, 0, 0), c1, 0.2, Enum.PartType.Cylinder)
 	Debris:AddItem(rim, life + 0.3)
 	task.delay(life, function()
 		fadeOut(rim, 0.25)
@@ -62228,11 +62268,11 @@ local function clockFace(g: Vector3, r: number, life: number, reverse: boolean, 
 	for i = 0, 11 do
 		local a = i / 12 * math.pi * 2
 		local big = i % 3 == 0
-		local tick = piece(V(big and 0.9 or 0.5, 0.3, r * (big and 0.22 or 0.14)), base * CF(math.sin(a) * r * 0.86, 0.3, math.cos(a) * r * 0.86) * CFrame.Angles(0, a, 0), c2, 0.05)
+		local tick = epiece(V(big and 0.9 or 0.5, 0.3, r * (big and 0.22 or 0.14)), base * CF(math.sin(a) * r * 0.86, 0.3, math.cos(a) * r * 0.86) * CFrame.Angles(0, a, 0), c2, 0.05)
 		table.insert(parts, tick)
 	end
-	local hour = piece(V(0.8, 0.35, r * 0.55), base, c1, 0)
-	local minute = piece(V(0.5, 0.35, r * 0.85), base, c2, 0)
+	local hour = epiece(V(0.8, 0.35, r * 0.55), base, c1, 0)
+	local minute = epiece(V(0.5, 0.35, r * 0.85), base, c2, 0)
 	table.insert(parts, hour)
 	table.insert(parts, minute)
 	local t0 = os.clock()
@@ -62276,11 +62316,11 @@ VFX.timeArrow = function(d)
 	gStroke(from, from + dir * len, 0.12, 0.9, 0.05, TIME2, TIME, true, 0.6)
 	gStroke(from + V(0, 0.6, 0), from + dir * len + V(0, 0.6, 0), 0.16, 0.3, 0.2, TIME, TIME2, true, 0.5)
 	-- 화살 끝: 금빛 촉
-	local tip = piece(V(1.4, 1.4, 4), CF(from + dir * 2, from + dir * 3), TIME2, 0)
+	local tip = epiece(V(1.4, 1.4, 4), CF(from + dir * 2, from + dir * 3), TIME2, 0)
 	tween(tip, 0.14, { CFrame = CF(from + dir * len, from + dir * (len + 1)) }, Enum.EasingStyle.Linear)
 	task.delay(0.14, function()
 		fadeOut(tip, 0.2, V(3, 3, 8))
-		Fx.flash(from + dir * len, TIME, 16, 2, 0.2)
+		flashL(from + dir * len, TIME, 16, 2, 0.2)
 		sand(from + dir * len, 14, 6, 0.8, TIME, TIME2)
 	end)
 	afterimage(d.m, nil, 0.5, TIME2, -dir * 3)
@@ -62303,7 +62343,7 @@ VFX.timeGhost = function(d)
 	end
 	task.delay(0.12, function()
 		gEmit(at + V(0, 2.5, 0), TEX_SPARK, TIME2, TIME, 14, 0.5, 10, 0.4)
-		Fx.flash(at + V(0, 2.5, 0), TIME, 10, 1.5, 0.15)
+		flashL(at + V(0, 2.5, 0), TIME, 10, 1.5, 0.15)
 	end)
 end
 VFX.timeDash = function(d)
@@ -62324,7 +62364,7 @@ VFX.timeSnap = function(d)
 	local g = ground(d.at) + V(0, 1, 0)
 	local r = d.radius or 13
 	Fx.ring(g, TIME2, 3, r * 2.4, 0.4)
-	Fx.flash(g + V(0, 2, 0), TIME, r * 2, 3, 0.25)
+	flashL(g + V(0, 2, 0), TIME, r * 2, 3, 0.25)
 	sand(g + V(0, 4, 0), 40, 18, 1, TIME, TIME2)
 	-- 되감기: 둘레에서 가운데로 빨려드는 바늘 열둘
 	for i = 1, 12 do
@@ -62372,7 +62412,7 @@ VFX.hourPillar = function(d)
 	local TIME, TIME2 = timePal(d)
 	local g = ground(d.at)
 	local col = (d.col or 1) % 3 == 0 and TIME2 or TIME
-	local p = piece(V(2.2, 60, 2.2), CF(g + V(0, 30, 0)), col, 0.15, Enum.PartType.Cylinder)
+	local p = epiece(V(2.2, 60, 2.2), CF(g + V(0, 30, 0)), col, 0.15, Enum.PartType.Cylinder)
 	p.CFrame = CF(g + V(0, 30, 0)) * CFrame.Angles(0, 0, math.rad(90))
 	p.Size = V(60, 0.3, 0.3)
 	tween(p, 0.08, { Size = V(60, 2.4, 2.4) })
@@ -62388,7 +62428,7 @@ VFX.timeRelease = function(d)
 	local g = ground(d.at)
 	local r = d.radius or 26
 	bloom(1.6, 0.7)
-	Fx.flash(g + V(0, 6, 0), TIME2, r * 3, 8, 0.4)
+	flashL(g + V(0, 6, 0), TIME2, r * 3, 8, 0.4)
 	Fx.ring(g + V(0, 0.4, 0), TIME2, 5, r * 2.6, 0.6)
 	Fx.ring(g + V(0, 0.4, 0), TIME, 4, r * 1.8, 0.7)
 	Fx.ring(g + V(0, 10, 0), TIME, 2, r * 2.2, 0.5)
@@ -62463,14 +62503,14 @@ VFX.clockShatter = function(d)
 	local back = g - look * (r * 0.6) + V(0, r * 0.75, 0)
 	for i = 1, 26 do
 		local sz = V(1 + math.random() * 3, 0.3, 1 + math.random() * 3)
-		local p = piece(sz, CF(back + V((math.random() - 0.5) * r, (math.random() - 0.5) * r * 0.6, (math.random() - 0.5) * 4)) * CFrame.Angles(math.random() * 6, math.random() * 6, 0), i % 3 == 0 and TIME or TIME2, 0.2)
+		local p = epiece(sz, CF(back + V((math.random() - 0.5) * r, (math.random() - 0.5) * r * 0.6, (math.random() - 0.5) * 4)) * CFrame.Angles(math.random() * 6, math.random() * 6, 0), i % 3 == 0 and TIME or TIME2, 0.2)
 		p.Material = Enum.Material.Glass
 		local fall = V((math.random() - 0.5) * r * 1.2, -r * 0.8 - math.random() * 10, (math.random() - 0.5) * r * 1.2)
 		tween(p, 0.9, { CFrame = p.CFrame * CFrame.Angles(math.random() * 4, math.random() * 4, 0) + fall, Transparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		Debris:AddItem(p, 1)
 	end
 	pcall(Fx.sound, "shatter", 1, 0.7, back)
-	Fx.flash(back, TIME2, r * 2, 6, 0.3)
+	flashL(back, TIME2, r * 2, 6, 0.3)
 	task.delay(0.12, function()
 		VFX.timeRelease(d, TIME, TIME2, {})
 		Fx.ring(g + V(0, 0.4, 0), TIME2, 6, r * 3, 0.8)
@@ -62498,8 +62538,8 @@ VFX.starHalo = function(d)
 	local life = d.life or 1.6
 	local balls = {}
 	for i = 1, 7 do
-		local b = piece(V(1.3, 1.3, 1.3), CF(r0.Position), WHITE, 0, Enum.PartType.Ball)
-		local h = piece(V(2.6, 2.6, 2.6), CF(r0.Position), STAR2, 0.55, Enum.PartType.Ball)
+		local b = epiece(V(1.3, 1.3, 1.3), CF(r0.Position), WHITE, 0, Enum.PartType.Ball)
+		local h = epiece(V(2.6, 2.6, 2.6), CF(r0.Position), STAR2, 0.55, Enum.PartType.Ball)
 		local tr = gBrush(0.5, 0.25, STAR2, STAR, true)
 		balls[i] = { b = b, h = h, tr = tr, gone = false }
 	end
@@ -62567,7 +62607,7 @@ VFX.timeAnchor = function(d)
 	local life = d.life or 1
 	afterimage(d.m, nil, life, TIME2)
 	clockFace(g, 5, life, true, nil, TIME, TIME2)
-	local pin = piece(V(0.6, 8, 0.6), CF(g + V(0, 4, 0)), TIME, 0.1)
+	local pin = epiece(V(0.6, 8, 0.6), CF(g + V(0, 4, 0)), TIME, 0.1)
 	Debris:AddItem(pin, life + 0.3)
 	task.delay(life, function()
 		fadeOut(pin, 0.25)
@@ -62601,7 +62641,7 @@ VFX.arrowHalo = function(d)
 		local a = i / 12 * math.pi * 2
 		local p = c + V(math.cos(a) * 5, math.sin(i * 1.7) * 1.2, math.sin(a) * 5)
 		local out = p + V(math.cos(a), 0, math.sin(a))
-		local ar = piece(V(0.35, 0.35, 3.2), CF(p, out), i % 2 == 0 and TIME2 or TIME, 0.05)
+		local ar = epiece(V(0.35, 0.35, 3.2), CF(p, out), i % 2 == 0 and TIME2 or TIME, 0.05)
 		ar.Size = V(0.1, 0.1, 0.4)
 		tween(ar, 0.2, { Size = V(0.35, 0.35, 3.2) })
 		Debris:AddItem(ar, life + 0.2)
@@ -62617,7 +62657,7 @@ VFX.arrowVolley = function(d)
 	local r0 = rootOf(d.m)
 	local at = (d.at :: Vector3) + V(0, 2.5, 0)
 	local from = r0 and (r0.Position + V((math.random() - 0.5) * 8, 3 + math.random() * 2, (math.random() - 0.5) * 8)) or (at + V(0, 10, 0))
-	local ar = piece(V(0.35, 0.35, 3.2), CF(from, at), TIME2, 0)
+	local ar = epiece(V(0.35, 0.35, 3.2), CF(from, at), TIME2, 0)
 	tween(ar, 0.1, { CFrame = CF(at, at + (at - from)) }, Enum.EasingStyle.Linear)
 	task.delay(0.1, function()
 		fadeOut(ar, 0.15, V(0.8, 0.8, 5))
@@ -62681,7 +62721,7 @@ VFX.ssBirdDive = function(d)
 	end, 0.18, 6, 0.9, BIRD, BIRD2, 0.02)
 	task.delay(0.2, function()
 		gEmit(at, TEX_FIRE, BIRD2, BIRD, 16, 1.4, 10, 0.5, 1, V(0, 6, 0))
-		Fx.flash(at, BIRD, 10, 2, 0.15)
+		flashL(at, BIRD, 10, 2, 0.15)
 	end)
 end
 VFX.ssBirdBurst = function(d)
@@ -62691,7 +62731,7 @@ VFX.ssBirdBurst = function(d)
 		gStroke(g, g + V(math.cos(a) * 10, 2 + math.random() * 4, math.sin(a) * 10), 0.14, 0.5, 0.4, BIRD2, BIRD, true, 0.4)
 	end
 	gEmit(g, TEX_FIRE, BIRD2, BIRD, 30, 2.2, 16, 0.7, 1, V(0, 8, 0))
-	Fx.flash(g, BIRD2, 22, 3, 0.25)
+	flashL(g, BIRD2, 22, 3, 0.25)
 	shake(0.4)
 end
 -- 청룡: 머리가 길을 따라가고 몸이 늦게 따라온다
@@ -62732,7 +62772,7 @@ VFX.ssDragonDive = function(d)
 	task.delay(0.3, function()
 		local g = ground(from + look * len * 0.6)
 		bloom(0.8, 0.5)
-		Fx.flash(g + V(0, 4, 0), AZURE2, 40, 4, 0.3)
+		flashL(g + V(0, 4, 0), AZURE2, 40, 4, 0.3)
 		for k = 1, 6 do
 			Fx.ring(ground(from + look * (len * k / 6)) + V(0, 0.4, 0), AZURE, 2, 14, 0.4)
 		end
@@ -62764,7 +62804,7 @@ VFX.ssGodTurtle = function(d)
 	local shell = {}
 	for i = 0, 6 do
 		local off = i == 0 and V() or V(math.cos(i / 6 * math.pi * 2) * r * 0.45, 0, math.sin(i / 6 * math.pi * 2) * r * 0.45)
-		local hx = piece(V(1.2, r * 0.46, r * 0.46), CF(g + off + V(0, 60, 0)) * CFrame.Angles(0, i * 0.5, math.rad(90)), i == 0 and TURTLE2 or TURTLE, 0.15, Enum.PartType.Cylinder)
+		local hx = epiece(V(1.2, r * 0.46, r * 0.46), CF(g + off + V(0, 60, 0)) * CFrame.Angles(0, i * 0.5, math.rad(90)), i == 0 and TURTLE2 or TURTLE, 0.15, Enum.PartType.Cylinder)
 		hx.Material = Enum.Material.Slate
 		table.insert(shell, hx)
 		tween(hx, 0.35, { CFrame = CF(g + off + V(0, 1.2, 0)) * CFrame.Angles(0, i * 0.5, math.rad(90)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
@@ -62774,7 +62814,7 @@ VFX.ssGodTurtle = function(d)
 			fadeOut(hx, 0.6)
 		end
 		bloom(1.4, 0.6)
-		Fx.flash(g + V(0, 4, 0), TURTLE2, r * 2.6, 6, 0.35)
+		flashL(g + V(0, 4, 0), TURTLE2, r * 2.6, 6, 0.35)
 		Fx.ring(g + V(0, 0.4, 0), TURTLE2, 5, r * 2.4, 0.6)
 		Fx.ring(g + V(0, 0.4, 0), TIGER2, 3, r * 1.6, 0.6)
 		Fx.debris(g, 18, 34)
@@ -62802,7 +62842,7 @@ VFX.chCrack = function(d)
 		local p = ground(from + look * (len * k / 8) + right * ((math.random() - 0.5) * 3))
 		task.delay(k * 0.025, function()
 			local mid = (prev + p) / 2
-			local seg = piece(V(1.2, 0.4, (p - prev).Magnitude + 0.5), CF(mid + V(0, 0.2, 0), p + V(0, 0.2, 0)), CH, 0)
+			local seg = epiece(V(1.2, 0.4, (p - prev).Magnitude + 0.5), CF(mid + V(0, 0.2, 0), p + V(0, 0.2, 0)), CH, 0)
 			fadeOut(seg, 0.9)
 			gEmit(p + V(0, 1, 0), TEX_SMOKE, EARTH, EARTH, 4, 2, 5, 0.6, 0)
 			prev = p
@@ -62816,7 +62856,7 @@ VFX.chPillars = function(d)
 	for i = 0, 6 do
 		local off = i == 0 and V() or V(math.cos(i) * 7, 0, math.sin(i) * 7)
 		local h = i == 0 and 18 or 9 + math.random() * 6
-		local rock = piece(V(4, h, 4), CF(g + off - V(0, h / 2, 0)) * CFrame.Angles(0, math.random() * 3, (math.random() - 0.5) * 0.4), EARTH, 0)
+		local rock = epiece(V(4, h, 4), CF(g + off - V(0, h / 2, 0)) * CFrame.Angles(0, math.random() * 3, (math.random() - 0.5) * 0.4), EARTH, 0)
 		rock.Material = Enum.Material.Rock
 		tween(rock, 0.15, { CFrame = rock.CFrame + V(0, h, 0) }, Enum.EasingStyle.Back)
 		task.delay(0.9, function()
@@ -62824,7 +62864,7 @@ VFX.chPillars = function(d)
 			Debris:AddItem(rock, 0.45)
 		end)
 	end
-	Fx.flash(g + V(0, 6, 0), CH, 30, 3, 0.25)
+	flashL(g + V(0, 6, 0), CH, 30, 3, 0.25)
 	Fx.debris(g, 14, 28)
 	bloom(0.6, 0.4)
 	shake(1)
@@ -62855,8 +62895,8 @@ VFX.chSkyFist = function(d)
 	local g = ground(d.at)
 	local r = d.radius or 30
 	-- 하늘에서 내려오는 금빛 주먹: 큰 덩이 (주먹) 와 손목 기둥
-	local fist = piece(V(r * 0.9, r * 0.7, r * 0.9), CF(g + V(0, 90, 0)), CH, 0.05, Enum.PartType.Ball)
-	local wrist = piece(V(r * 0.5, 80, r * 0.5), CF(g + V(0, 140, 0)), CH2, 0.3, Enum.PartType.Block)
+	local fist = epiece(V(r * 0.9, r * 0.7, r * 0.9), CF(g + V(0, 90, 0)), CH, 0.05, Enum.PartType.Ball)
+	local wrist = epiece(V(r * 0.5, 80, r * 0.5), CF(g + V(0, 140, 0)), CH2, 0.3, Enum.PartType.Block)
 	fist.Material = Enum.Material.Neon
 	tween(fist, 0.3, { CFrame = CF(g + V(0, r * 0.3, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 	tween(wrist, 0.3, { CFrame = CF(g + V(0, r * 0.3 + 45, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
@@ -62864,7 +62904,7 @@ VFX.chSkyFist = function(d)
 		fadeOut(fist, 0.5, V(r * 1.4, r * 0.4, r * 1.4))
 		fadeOut(wrist, 0.4)
 		bloom(1.8, 0.7)
-		Fx.flash(g + V(0, 6, 0), CH2, r * 3, 8, 0.4)
+		flashL(g + V(0, 6, 0), CH2, r * 3, 8, 0.4)
 		Fx.ring(g + V(0, 0.4, 0), CH, 6, r * 2.6, 0.7)
 		Fx.debris(g, 20, 36)
 		pcall(Fx.sound, "heavy", 1, 0.4, g)
@@ -62889,9 +62929,9 @@ local function blackFlame(at: Vector3, n: number, size: number, life: number)
 	gEmit(at, TEX_FIRE, HY, HY2, math.ceil(n / 2), size * 0.6, size * 2, life * 0.7, 1, V(0, 6, 0))
 end
 local function bladePiece(len: number, cf: CFrame, alpha: number?): Part
-	local b = piece(V(len * 0.12, 0.25, len), cf, HYD, alpha or 0)
+	local b = epiece(V(len * 0.12, 0.25, len), cf, HYD, alpha or 0)
 	b.Material = Enum.Material.Glass
-	local edge = piece(V(len * 0.02, 0.3, len), cf * CF(len * 0.06, 0, 0), HY, 0)
+	local edge = epiece(V(len * 0.02, 0.3, len), cf * CF(len * 0.06, 0, 0), HY, 0)
 	edge.Parent = b
 	return b
 end
@@ -62917,7 +62957,7 @@ VFX.hyLateCuts = function(d)
 		end)
 	end
 	task.delay(0.25, function()
-		Fx.flash(c, HY, 20, 2, 0.2)
+		flashL(c, HY, 20, 2, 0.2)
 		shake(0.4)
 	end)
 end
@@ -62992,11 +63032,11 @@ VFX.hyGiantSlash = function(d)
 		for k = 1, 10 do
 			local p = ground(from + look * (len * k / 10))
 			task.delay(k * 0.02, function()
-				local seg = piece(V(1.6, 0.4, len / 10 + 0.6), CF(p + V(0, 0.2, 0), p + V(0, 0.2, 0) + look), HY, 0)
+				local seg = epiece(V(1.6, 0.4, len / 10 + 0.6), CF(p + V(0, 0.2, 0), p + V(0, 0.2, 0) + look), HY, 0)
 				fadeOut(seg, 1.2)
 			end)
 		end
-		Fx.flash(from + look * len * 0.5, HY, 40, 4, 0.3)
+		flashL(from + look * len * 0.5, HY, 40, 4, 0.3)
 		pcall(Fx.sound, "shatter", 0.7, 0.6, from)
 		shake(1.2)
 	end)
@@ -63008,7 +63048,7 @@ VFX.hyRiftFlames = function(d)
 	for k = 1, 8 do
 		task.delay(k * 0.05, function()
 			local p = ground(from + look * (len * k / 8))
-			local col = piece(V(3, 16, 3), CF(p + V(0, 8, 0)), HYD, 0.2, Enum.PartType.Block)
+			local col = epiece(V(3, 16, 3), CF(p + V(0, 8, 0)), HYD, 0.2, Enum.PartType.Block)
 			fadeOut(col, 0.5, V(1, 22, 1))
 			blackFlame(p + V(0, 3, 0), 14, 2, 0.8)
 		end)
@@ -63050,12 +63090,12 @@ VFX.hyDemonSword = function(d)
 	tween(b, 0.3, { CFrame = CF(g + V(0, 26, 0)) * CFrame.Angles(math.rad(90), 0, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 	task.delay(0.3, function()
 		bloom(2, 0.8)
-		Fx.flash(g + V(0, 6, 0), HY2, r * 3, 8, 0.4)
+		flashL(g + V(0, 6, 0), HY2, r * 3, 8, 0.4)
 		Fx.ring(g + V(0, 0.4, 0), HY, 6, r * 2.6, 0.7)
 		for i = 1, 10 do
 			local a = i / 10 * math.pi * 2
 			local p = g + V(math.cos(a) * r * 0.7, 0, math.sin(a) * r * 0.7)
-			local col = piece(V(3, 30, 3), CF(p + V(0, 15, 0)), HYD, 0.15)
+			local col = epiece(V(3, 30, 3), CF(p + V(0, 15, 0)), HYD, 0.15)
 			fadeOut(col, 0.8, V(1, 40, 1))
 			blackFlame(p + V(0, 2, 0), 16, 2.4, 1)
 		end
@@ -63080,7 +63120,7 @@ VFX.snTriad = function(d)
 		local a = math.atan2(look.Z, look.X) + (i - 1) / 3 * math.pi * 2
 		local p = g + V(math.cos(a) * r * 0.85, 0, math.sin(a) * r * 0.85)
 		pts[i] = p + V(0, 12, 0)
-		local pil = piece(V(3, 24, 3), CF(p - V(0, 12, 0)), SJ[i], 0.1, Enum.PartType.Cylinder)
+		local pil = epiece(V(3, 24, 3), CF(p - V(0, 12, 0)), SJ[i], 0.1, Enum.PartType.Cylinder)
 		pil.CFrame = CF(p - V(0, 12, 0)) * CFrame.Angles(0, 0, math.rad(90))
 		pil.Size = V(24, 3, 3)
 		tween(pil, 0.25, { CFrame = CF(p + V(0, 12, 0)) * CFrame.Angles(0, 0, math.rad(90)) }, Enum.EasingStyle.Back)
@@ -63104,7 +63144,7 @@ VFX.snBeam = function(d)
 	gStroke(from, at, 0.08, 0.9, 0, WHITE, col, true, 0.35)
 	task.delay(0.08, function()
 		gEmit(at, TEX_SPARK, WHITE, col, 14, 0.6, 12, 0.4)
-		Fx.flash(at, col, 10, 2, 0.15)
+		flashL(at, col, 10, 2, 0.15)
 	end)
 end
 VFX.snUnity = function(d)
@@ -63120,7 +63160,7 @@ VFX.snUnity = function(d)
 	end
 	task.delay(0.12, function()
 		bloom(1.4, 0.6)
-		Fx.flash(mid, WHITE, r * 3, 6, 0.35)
+		flashL(mid, WHITE, r * 3, 6, 0.35)
 		for i = 1, 3 do
 			Fx.ring(g + V(0, 0.4 + i, 0), SJ[i], 4, r * (1.6 + i * 0.4), 0.6)
 		end
@@ -63140,11 +63180,11 @@ VFX.crSkyTear = function(d)
 	end
 	gEmit(c, TEX_SMOKE, Color3.fromRGB(200, 200, 210), Color3.fromRGB(120, 120, 130), 30, 8, 10, 1.2, 0)
 	-- 금에서 내민 천룡의 머리 (큰 빛 덩이 + 두 눈)
-	local head = piece(V(10, 8, 14), CF(c), CR, 0.2, Enum.PartType.Ball)
+	local head = epiece(V(10, 8, 14), CF(c), CR, 0.2, Enum.PartType.Ball)
 	tween(head, 0.6, { CFrame = CF(c - V(0, 6, 0)) }, Enum.EasingStyle.Sine)
 	Debris:AddItem(head, (d.life or 0.9) + 0.1)
 	for s = -1, 1, 2 do
-		local eye = piece(V(1.4, 1.4, 1.4), CF(c + V(s * 2.5, 1.5, -6)), CR2, 0, Enum.PartType.Ball)
+		local eye = epiece(V(1.4, 1.4, 1.4), CF(c + V(s * 2.5, 1.5, -6)), CR2, 0, Enum.PartType.Ball)
 		tween(eye, 0.6, { CFrame = CF(c + V(s * 2.5, -4.5, -6)) }, Enum.EasingStyle.Sine)
 		Debris:AddItem(eye, (d.life or 0.9) + 0.1)
 	end
@@ -63165,7 +63205,7 @@ VFX.crDragonDive = function(d)
 		for k = 1, 8 do
 			Fx.ring(ground(from + look * (len * k / 8)) + V(0, 0.4, 0), CR, 2, 16, 0.4)
 		end
-		Fx.flash(from + look * len * 0.6, CR2, 46, 4, 0.3)
+		flashL(from + look * len * 0.6, CR2, 46, 4, 0.3)
 		shake(1.2)
 	end)
 end
@@ -63173,7 +63213,7 @@ VFX.crScaleBurst = function(d)
 	local g = ground(d.at) + V(0, 2, 0)
 	for i = 1, 18 do
 		local a = i / 18 * math.pi * 2
-		local sc = piece(V(1.6, 0.3, 2.2), CF(g, g + V(math.cos(a), 0.3, math.sin(a))), i % 2 == 0 and CR or CR2, 0)
+		local sc = epiece(V(1.6, 0.3, 2.2), CF(g, g + V(math.cos(a), 0.3, math.sin(a))), i % 2 == 0 and CR or CR2, 0)
 		tween(sc, 0.45, { CFrame = sc.CFrame + V(math.cos(a) * 16, 4 + math.random() * 6, math.sin(a) * 16), Transparency = 1 })
 		Debris:AddItem(sc, 0.5)
 	end
@@ -63202,7 +63242,7 @@ end
 VFX.jlEarthLift = function(d)
 	local g = ground(d.at)
 	local r = d.radius or 18
-	local slab = piece(V(r * 1.6, 3, r * 1.6), CF(g - V(0, 1.5, 0)), Color3.fromRGB(120, 95, 70), 0, Enum.PartType.Cylinder)
+	local slab = epiece(V(r * 1.6, 3, r * 1.6), CF(g - V(0, 1.5, 0)), Color3.fromRGB(120, 95, 70), 0, Enum.PartType.Cylinder)
 	slab.CFrame = CF(g - V(0, 1.5, 0)) * CFrame.Angles(0, 0, math.rad(90))
 	slab.Size = V(3, r * 1.6, r * 1.6)
 	slab.Material = Enum.Material.Rock
@@ -63221,11 +63261,11 @@ end
 VFX.jlPawSlam = function(d)
 	local g = ground(d.at)
 	local r = d.radius or 18
-	local paw = piece(V(r * 1.2, r * 0.6, r * 1.2), CF(g + V(0, 70, 0)), JL, 0.1, Enum.PartType.Ball)
+	local paw = epiece(V(r * 1.2, r * 0.6, r * 1.2), CF(g + V(0, 70, 0)), JL, 0.1, Enum.PartType.Ball)
 	tween(paw, 0.25, { CFrame = CF(g + V(0, r * 0.25, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 	for i = 1, 4 do
 		local a = (i - 2.5) * 0.45
-		local claw = piece(V(1.4, 1.4, r * 0.5), CF(g + V(0, 70, 0)), JL2, 0)
+		local claw = epiece(V(1.4, 1.4, r * 0.5), CF(g + V(0, 70, 0)), JL2, 0)
 		tween(claw, 0.25, { CFrame = CF(g + V(math.sin(a) * r * 0.55, 1, math.cos(a) * r * 0.55), g + V(math.sin(a) * r * 2, 0, math.cos(a) * r * 2)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		Debris:AddItem(claw, 0.9)
 		task.delay(0.6, function()
@@ -63235,7 +63275,7 @@ VFX.jlPawSlam = function(d)
 	task.delay(0.25, function()
 		fadeOut(paw, 0.4, V(r * 1.6, r * 0.3, r * 1.6))
 		bloom(1.2, 0.6)
-		Fx.flash(g + V(0, 4, 0), JL2, r * 3, 6, 0.35)
+		flashL(g + V(0, 4, 0), JL2, r * 3, 6, 0.35)
 		Fx.ring(g + V(0, 0.4, 0), JL, 5, r * 2.6, 0.6)
 		Fx.debris(g, 18, 30)
 		pcall(Fx.sound, "heavy", 1, 0.45, g)
@@ -63253,7 +63293,7 @@ VFX.jlBreath = function(d)
 		end)
 	end
 	gStroke(from, from + look * len, 0.2, 2.4, 0.6, JL2, JL, true, 0.5)
-	Fx.flash(from + look * len * 0.5, JL, 30, 3, 0.25)
+	flashL(from + look * len * 0.5, JL, 30, 3, 0.25)
 	shake(0.6)
 end
 ------------------------------------------------------------------------
@@ -63270,7 +63310,7 @@ VFX.inkRain = function(d)
 		local x, z = (math.random() - 0.5) * 6, (math.random() - 0.5) * 6
 		task.delay(i * 0.03, function()
 			local top = at + V(x, 26, z)
-			local drop = piece(V(0.4, 3.5, 0.4), CF(top), INK2, 0.05)
+			local drop = epiece(V(0.4, 3.5, 0.4), CF(top), INK2, 0.05)
 			tween(drop, 0.16, { CFrame = CF(ground(at + V(x, 0, z)) + V(0, 1, 0)) }, Enum.EasingStyle.Linear)
 			task.delay(0.16, function()
 				fadeOut(drop, 0.1)
@@ -63331,7 +63371,7 @@ VFX.inkGlyphBurst = function(d)
 	local g = ground(d.at)
 	local r = d.radius or 30
 	bloom(1.2, 0.6)
-	Fx.flash(g + V(0, 4, 0), INKGOLD, r * 2.6, 6, 0.35)
+	flashL(g + V(0, 4, 0), INKGOLD, r * 2.6, 6, 0.35)
 	for i, s in ipairs(GLYPH) do
 		local a, b = g + s[1] * r * 0.8, g + s[2] * r * 0.8
 		for k = 0, 4 do
@@ -63373,13 +63413,13 @@ end
 VFX.inkSeal = function(d)
 	local at = (d.at :: Vector3) + V(0, 3, 0)
 	-- 봉인의 글자: 먹 동그라미에 금빛 가로획 · 세로획
-	local ring = piece(V(0.3, 7, 7), CF(at) * CFrame.Angles(0, 0, math.rad(90)), INK2, 0.1, Enum.PartType.Cylinder)
+	local ring = epiece(V(0.3, 7, 7), CF(at) * CFrame.Angles(0, 0, math.rad(90)), INK2, 0.1, Enum.PartType.Cylinder)
 	fadeOut(ring, 0.5, V(0.1, 10, 10))
 	gStroke(at + V(-2.5, 1.5, 0), at + V(2.5, 1.5, 0), 0.08, 0.5, 0.1, INKGOLD, WHITE, true, 0.35)
 	gStroke(at + V(0, 3, 0), at + V(0, -2.5, 0), 0.1, 0.5, 0.1, INKGOLD, WHITE, true, 0.35)
 	task.delay(0.15, function()
 		gEmit(at, TEX_SMOKE, INK2, INKGOLD, 14, 2, 10, 0.6, 0.3)
-		Fx.flash(at, INKGOLD, 12, 2, 0.15)
+		flashL(at, INKGOLD, 12, 2, 0.15)
 	end)
 end
 VFX.inkNetBurst = function(d)
@@ -63391,7 +63431,7 @@ VFX.inkNetBurst = function(d)
 	end, 24, r, 12, 0.35, INK2, INKGOLD, { width = 0.8, trail = 0.4, converge = true, speed = 3, glow = false })
 	task.delay(0.35, function()
 		bloom(1.6, 0.7)
-		Fx.flash(g + V(0, 8, 0), INKGOLD, r * 2.8, 8, 0.4)
+		flashL(g + V(0, 8, 0), INKGOLD, r * 2.8, 8, 0.4)
 		for i = 1, 24 do
 			local a = i / 24 * math.pi * 2
 			inkStroke(g + V(0, 8, 0), g + V(math.cos(a) * r, 2 + math.random() * 12, math.sin(a) * r), 0.2, 1.4, 2, i % 3 == 0)
@@ -63408,7 +63448,7 @@ VFX.swHorizon = function(d)
 	local look = lookOf(d)
 	local len = d.length or 50
 	-- 아무것도 없다가, 아주 가는 흰 줄 하나
-	local line = piece(V(0.05, 0.05, len), CFrame.lookAt(from + look * len / 2, from + look * len), WHITE, 0)
+	local line = epiece(V(0.05, 0.05, len), CFrame.lookAt(from + look * len / 2, from + look * len), WHITE, 0)
 	tween(line, 0.12, { Size = V(0.12, 0.12, len) })
 	Debris:AddItem(line, 0.6)
 	task.delay(0.4, function()
@@ -63422,7 +63462,7 @@ VFX.swHorizonSplit = function(d)
 	local right = V(-look.Z, 0, look.X)
 	-- 세상이 줄을 따라 어긋난다: 위아래 두 장의 빛판이 반대로 밀리며 사라진다
 	for s = -1, 1, 2 do
-		local plate = piece(V(len, 6, 0.1), CFrame.lookAt(from + look * len / 2 + V(0, s * 3, 0), from + look * len / 2 + V(0, s * 3, 0) + right) , SW_B, 0.6)
+		local plate = epiece(V(len, 6, 0.1), CFrame.lookAt(from + look * len / 2 + V(0, s * 3, 0), from + look * len / 2 + V(0, s * 3, 0) + right) , SW_B, 0.6)
 		tween(plate, 0.35, { CFrame = plate.CFrame + look * (s * 4), Transparency = 1 })
 		Debris:AddItem(plate, 0.4)
 	end
@@ -63430,7 +63470,7 @@ VFX.swHorizonSplit = function(d)
 	for k = 1, 8 do
 		gEmit(from + look * (len * k / 8), TEX_SPARK, SW_W, SW_B, 6, 0.4, 10, 0.35)
 	end
-	Fx.flash(from + look * len * 0.5, SW_W, 40, 3, 0.2)
+	flashL(from + look * len * 0.5, SW_W, 40, 3, 0.2)
 	pcall(Fx.sound, "deflect", 0.8, 0.6, from)
 	shake(0.8)
 end
@@ -63478,7 +63518,7 @@ VFX.swGather = function(d)
 		end)
 	end
 	task.delay(0.45, function()
-		Fx.flash(hand, SW_W, 18, 3, 0.2)
+		flashL(hand, SW_W, 18, 3, 0.2)
 		pcall(Fx.sound, "deflect", 0.8, 0.5, hand)
 	end)
 end
@@ -63517,7 +63557,7 @@ VFX.swGiantThrust = function(d)
 		fadeParts(parts, 0.3)
 		qiSlash(from, from + look * len, 4, 0.4)
 		bloom(1, 0.5)
-		Fx.flash(from + look * len, SW_W, 30, 4, 0.3)
+		flashL(from + look * len, SW_W, 30, 4, 0.3)
 		Fx.ring(ground(from + look * len) + V(0, 0.4, 0), SW_B, 3, 24, 0.4)
 		shake(1.2)
 	end)
@@ -63553,7 +63593,7 @@ VFX.swSilentMark = function(d)
 	local a = math.random() * math.pi
 	local u = V(math.cos(a), (math.random() - 0.5) * 0.8, math.sin(a))
 	-- 소리 없이 그어지는 가는 칼금 (터지지 않고 남는다)
-	local cut = piece(V(0.06, 0.06, 7), CFrame.lookAt(at, at + u), Color3.fromRGB(40, 40, 50), 0)
+	local cut = epiece(V(0.06, 0.06, 7), CFrame.lookAt(at, at + u), Color3.fromRGB(40, 40, 50), 0)
 	Debris:AddItem(cut, 2.2)
 	task.delay(2, function()
 		fadeOut(cut, 0.15)
@@ -63564,7 +63604,7 @@ VFX.swAfterSilence = function(d)
 	local r = d.radius or 50
 	-- 세상이 다시 흐르는 순간: 둘레의 모든 칼금이 한꺼번에 터진다
 	bloom(2.4, 0.9)
-	Fx.flash(g + V(0, 6, 0), SW_W, r * 3, 10, 0.45)
+	flashL(g + V(0, 6, 0), SW_W, r * 3, 10, 0.45)
 	for i = 1, 30 do
 		local p = g + V((math.random() - 0.5) * r * 1.6, 2 + math.random() * 6, (math.random() - 0.5) * r * 1.6)
 		local a = math.random() * math.pi
@@ -63643,7 +63683,7 @@ VFX.phAscend = function(d)
 		return c + V(math.sin(u * 8) * 3, u * 60, math.cos(u * 8) * 3)
 	end, life * 0.5, 0.6)
 	task.delay(life * 0.5, function()
-		local sun = piece(V(2, 2, 2), CF(c + V(0, 60, 0)), PH_G, 0, Enum.PartType.Ball)
+		local sun = epiece(V(2, 2, 2), CF(c + V(0, 60, 0)), PH_G, 0, Enum.PartType.Ball)
 		tween(sun, life * 0.5, { Size = V(16, 16, 16) })
 		Debris:AddItem(sun, life * 0.5 + 0.4)
 		task.delay(life * 0.5, function()
@@ -63656,7 +63696,7 @@ VFX.phSunDive = function(d)
 	local g = ground(d.at)
 	local r = d.radius or 30
 	bloom(1.8, 0.8)
-	Fx.flash(g + V(0, 6, 0), PH_G, r * 3, 8, 0.4)
+	flashL(g + V(0, 6, 0), PH_G, r * 3, 8, 0.4)
 	-- 녹아내린 땅: 붉게 빛나는 원판이 천천히 식는다
 	local melt = disc(g + V(0, 0.3, 0), r * 0.9, PH_R, 0.05, 1.6, r)
 	melt.Material = Enum.Material.Neon
@@ -63704,7 +63744,7 @@ VFX.phConverge = function(d)
 	end, 0.3, 0.35)
 	task.delay(0.3, function()
 		blackFire(at, 12, 2, 10, 0.5)
-		Fx.flash(at, PH_G, 12, 2, 0.15)
+		flashL(at, PH_G, 12, 2, 0.15)
 	end)
 end
 VFX.phHatch = function(d)
@@ -63713,7 +63753,7 @@ VFX.phHatch = function(d)
 	local r0 = rootOf(d.m)
 	local c = (r0 and r0.Position or g) + V(0, 3, 0)
 	-- 새들이 모여 이룬 불꽃의 알: 커지며 금이 가다가 깨진다
-	local egg = piece(V(10, 14, 10), CF(c), PH_R, 0.2, Enum.PartType.Ball)
+	local egg = epiece(V(10, 14, 10), CF(c), PH_R, 0.2, Enum.PartType.Ball)
 	egg.Material = Enum.Material.Neon
 	tween(egg, 0.3, { Size = V(16, 22, 16) })
 	for i = 1, 6 do
@@ -63725,7 +63765,7 @@ VFX.phHatch = function(d)
 	task.delay(0.32, function()
 		fadeOut(egg, 0.2, V(30, 40, 30))
 		bloom(2.4, 0.9)
-		Fx.flash(c, PH_G, r * 3, 10, 0.45)
+		flashL(c, PH_G, r * 3, 10, 0.45)
 		Fx.ring(g + V(0, 0.5, 0), PH_G, 6, r * 2.4, 0.7)
 		Fx.ring(g + V(0, 0.5, 0), PH_R, 4, r * 1.6, 0.8)
 		for i = 1, 8 do
@@ -63746,8 +63786,8 @@ end
 local GD, GD2, GDW = Color3.fromRGB(255, 214, 120), Color3.fromRGB(255, 244, 210), Color3.fromRGB(190, 225, 255)
 local function haloRing(at: Vector3, r: number, life: number, look: Vector3?)
 	local cf = look and CFrame.lookAt(at, at + look) or (CF(at) * CFrame.Angles(0, 0, math.rad(90)))
-	local ring = piece(V(0.2, r * 2, r * 2), cf * (look and CFrame.Angles(0, math.rad(90), 0) or CFrame.new()), GD, 0.3, Enum.PartType.Cylinder)
-	local hole = piece(V(0.25, r * 1.7, r * 1.7), ring.CFrame, GD2, 0.85, Enum.PartType.Cylinder)
+	local ring = epiece(V(0.2, r * 2, r * 2), cf * (look and CFrame.Angles(0, math.rad(90), 0) or CFrame.new()), GD, 0.3, Enum.PartType.Cylinder)
+	local hole = epiece(V(0.25, r * 1.7, r * 1.7), ring.CFrame, GD2, 0.85, Enum.PartType.Cylinder)
 	fadeOut(ring, life, V(0.05, r * 2.6, r * 2.6))
 	fadeOut(hole, life, V(0.05, r * 2.2, r * 2.2))
 end
@@ -63775,7 +63815,7 @@ VFX.godHalo = function(d)
 	haloRing(c + V(0, 4, 0) - lookOf(d) * 1.2, 3, 0.5, lookOf(d))
 	task.delay(0.12, function()
 		haloRing(ground(c) + V(0, 0.4, 0), r, 0.55)
-		Fx.flash(c + V(0, 3, 0), GD2, r * 2.4, 4, 0.3)
+		flashL(c + V(0, 3, 0), GD2, r * 2.4, 4, 0.3)
 		gEmit(c + V(0, 3, 0), TEX_SPARK, WHITE, GD, 30, 0.7, 20, 0.6)
 		shake(0.7)
 	end)
@@ -63787,14 +63827,14 @@ VFX.godFinger = function(d)
 	-- 하늘이 둥글게 열리고, 그 사이로 거대한 손가락 하나가 내려온다
 	local sky = g + V(0, 70, 0)
 	haloRing(sky, 14, 1.0)
-	local finger = piece(V(r * 0.9, 60, r * 0.9), CF(sky + V(0, 30, 0)), GD2, 0.1, Enum.PartType.Block)
+	local finger = epiece(V(r * 0.9, 60, r * 0.9), CF(sky + V(0, 30, 0)), GD2, 0.1, Enum.PartType.Block)
 	finger.Material = Enum.Material.Neon
-	local tip = piece(V(r * 0.9, r * 0.9, r * 0.9), CF(sky), GD2, 0.1, Enum.PartType.Ball)
+	local tip = epiece(V(r * 0.9, r * 0.9, r * 0.9), CF(sky), GD2, 0.1, Enum.PartType.Ball)
 	tween(finger, 0.25, { CFrame = CF(g + V(0, 30 + r * 0.45, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 	tween(tip, 0.25, { CFrame = CF(g + V(0, r * 0.45, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 	task.delay(0.25, function()
 		bloom(1.2, 0.5)
-		Fx.flash(g + V(0, 4, 0), GD2, r * 3, 5, 0.3)
+		flashL(g + V(0, 4, 0), GD2, r * 3, 5, 0.3)
 		Fx.ring(g + V(0, 0.4, 0), GD, 4, r * 2.4, 0.5)
 		Fx.debris(g, 14, 24)
 		pcall(Fx.sound, "heavy", 1, 0.5, g)
@@ -63817,7 +63857,7 @@ VFX.godCrossCrack = function(d)
 			local p = ground(g + dir * (r * 1.6 * k / 6) + V(-dir.Z, 0, dir.X) * ((math.random() - 0.5) * 2))
 			local a = prev
 			task.delay(k * 0.03, function()
-				local seg = piece(V(1, 0.4, (p - a).Magnitude + 0.4), CF((a + p) / 2 + V(0, 0.25, 0), p + V(0, 0.25, 0)), GD, 0)
+				local seg = epiece(V(1, 0.4, (p - a).Magnitude + 0.4), CF((a + p) / 2 + V(0, 0.25, 0), p + V(0, 0.25, 0)), GD, 0)
 				fadeOut(seg, 1)
 				gEmit(p + V(0, 1, 0), TEX_SPARK, GD2, GD, 4, 0.4, 8, 0.4)
 			end)
@@ -63840,19 +63880,19 @@ VFX.godMandala = function(d)
 		table.insert(parts, p)
 		Debris:AddItem(p, life + 0.4)
 	end
-	add(piece(V(0.2, r * 2, r * 2), CF(g) * CFrame.Angles(0, 0, math.rad(90)), GD, 0.55, Enum.PartType.Cylinder))
-	add(piece(V(0.25, r * 1.86, r * 1.86), CF(g + V(0, 0.05, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(40, 30, 20), 0.75, Enum.PartType.Cylinder))
-	add(piece(V(0.3, r * 1.2, r * 1.2), CF(g + V(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90)), GDW, 0.6, Enum.PartType.Cylinder))
+	add(epiece(V(0.2, r * 2, r * 2), CF(g) * CFrame.Angles(0, 0, math.rad(90)), GD, 0.55, Enum.PartType.Cylinder))
+	add(epiece(V(0.25, r * 1.86, r * 1.86), CF(g + V(0, 0.05, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(40, 30, 20), 0.75, Enum.PartType.Cylinder))
+	add(epiece(V(0.3, r * 1.2, r * 1.2), CF(g + V(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90)), GDW, 0.6, Enum.PartType.Cylinder))
 	local sig = {}
 	for i = 1, 12 do
-		local p = piece(V(2.4, 0.3, 2.4), CF(g), GD2, 0.1)
+		local p = epiece(V(2.4, 0.3, 2.4), CF(g), GD2, 0.1)
 		p.Material = Enum.Material.Neon
 		add(p)
 		table.insert(sig, p)
 	end
 	local petals = {}
 	for i = 1, 8 do
-		local p = piece(V(1.2, 0.3, r * 0.35), CF(g), GD, 0.2)
+		local p = epiece(V(1.2, 0.3, r * 0.35), CF(g), GD, 0.2)
 		add(p)
 		table.insert(petals, p)
 	end
@@ -63892,7 +63932,7 @@ VFX.godSigilBeam = function(d)
 	gStroke(from, at, 0.08, 0.9, 0, WHITE, GD, true, 0.3)
 	task.delay(0.08, function()
 		gEmit(at, TEX_SPARK, GD2, GD, 12, 0.5, 12, 0.35)
-		Fx.flash(at, GD, 10, 2, 0.15)
+		flashL(at, GD, 10, 2, 0.15)
 	end)
 end
 VFX.godMandalaClose = function(d)
@@ -63908,7 +63948,7 @@ VFX.godMandalaClose = function(d)
 	end
 	task.delay(0.16, function()
 		bloom(2, 0.8)
-		Fx.flash(g + V(0, 6, 0), GD2, r * 3, 8, 0.4)
+		flashL(g + V(0, 6, 0), GD2, r * 3, 8, 0.4)
 		haloRing(g + V(0, 0.5, 0), r * 1.2, 0.7)
 		Fx.ring(g + V(0, 0.5, 0), GDW, 4, r * 2, 0.6)
 		gStroke(g + V(0, 2, 0), g + V(0, 80, 0), 0.12, 3, 0, WHITE, GD, true, 0.6)
@@ -63941,15 +63981,15 @@ VFX.starBeam = function(d)
 		end)
 	end
 	task.delay(0.32, function()
-		local beam = piece(V(70, 2, 2), CF(g + V(0, 35, 0)) * CFrame.Angles(0, 0, math.rad(90)), WHITE, 0, Enum.PartType.Cylinder)
+		local beam = epiece(V(70, 2, 2), CF(g + V(0, 35, 0)) * CFrame.Angles(0, 0, math.rad(90)), WHITE, 0, Enum.PartType.Cylinder)
 		tween(beam, 0.1, { Size = V(70, 14, 14) })
-		local glow = piece(V(70, 22, 22), CF(g + V(0, 35, 0)) * CFrame.Angles(0, 0, math.rad(90)), STAR2, 0.6, Enum.PartType.Cylinder)
+		local glow = epiece(V(70, 22, 22), CF(g + V(0, 35, 0)) * CFrame.Angles(0, 0, math.rad(90)), STAR2, 0.6, Enum.PartType.Cylinder)
 		task.delay(0.12, function()
 			fadeOut(beam, 0.5, V(70, 1, 1))
 			fadeOut(glow, 0.6, V(70, 30, 30))
 		end)
 		bloom(2, 0.8)
-		Fx.flash(g + V(0, 6, 0), STAR2, r * 3, 8, 0.4)
+		flashL(g + V(0, 6, 0), STAR2, r * 3, 8, 0.4)
 		Fx.ring(g + V(0, 0.4, 0), STAR2, 6, r * 2.6, 0.7)
 		Fx.ring(g + V(0, 0.4, 0), STAR, 4, r * 1.8, 0.8)
 		for i = 1, 14 do
