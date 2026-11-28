@@ -4,6 +4,7 @@
 - 첨부: 그 캐릭터의 `SHEETREF_*.jpg` **한 장만**. 보드 위쪽 = 앱 피규어(디자인 원본), 아래쪽 = 기존 가족 시트(배치·그림체 견본).
 - 한 채팅에 한 캐릭터. 어긋나면 "Edit the attached image. Keep EVERYTHING exactly the same, and change ONLY this: …"로 한 가지씩 고친다.
 - **신입사원 3인방(사용자 지시, 2026-11-28)**: 꼿꼿이·알시·후끈이만 신입으로 먼저 등장. **큐피는 나중에**(신입 아님, 사원증 없음, 시트도 그때 그린다). 앱 피규어에 조끼가 없으니 **조끼를 입히지 않는다.** 신입 표시는 목에 건 **사원증 하나**뿐(줄 색 = 집 색: 꼿꼿이 파랑, 알시 보라, 후끈이 빨강. 카드 글자 = 등급). **가슴 로고(엠블럼)는 셋 다 피규어 그대로 유지**하고 사원증은 그 아래 배 높이에 단다.
+- **첫 결과(2026-11-28)**: 후끈이·알시 통과. 꼿꼿이는 'eyebrows tilt down toward the middle'을 화난 눈썹(안쪽 끝이 내려감)으로 그려서, **바깥 끝이 내려가는 공손한 눈썹**으로 문장을 고쳤다. 눈썹 방향은 '안쪽/바깥쪽 끝'으로 적는다.
 - 결과 파일 이름: `s00-kkot.webp`, `s00-alsi.webp`, `s00-hukkeun.webp`, `s00-qp.webp` (1200×800, 기존 시트와 같은 규격).
 
 ## 공통 머리말 (네 프롬프트 맨 앞에 똑같이 붙는다)
@@ -51,11 +52,11 @@ TOP ROW (left to right):
 1. FRONT — standing at attention, arms straight down, ID card hanging perfectly straight.
 2. SIDE (RIGHT) — facing the viewer's right, body a perfectly straight vertical line.
 3. BACK — back view, faceted helmet back and faceted back, lanyard strap around the neck.
-4. EYEBROW BOW — body exactly as straight as FRONT, NOT bent at all; only the two eyebrows tilt down toward the middle, eyes closed as two short lines.
+4. EYEBROW BOW — body exactly as straight as FRONT, NOT bent at all. A POLITE greeting face: eyes closed as two short lines, both eyebrows lowered and tilted so the OUTER ends are lower than the inner ends (a soft, humble look), small calm mouth. NOT an angry face: the inner ends of the eyebrows must NOT point down.
 
 BOTTOM ROW (left to right):
 1. SERIOUS — straight eyebrows, straight mouth.
-2. EYEBROW BOW — eyebrows tilted down, eyes closed lines.
+2. EYEBROW BOW — the same polite face as top pose 4: eyes closed lines, eyebrows with the OUTER ends lower (soft, humble), never the angry slant.
 3. SMALL SMILE — eyebrows raised just a little, tiny curved smile.
 4. STUCK — eyes wide round dots, mouth a small wavy line, eyebrows pushed up high (it tried to bend and could not).
 
