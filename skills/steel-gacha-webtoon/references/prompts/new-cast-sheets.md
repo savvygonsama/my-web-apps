@@ -83,7 +83,7 @@ TOP ROW (left to right):
 1. FRONT — standing, one mitten hand lightly patting its own silver sleeve, proud small smile.
 2. SIDE (RIGHT) — facing the viewer's right, chin slightly up.
 3. BACK — back view, seam line over the helmet top and down the back, lanyard strap around the neck.
-4. AFTER HEATING — the dark bronze version with copper seams, standing strong, one fist at the chest.
+4. AFTER HEATING — the dark bronze version with copper seams, standing strong, both fists on its hips, hexagon emblem fully visible.
 
 BOTTOM ROW (left to right):
 1. PROUD — chin up, eyes closed as two happy curves, small smile.
